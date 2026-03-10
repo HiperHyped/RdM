@@ -1464,16 +1464,11 @@ async function runHumanPostDeliveryTurn() {
     });
     if (!contract) return;
 
-    setSession({
-      active_player_id: player.id,
-      action_label: 'Rolar 2 dados',
-      note: 'O novo contrato foi preparado. Agora voce pode rolar os dados do proximo turno.',
+    await runTurnExecutionForPlayer(player, {
+      phaseLabel: 'Novo turno',
+      humanActionLabel: 'Rolar 2 dados',
+      humanNote: 'O novo contrato foi preparado. Agora voce pode rolar os dados do proximo turno.',
     });
-    const diceResult = await openHumanMovementDice();
-    if (diceResult?.total) {
-      player.last_roll = [...diceResult.values];
-      await animateHumanMovement(diceResult.total);
-    }
   } finally {
     state.flow.followupSetupRunning = false;
   }
@@ -1962,6 +1957,54 @@ async function animateHumanMovement(totalSteps) {
     diceValues: [...state.movementDice.values],
     updateSession: true,
   });
+}
+
+async function runTurnExecutionForPlayer(player, {
+  phaseLabel = 'Turno',
+  humanActionLabel = 'Rolar 2 dados',
+  humanNote = 'Agora o usuario deve jogar os dois dados de movimentacao.',
+  cpuActionLabel = null,
+  cpuNote = null,
+  humanStepDelay = 360,
+  cpuStepDelay = CPU_MOVE_DELAY_MS,
+} = {}) {
+  if (!player?.active_contract) return null;
+
+  if (player.is_human) {
+    setSession({
+      active_player_id: player.id,
+      action_label: humanActionLabel,
+      note: humanNote,
+    });
+    const diceResult = await openHumanMovementDice();
+    if (!diceResult?.total) return null;
+    player.last_roll = [...diceResult.values];
+    await animatePlayerMovement(player, diceResult.total, {
+      stepDelay: humanStepDelay,
+      diceValues: [...diceResult.values],
+      updateSession: true,
+    });
+    return diceResult;
+  }
+
+  const dice = [randomDie(), randomDie()];
+  player.last_roll = [...dice];
+  setSession({
+    active_player_id: player.id,
+    phase: phaseLabel,
+    action_label: cpuActionLabel || `${player.name}: ${dice[0]} + ${dice[1]}`,
+    dice: [...dice],
+    note: cpuNote || `${player.name} rolou ${dice[0]} + ${dice[1]} e iniciou o movimento.`,
+  });
+  renderHud();
+  await delay(650);
+  await animatePlayerMovement(player, dice[0] + dice[1], {
+    stepDelay: cpuStepDelay,
+    diceValues: [...dice],
+    updateSession: true,
+  });
+  await delay(CPU_STEP_DELAY_MS);
+  return { values: [...dice], total: dice[0] + dice[1], isDouble: dice[0] === dice[1] };
 }
 
 function startMovementDiceRoll() {
@@ -3433,24 +3476,11 @@ async function runCpuOpeningTurn(player) {
     originMode: 'draw',
   });
 
-  const dice = [randomDie(), randomDie()];
-  player.last_roll = [...dice];
-  setSession({
-    active_player_id: player.id,
-    phase: `Primeiro turno - ${player.name}`,
-    action_label: `${player.name}: ${dice[0]} + ${dice[1]}`,
-    dice: [...dice],
-    note: `${player.name} rolou ${dice[0]} + ${dice[1]} e iniciou o movimento.`,
+  await runTurnExecutionForPlayer(player, {
+    phaseLabel: `Primeiro turno - ${player.name}`,
+    cpuActionLabel: `${player.name}: rolar dados`,
+    cpuNote: `${player.name} vai rolar os dados do primeiro turno.`,
   });
-  renderHud();
-  await delay(650);
-
-  await animatePlayerMovement(player, dice[0] + dice[1], {
-    stepDelay: CPU_MOVE_DELAY_MS,
-    diceValues: dice,
-    updateSession: true,
-  });
-  await delay(CPU_STEP_DELAY_MS);
 }
 
 async function runCpuOpeningRound() {
@@ -3505,17 +3535,12 @@ async function submitSetupSelection(event) {
       needsPermission: true,
       originMode: 'draw',
     });
-    setSession({
-      active_player_id: 'human',
-      action_label: 'Rolar 2 dados',
-      note: 'Agora o usuario deve jogar os dois dados de movimentacao.',
-    });
     await delay(PREP_STEP_DELAY_MS);
-    const diceResult = await openHumanMovementDice();
-    if (diceResult?.total) {
-      humanPlayer().last_roll = [...diceResult.values];
-      await animateHumanMovement(diceResult.total);
-    }
+    await runTurnExecutionForPlayer(humanPlayer(), {
+      phaseLabel: 'Primeiro turno',
+      humanActionLabel: 'Rolar 2 dados',
+      humanNote: 'Agora o usuario deve jogar os dois dados de movimentacao.',
+    });
 
     await delay(PREP_STEP_DELAY_LONG_MS);
     await runCpuOpeningRound();
