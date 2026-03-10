@@ -34,7 +34,7 @@ const state = {
   assets: { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} },
   distances: {},
   rules: {},
-  flow: { openingRoundRunning: false, followupSetupRunning: false },
+  flow: { openingRoundRunning: false, followupSetupRunning: false, turnCycleRunning: false },
   setup: {
     started: false,
     companyName: '',
@@ -46,6 +46,7 @@ const state = {
     drawing: false,
     selectedCardId: '',
     order: [],
+    cardIds: [],
     frame: 0,
     rafId: 0,
     resolver: null,
@@ -87,10 +88,14 @@ const state = {
     revealOnly: false,
   },
   actionFeed: [],
+  pause: {
+    waiters: [],
+  },
   view: {
     rotationLon: -18,
     zoom: 1,
     openRivalDrawerId: null,
+    paused: false,
   },
   projection: {
     plot: null,
@@ -110,8 +115,67 @@ function byId(id) {
   return document.getElementById(id);
 }
 
-function delay(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
+function getPauseIndicator() {
+  return byId('game-pause-indicator');
+}
+
+function hasCentralOverlayOpen() {
+  const ids = [
+    'game-setup-overlay',
+    'permission-draw-overlay',
+    'port-draw-overlay',
+    'movement-dice-overlay',
+    'chance-draw-overlay',
+    'decision-overlay',
+  ];
+  return ids.some((id) => {
+    const node = byId(id);
+    return node && !node.classList.contains('is-hidden');
+  });
+}
+
+function renderPauseIndicator() {
+  const node = getPauseIndicator();
+  if (!node) return;
+  node.classList.toggle('is-hidden', !state.view.paused);
+}
+
+function waitForResume() {
+  if (!state.view.paused) return Promise.resolve();
+  return new Promise((resolve) => {
+    state.pause.waiters.push(resolve);
+  });
+}
+
+function setPaused(paused) {
+  const next = Boolean(paused);
+  if (state.view.paused === next) return;
+  state.view.paused = next;
+  renderPauseIndicator();
+  if (!next) {
+    const waiters = state.pause.waiters.splice(0, state.pause.waiters.length);
+    waiters.forEach((resolve) => resolve());
+  }
+}
+
+function togglePaused() {
+  if (hasCentralOverlayOpen()) return;
+  setPaused(!state.view.paused);
+}
+
+async function delay(ms) {
+  let remaining = Math.max(0, Number(ms) || 0);
+  while (remaining > 0) {
+    if (state.view.paused) {
+      await waitForResume();
+      continue;
+    }
+    const slice = Math.min(remaining, 40);
+    const startedAt = performance.now();
+    await new Promise((resolve) => window.setTimeout(resolve, slice));
+    if (state.view.paused) continue;
+    remaining -= (performance.now() - startedAt);
+  }
 }
 
 function formatCurrency(value) {
@@ -664,6 +728,8 @@ function ensurePlayerContractDraft(player) {
       settlement_value: 0,
       rounds_elapsed: 1,
       target_rounds: state.rules.target_rounds || 4,
+      toll_passed: false,
+      route_stage: 'to_toll',
       completed: false,
       note: 'Contrato em montagem.',
     };
@@ -695,6 +761,21 @@ function getPermissionDrawButton() {
 
 function getPermissionDrawResult() {
   return byId('permission-draw-result');
+}
+
+function permissionCardsForDraw() {
+  const ids = state.permissionDraw.cardIds || [];
+  const pool = ids.length
+    ? ids.map((id) => state.freightPermissionCards.find((card) => card.id === id)).filter(Boolean)
+    : state.freightPermissionCards.slice();
+  return pool;
+}
+
+function availablePermissionCardsForPlayer(player, { excludeOwned = false } = {}) {
+  const allCards = state.freightPermissionCards || [];
+  if (!excludeOwned) return allCards.slice();
+  const ownedKinds = new Set((player?.permissions || []).map((permission) => permission.kind).filter(Boolean));
+  return allCards.filter((card) => !ownedKinds.has(card.kind));
 }
 
 function setPermissionDrawVisible(visible) {
@@ -735,8 +816,9 @@ function renderPermissionDraw() {
   const button = getPermissionDrawButton();
   if (!stage) return;
 
+  const drawCards = permissionCardsForDraw();
   const orderedCards = state.permissionDraw.order
-    .map((id) => state.freightPermissionCards.find((card) => card.id === id))
+    .map((id) => drawCards.find((card) => card.id === id))
     .filter(Boolean);
 
   stage.innerHTML = orderedCards.map((card, index) => {
@@ -818,16 +900,18 @@ function closePermissionDraw(card = null) {
   state.permissionDraw.resolver = null;
   state.permissionDraw.onSelected = null;
   state.permissionDraw.promptText = '';
+  state.permissionDraw.cardIds = [];
   if (resolver) resolver(card);
 }
 
 function startPermissionDraw() {
-  if (state.permissionDraw.drawing || !state.freightPermissionCards.length) return;
+  const drawCards = permissionCardsForDraw();
+  if (state.permissionDraw.drawing || !drawCards.length) return;
 
   state.permissionDraw.drawing = true;
   state.permissionDraw.selectedCardId = '';
   state.permissionDraw.frame = 0;
-  state.permissionDraw.order = shuffleArray(state.freightPermissionCards.map((card) => card.id));
+  state.permissionDraw.order = shuffleArray(drawCards.map((card) => card.id));
   setPermissionDrawResult('Embaralhando as permissoes...');
   renderPermissionDraw();
 
@@ -841,7 +925,7 @@ function startPermissionDraw() {
     state.permissionDraw.frame += 1;
 
     if ((now - lastShuffleAt) >= shuffleEveryMs) {
-      state.permissionDraw.order = shuffleArray(state.freightPermissionCards.map((card) => card.id));
+      state.permissionDraw.order = shuffleArray(drawCards.map((card) => card.id));
       lastShuffleAt = now;
     }
 
@@ -853,10 +937,10 @@ function startPermissionDraw() {
     }
 
     state.permissionDraw.drawing = false;
-    state.permissionDraw.order = shuffleArray(state.freightPermissionCards.map((card) => card.id));
+    state.permissionDraw.order = shuffleArray(drawCards.map((card) => card.id));
     const selectedId = randomChoice(state.permissionDraw.order);
     state.permissionDraw.selectedCardId = selectedId;
-    const card = state.freightPermissionCards.find((item) => item.id === selectedId) || null;
+    const card = drawCards.find((item) => item.id === selectedId) || null;
     setPermissionDrawResult(`Permissao sorteada: ${card?.title || '--'}.`);
     renderPermissionDraw();
 
@@ -879,11 +963,13 @@ function startPermissionDraw() {
   state.permissionDraw.rafId = window.requestAnimationFrame(step);
 }
 
-function openHumanPermissionDraw({ promptText = 'Clique em embaralhar para sortear uma permissao.', onSelected = null } = {}) {
+function openHumanPermissionDraw({ promptText = 'Clique em embaralhar para sortear uma permissao.', onSelected = null, cards = null } = {}) {
+  const drawCards = Array.isArray(cards) && cards.length ? cards : state.freightPermissionCards;
   state.permissionDraw.drawing = false;
   state.permissionDraw.selectedCardId = '';
   state.permissionDraw.frame = 0;
-  state.permissionDraw.order = state.freightPermissionCards.map((card) => card.id);
+  state.permissionDraw.cardIds = drawCards.map((card) => card.id);
+  state.permissionDraw.order = drawCards.map((card) => card.id);
   state.permissionDraw.onSelected = onSelected;
   state.permissionDraw.promptText = promptText;
   setPermissionDrawResult(promptText);
@@ -1231,6 +1317,8 @@ function applyDestinationSelectionForPlayer(player, card, { updateSession = fals
     contract.destination = card.code;
     contract.target_rounds = state.rules.target_rounds || 4;
     contract.rounds_elapsed = 1;
+    contract.toll_passed = false;
+    contract.route_stage = 'to_toll';
     contract.completed = false;
     contract.deadline_label = `1 / ${contract.target_rounds}`;
     contract.deadline_progress = `1/${contract.target_rounds}`;
@@ -1294,6 +1382,8 @@ function resetContractFromCurrentPort(player, { updateSession = false, actionLab
   contract.settlement_value = 0;
   contract.rounds_elapsed = 1;
   contract.target_rounds = state.rules.target_rounds || 4;
+  contract.toll_passed = false;
+  contract.route_stage = 'to_toll';
   contract.completed = false;
   contract.origin_owned = Boolean(player.property_codes?.includes(originCode));
   contract.note = note || `${originCode} agora e o novo porto de partida.`;
@@ -1312,23 +1402,50 @@ function resetContractFromCurrentPort(player, { updateSession = false, actionLab
   return contract;
 }
 
-async function maybeBuyCurrentPortAfterDeliveryForHuman(player) {
+async function maybeHandleCurrentPortAfterDelivery(player) {
   if (!player) return false;
   const card = getPropertyCard(player.location_code || '');
   if (!card || card.kind !== 'port') return false;
   const owner = ownerPlayerOf(card.code);
   const negotiationPrice = Math.round(card.price * 1.5);
 
-  if (!owner) {
-    if (player.cash < card.price) return false;
+  if (player.is_human) {
+    if (!owner) {
+      if (player.cash < card.price) return false;
+      const choice = await openDecisionModal({
+        title: `${card.code} chegou ao destino`,
+        copy: `Deseja comprar o porto ${card.code} por ${formatCurrency(card.price)} antes de abrir o novo contrato?`,
+        primaryLabel: `Comprar ${formatCurrency(card.price)}`,
+        secondaryLabel: 'Nao comprar',
+      });
+      if (choice === 'primary' && buyProperty(player, card.code)) {
+        player.status_label = `comprou ${card.code}`;
+        pushActionLog(player, 'Porto comprado no destino', `${card.code} por ${formatCurrency(card.price)}.`);
+        renderHud();
+        return true;
+      }
+      return false;
+    }
+
+    if (owner.id === player.id || player.cash < negotiationPrice) return false;
     const choice = await openDecisionModal({
-      title: `${card.code} chegou ao destino`,
-      copy: `Deseja comprar o porto ${card.code} por ${formatCurrency(card.price)} antes de abrir o novo contrato?`,
-      primaryLabel: `Comprar ${formatCurrency(card.price)}`,
-      secondaryLabel: 'Nao comprar',
+      title: `${card.code} pertence a ${owner.name}`,
+      copy: `Deseja negociar a compra do porto ${card.code} por ${formatCurrency(negotiationPrice)} antes do novo contrato?`,
+      primaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
+      secondaryLabel: 'Nao negociar',
     });
-    if (choice === 'primary' && buyProperty(player, card.code)) {
+    if (choice === 'primary' && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
+      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
+      pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para voce.`);
+      renderHud();
+      return true;
+    }
+    return false;
+  }
+
+  if (!owner) {
+    if (cpuShouldBuyOrigin(player, card) && buyProperty(player, card.code)) {
       pushActionLog(player, 'Porto comprado no destino', `${card.code} por ${formatCurrency(card.price)}.`);
       renderHud();
       return true;
@@ -1336,142 +1453,163 @@ async function maybeBuyCurrentPortAfterDeliveryForHuman(player) {
     return false;
   }
 
-  if (owner.id === player.id || player.cash < negotiationPrice) return false;
-  const choice = await openDecisionModal({
-    title: `${card.code} pertence a ${owner.name}`,
-    copy: `Deseja negociar a compra do porto ${card.code} por ${formatCurrency(negotiationPrice)} antes do novo contrato?`,
-    primaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
-    secondaryLabel: 'Nao negociar',
-  });
-  if (choice === 'primary' && transferProperty(owner, player, card.code, negotiationPrice)) {
-    player.status_label = `comprou ${card.code}`;
+  if (owner.id !== player.id && player.cash >= negotiationPrice && transferProperty(owner, player, card.code, negotiationPrice)) {
     pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-    pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para voce.`);
+    pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
     renderHud();
     return true;
   }
   return false;
 }
 
-async function maybeBuyExtraPermissionForHuman(player) {
+async function maybeHandleExtraPermissionAfterDelivery(player) {
   if (!player) return false;
   const extraCost = Number(state.rules.extra_permission_cost || 2000);
   if (player.cash < extraCost) return false;
-  const choice = await openDecisionModal({
-    title: 'Nova permissao',
-    copy: `Deseja comprar uma nova permissao por ${formatCurrency(extraCost)} e sortear um novo tipo de frete?`,
-    primaryLabel: `Comprar ${formatCurrency(extraCost)}`,
-    secondaryLabel: 'Nao comprar',
-  });
-  if (choice !== 'primary') return false;
 
+  const availablePermissionCards = availablePermissionCardsForPlayer(player, { excludeOwned: true });
+  if (!availablePermissionCards.length) {
+    player.status_label = 'ja possui todas as permissoes';
+    pushActionLog(player, 'Sem nova permissao', 'Ja possui todos os tipos de carga disponiveis.');
+    renderHud();
+    return false;
+  }
+
+  if (player.is_human) {
+    const choice = await openDecisionModal({
+      title: 'Nova permissao',
+      copy: `Deseja comprar uma nova permissao por ${formatCurrency(extraCost)} e sortear um novo tipo de frete?`,
+      primaryLabel: `Comprar ${formatCurrency(extraCost)}`,
+      secondaryLabel: 'Nao comprar',
+    });
+    if (choice !== 'primary') return false;
+
+    updatePlayerCash(player, -extraCost);
+    player.status_label = `investiu ${formatCurrency(extraCost)}`;
+    pushActionLog(player, 'Nova permissao comprada', `Investiu ${formatCurrency(extraCost)} para sortear uma nova permissao.`);
+    renderHud();
+    setSession({
+      active_player_id: player.id,
+      action_label: 'Sortear nova permissao',
+      note: 'Agora o jogo vai sortear a nova permissao de frete comprada.',
+    });
+    await openHumanPermissionDraw({
+      promptText: 'Clique em embaralhar para sortear a nova permissao.',
+      cards: availablePermissionCards,
+      onSelected: (card) => {
+        applyPermissionSelectionForPlayer(player, card, {
+          append: true,
+          setActive: true,
+          updateSession: true,
+          actionLabel: 'Nova permissao sorteada',
+          note: `Nova permissao sorteada: ${card.title}. Ela passa a ser a permissao ativa.`,
+        });
+      },
+    });
+    return true;
+  }
+
+  if ((player.purchase_policy || 'always') === 'never') return false;
   updatePlayerCash(player, -extraCost);
-  player.status_label = `investiu ${formatCurrency(extraCost)}`;
-  pushActionLog(player, 'Nova permissao comprada', `Investiu ${formatCurrency(extraCost)} para sortear uma nova permissao.`);
-  renderHud();
-  setSession({
-    active_player_id: player.id,
-    action_label: 'Sortear nova permissao',
-    note: 'Agora o jogo vai sortear a nova permissao de frete comprada.',
-  });
-  await openHumanPermissionDraw({
-    promptText: 'Clique em embaralhar para sortear a nova permissao.',
-    onSelected: (card) => {
-      applyPermissionSelectionForPlayer(player, card, {
-        append: true,
-        setActive: true,
-        updateSession: true,
-        actionLabel: 'Nova permissao sorteada',
-        note: `Nova permissao sorteada: ${card.title}. Ela passa a ser a permissao ativa.`,
+  const permissionCard = randomChoice(availablePermissionCards);
+  if (permissionCard) {
+    applyPermissionSelectionForPlayer(player, permissionCard, {
+      append: true,
+      setActive: true,
+      updateSession: false,
+      note: `${player.name} comprou uma nova permissao e sorteou ${permissionCard.title}.`,
+    });
+    pushActionLog(player, 'Nova permissao comprada', `${formatCurrency(extraCost)} investidos em ${permissionCard.title}.`);
+    renderHud();
+    return true;
+  }
+  return false;
+}
+
+async function runPostContractForPlayer(player, {
+  phaseLabel = 'Novo turno',
+  advanceGlobalTurn = false,
+  autoRollAfterSetup = false,
+} = {}) {
+  if (!player?.needs_new_contract) return null;
+  if (player.is_human && state.flow.followupSetupRunning) return null;
+
+  if (player.is_human) {
+    state.flow.followupSetupRunning = true;
+  }
+
+  try {
+    player.needs_new_contract = false;
+    if (advanceGlobalTurn) {
+      const nextTurn = Number(state.session?.turn_number || 1) + 1;
+      setSession({
+        turn_number: nextTurn,
+        turn_label: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        phase: phaseLabel,
+        active_player_id: player.id,
+        action_label: 'Preparar novo contrato',
+        note: player.is_human
+          ? 'Agora voce decide a compra do porto atual, a compra de nova permissao e a abertura do novo contrato.'
+          : `${player.name} esta preparando o novo contrato.`,
       });
-    },
-  });
-  return true;
+    } else {
+      setSession({
+        active_player_id: player.id,
+        phase: phaseLabel,
+        action_label: player.is_human ? 'Preparar novo contrato' : `${player.name}: novo contrato`,
+        note: player.is_human
+          ? 'Agora voce decide a compra do porto atual, a compra de nova permissao e a abertura do novo contrato.'
+          : `${player.name} esta preparando o novo contrato.`,
+      });
+    }
+
+    await delay(preparationDelayFor(player, false));
+    await maybeHandleCurrentPortAfterDelivery(player);
+    await delay(preparationDelayFor(player, false));
+    await maybeHandleExtraPermissionAfterDelivery(player);
+    await delay(preparationDelayFor(player, false));
+
+    const contract = await runContractOpeningForPlayer(player, {
+      phaseLabel,
+      needsPermission: false,
+      originMode: 'current',
+    });
+    if (!contract) return null;
+
+    player.status_label = 'novo contrato pronto';
+    renderHud();
+
+    if (autoRollAfterSetup) {
+      await runTurnExecutionForPlayer(player, {
+        phaseLabel,
+        humanActionLabel: 'Rolar 2 dados',
+        humanNote: 'O novo contrato foi preparado. Agora voce pode rolar os dados do proximo turno.',
+      });
+    }
+
+    return contract;
+  } finally {
+    if (player.is_human) {
+      state.flow.followupSetupRunning = false;
+    }
+  }
 }
 
 async function prepareCpuNextContractAfterDelivery(player) {
-  if (!player?.needs_new_contract || player.is_human) return null;
-
-  const currentPort = getPropertyCard(player.location_code || '');
-  if (currentPort?.kind === 'port') {
-    const owner = ownerPlayerOf(currentPort.code);
-    const negotiationPrice = Math.round(currentPort.price * 1.5);
-    if (!owner) {
-      if (cpuShouldBuyOrigin(player, currentPort) && buyProperty(player, currentPort.code)) {
-        pushActionLog(player, 'Porto comprado no destino', `${currentPort.code} por ${formatCurrency(currentPort.price)}.`);
-      }
-    } else if (owner.id !== player.id && player.cash >= negotiationPrice && transferProperty(owner, player, currentPort.code, negotiationPrice)) {
-      pushActionLog(player, 'Negociacao aceita', `${currentPort.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu porto', `${currentPort.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-    }
-  }
-
-  const extraCost = Number(state.rules.extra_permission_cost || 2000);
-  if (player.cash >= extraCost && (player.purchase_policy || 'always') !== 'never') {
-    updatePlayerCash(player, -extraCost);
-    const permissionCard = randomChoice(state.freightPermissionCards);
-    if (permissionCard) {
-      applyPermissionSelectionForPlayer(player, permissionCard, {
-        append: true,
-        setActive: true,
-        updateSession: false,
-        note: `${player.name} comprou uma nova permissao e sorteou ${permissionCard.title}.`,
-      });
-      pushActionLog(player, 'Nova permissao comprada', `${formatCurrency(extraCost)} investidos em ${permissionCard.title}.`);
-    }
-  }
-
-  const contract = await runContractOpeningForPlayer(player, {
+  return runPostContractForPlayer(player, {
     phaseLabel: `${player.name}: novo turno`,
-    needsPermission: false,
-    originMode: 'current',
+    advanceGlobalTurn: false,
+    autoRollAfterSetup: false,
   });
-  if (!contract) return null;
-
-  player.needs_new_contract = false;
-  player.status_label = 'novo contrato pronto';
-  renderHud();
-  return contract;
 }
 
 async function runHumanPostDeliveryTurn() {
   const player = humanPlayer();
-  if (!player?.needs_new_contract || state.flow.followupSetupRunning) return;
-
-  state.flow.followupSetupRunning = true;
-  try {
-    player.needs_new_contract = false;
-    const nextTurn = Number(state.session?.turn_number || 1) + 1;
-    setSession({
-      turn_number: nextTurn,
-      turn_label: `Turno ${String(nextTurn).padStart(2, '0')}`,
-      phase: 'Novo turno',
-      active_player_id: player.id,
-      action_label: 'Preparar novo contrato',
-      note: 'Agora voce decide a compra do porto atual, a compra de nova permissao e a abertura do novo contrato.',
-    });
-
-    await delay(PREP_STEP_DELAY_MS);
-    await maybeBuyCurrentPortAfterDeliveryForHuman(player);
-    await delay(PREP_STEP_DELAY_MS);
-    await maybeBuyExtraPermissionForHuman(player);
-    await delay(PREP_STEP_DELAY_MS);
-
-    const contract = await runContractOpeningForPlayer(player, {
-      phaseLabel: 'Novo turno',
-      needsPermission: false,
-      originMode: 'current',
-    });
-    if (!contract) return;
-
-    await runTurnExecutionForPlayer(player, {
-      phaseLabel: 'Novo turno',
-      humanActionLabel: 'Rolar 2 dados',
-      humanNote: 'O novo contrato foi preparado. Agora voce pode rolar os dados do proximo turno.',
-    });
-  } finally {
-    state.flow.followupSetupRunning = false;
-  }
+  return runPostContractForPlayer(player, {
+    phaseLabel: 'Novo turno',
+    advanceGlobalTurn: true,
+    autoRollAfterSetup: true,
+  });
 }
 
 function closePortDraw(result = null) {
@@ -1764,6 +1902,28 @@ function shortestPath(startNodeId, endNodeId) {
   return [];
 }
 
+function syncContractRouteProgress(player, traveledNodeIds = []) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return contract;
+
+  const tollNodeId = getPropertyNode(contract.mandatory_toll)?.id;
+  const destinationNodeId = getPropertyNode(contract.destination)?.id;
+  const currentNodeId = player.board_node_id || null;
+
+  if (tollNodeId && (contract.toll_passed || currentNodeId === tollNodeId || traveledNodeIds.includes(tollNodeId))) {
+    contract.toll_passed = true;
+  } else if (!contract.toll_passed) {
+    contract.toll_passed = false;
+  }
+
+  if (destinationNodeId && currentNodeId === destinationNodeId && contract.toll_passed) {
+    contract.route_stage = 'arrived';
+  } else {
+    contract.route_stage = contract.toll_passed ? 'to_destination' : 'to_toll';
+  }
+  return contract;
+}
+
 function buildMovementPathForPlayer(player) {
   const contract = player?.active_contract;
   if (!player || !contract) return [];
@@ -1771,12 +1931,29 @@ function buildMovementPathForPlayer(player) {
   const startNodeId = player.board_node_id || getPropertyNode(contract.origin)?.id;
   const tollNodeId = getPropertyNode(contract.mandatory_toll)?.id;
   const destinationNodeId = getPropertyNode(contract.destination)?.id;
-  if (!startNodeId || !tollNodeId || !destinationNodeId) return [];
+  if (!startNodeId || !destinationNodeId) return [];
 
+  if (contract.toll_passed) {
+    return shortestPath(startNodeId, destinationNodeId);
+  }
+
+  if (!tollNodeId) return [];
   const firstLeg = shortestPath(startNodeId, tollNodeId);
   const secondLeg = shortestPath(tollNodeId, destinationNodeId);
   if (!firstLeg.length || !secondLeg.length) return [];
   return [...firstLeg, ...secondLeg.slice(1)];
+}
+
+function advanceContractRoundForPlayer(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return contract;
+  const targetRounds = Number(contract.target_rounds || state.rules.target_rounds || 4);
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1)) + 1;
+  contract.rounds_elapsed = roundsElapsed;
+  contract.target_rounds = targetRounds;
+  contract.deadline_label = `${roundsElapsed} / ${targetRounds}`;
+  contract.deadline_progress = `${roundsElapsed}/${targetRounds}`;
+  return contract;
 }
 
 function resolveContractSettlement(contract) {
@@ -1807,6 +1984,8 @@ function completeContractForPlayer(player) {
   const settlement = resolveContractSettlement(contract);
   updatePlayerCash(player, settlement.total);
   contract.completed = true;
+  contract.toll_passed = true;
+  contract.route_stage = 'arrived';
   player.needs_new_contract = true;
   contract.settlement_adjustment = settlement.adjustment;
   contract.settlement_value = settlement.total;
@@ -1861,7 +2040,9 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
       active_player_id: player.id,
       action_label: player.is_human ? 'Navio em movimento' : `${player.name}: navio em movimento`,
       dice: resolvedDice,
-      note: `O navio vai percorrer ${maxMoves} casas no menor caminho ate ${contract.destination}, passando por ${contract.mandatory_toll}.`,
+      note: contract.toll_passed
+        ? `O navio vai percorrer ${maxMoves} casas no menor caminho ate ${contract.destination}.`
+        : `O navio vai percorrer ${maxMoves} casas no menor caminho ate ${contract.destination}, passando por ${contract.mandatory_toll}.`,
     });
   }
 
@@ -1878,7 +2059,9 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
   const finalNode = state.nodesById[player.board_node_id] || null;
   const tollNodeId = getPropertyNode(contract.mandatory_toll)?.id;
   const destinationNodeId = getPropertyNode(contract.destination)?.id;
-  const passedToll = tollNodeId ? traveled.includes(tollNodeId) : false;
+  const passedTollThisMove = tollNodeId ? traveled.includes(tollNodeId) : false;
+  syncContractRouteProgress(player, traveled);
+  const passedToll = Boolean(contract.toll_passed);
   const reachedDestination = Boolean(destinationNodeId && player.board_node_id === destinationNodeId);
   const contractCompletion = reachedDestination && passedToll
     ? completeContractForPlayer(player)
@@ -1912,6 +2095,8 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
     note = `O navio parou em ${player.location_label} e pagou ${formatCurrency(fuelCost)} ao banco.`;
   } else if (!passedToll) {
     note = `O navio avancou ${maxMoves} casas e segue rumo ao pedagio ${contract.mandatory_toll}.`;
+  } else if (passedTollThisMove && !reachedDestination) {
+    note = `O navio passou por ${contract.mandatory_toll} e agora segue rumo ao destino ${contract.destination}.`;
   } else if (!reachedDestination) {
     note = `O navio avancou ${maxMoves} casas e segue rumo ao destino ${contract.destination}.`;
   }
@@ -1936,15 +2121,6 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
       dice: resolvedDice,
       note,
     });
-  }
-  if (reachedDestination && passedToll) {
-    if (player.is_human && !state.flow.openingRoundRunning && !state.flow.followupSetupRunning) {
-      window.setTimeout(() => {
-        runHumanPostDeliveryTurn().catch(() => {});
-      }, PREP_STEP_DELAY_LONG_MS);
-    } else if (!player.is_human) {
-      await prepareCpuNextContractAfterDelivery(player);
-    }
   }
   renderHud();
   renderNodeOverlay();
@@ -3264,6 +3440,7 @@ function applyBootstrapPayload(payload) {
   state.view.openRivalDrawerId = null;
   state.flow.openingRoundRunning = false;
   state.flow.followupSetupRunning = false;
+  state.flow.turnCycleRunning = false;
   state.actionFeed = [];
   buildCardIndexes();
   syncDerivedState();
@@ -3483,6 +3660,109 @@ async function runCpuOpeningTurn(player) {
   });
 }
 
+async function runPlayerSubsequentTurn(player, turnNumber) {
+  if (!player) return;
+
+  const phaseLabel = `Turno ${String(turnNumber).padStart(2, '0')}`;
+  if (!player.is_human) {
+    state.view.openRivalDrawerId = player.id;
+    renderHud();
+  } else {
+    state.view.openRivalDrawerId = null;
+    renderHud();
+  }
+
+  if ((player.skip_turns || 0) > 0) {
+    player.skip_turns = Math.max(0, (player.skip_turns || 0) - 1);
+    player.status_label = player.skip_turns > 0 ? `parado ${player.skip_turns} rodada(s)` : 'retoma na proxima';
+    const note = player.is_human
+      ? `Voce perdeu a vez nesta rodada.`
+      : `${player.name} perdeu a vez nesta rodada.`;
+    pushActionLog(player, 'Rodada perdida', player.skip_turns > 0 ? `Ainda faltam ${player.skip_turns} rodada(s).` : 'Volta a jogar na proxima rodada.');
+    setSession({
+      active_player_id: player.id,
+      phase: phaseLabel,
+      action_label: player.is_human ? 'Rodada perdida' : `${player.name}: rodada perdida`,
+      dice: [0, 0],
+      note,
+    });
+    renderHud();
+    await delay(preparationDelayFor(player, false));
+    return;
+  }
+
+  if (player.needs_new_contract) {
+    await runPostContractForPlayer(player, {
+      phaseLabel,
+      advanceGlobalTurn: false,
+      autoRollAfterSetup: true,
+    });
+    return;
+  }
+
+  if (!player.active_contract || !player.active_contract.destination || player.active_contract.destination === '--') {
+    await runContractOpeningForPlayer(player, {
+      phaseLabel,
+      needsPermission: !(player.permissions || []).length,
+      originMode: player.location_code ? 'current' : 'draw',
+    });
+    await runTurnExecutionForPlayer(player, {
+      phaseLabel,
+      humanActionLabel: 'Rolar 2 dados',
+      humanNote: 'Agora voce pode rolar os dados da rodada.',
+      cpuActionLabel: `${player.name}: rolar dados`,
+      cpuNote: `${player.name} vai rolar os dados da rodada.`,
+    });
+    return;
+  }
+
+  advanceContractRoundForPlayer(player);
+  setSession({
+    active_player_id: player.id,
+    phase: phaseLabel,
+    action_label: player.is_human ? 'Contrato em andamento' : `${player.name}: contrato em andamento`,
+    note: player.is_human
+      ? `Seu contrato segue em andamento. Prazo atual: ${player.active_contract.deadline_progress}.`
+      : `${player.name} segue com o contrato em andamento. Prazo atual: ${player.active_contract.deadline_progress}.`,
+  });
+  renderHud();
+  await delay(preparationDelayFor(player, false));
+  await runTurnExecutionForPlayer(player, {
+    phaseLabel,
+    humanActionLabel: 'Rolar 2 dados',
+    humanNote: 'Seu contrato segue em andamento. Role os dados desta rodada.',
+    cpuActionLabel: `${player.name}: rolar dados`,
+    cpuNote: `${player.name} vai rolar os dados desta rodada.`,
+  });
+}
+
+async function runSubsequentTurnCycle() {
+  if (state.flow.turnCycleRunning) return;
+  state.flow.turnCycleRunning = true;
+  try {
+    while (state.setup.started) {
+      const nextTurn = Number(state.session?.turn_number || 1) + 1;
+      setSession({
+        turn_number: nextTurn,
+        turn_label: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        phase: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        active_player_id: 'human',
+        action_label: 'Nova rodada',
+        note: `A rodada ${String(nextTurn).padStart(2, '0')} vai comecar.`,
+        dice: [0, 0],
+      });
+      renderHud();
+      await delay(PREP_STEP_DELAY_LONG_MS);
+
+      for (const player of state.players) {
+        await runPlayerSubsequentTurn(player, nextTurn);
+      }
+    }
+  } finally {
+    state.flow.turnCycleRunning = false;
+  }
+}
+
 async function runCpuOpeningRound() {
   if (state.flow.openingRoundRunning) return;
 
@@ -3544,12 +3824,11 @@ async function submitSetupSelection(event) {
 
     await delay(PREP_STEP_DELAY_LONG_MS);
     await runCpuOpeningRound();
-    if (humanPlayer()?.needs_new_contract) {
-      await delay(PREP_STEP_DELAY_LONG_MS);
-      await runHumanPostDeliveryTurn();
-    }
     state.setup.submitting = false;
     updateSetupStartButton();
+    delay(PREP_STEP_DELAY_LONG_MS).then(() => {
+      runSubsequentTurnCycle().catch(() => {});
+    });
   } catch (_error) {
     state.setup.submitting = false;
     updateSetupStartButton();
@@ -3586,6 +3865,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   byId('port-draw-button')?.addEventListener('click', startCurrentPortDraw);
   byId('movement-dice-button')?.addEventListener('click', startMovementDiceRoll);
   byId('chance-draw-button')?.addEventListener('click', startChanceDraw);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'Space' || event.repeat) return;
+    const active = document.activeElement;
+    const tag = active?.tagName || '';
+    if (active?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (hasCentralOverlayOpen()) return;
+    event.preventDefault();
+    togglePaused();
+  });
 
   byId('preview-rival-list')?.addEventListener('click', (event) => {
     const card = event.target.closest('.preview-rival-card');

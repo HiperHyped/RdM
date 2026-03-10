@@ -2358,6 +2358,37 @@ kbd {
   display: none;
 }
 
+.game-pause-indicator {
+  position: fixed;
+  z-index: 7;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 52px;
+  height: 34px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 230, 245, 0.16);
+  background: linear-gradient(180deg, rgba(4, 15, 27, 0.88), rgba(6, 18, 31, 0.82));
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.game-pause-indicator.is-hidden {
+  display: none;
+}
+
+.game-pause-indicator span {
+  color: #edf6ff;
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
 .game-action-log .eyebrow {
   margin-bottom: 1px;
   font-size: 0.54rem;
