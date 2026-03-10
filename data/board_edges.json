@@ -1053,5 +1053,10 @@
     "id": "edge-271",
     "from_node_id": "fuel-150",
     "to_node_id": "mum"
+  },
+  {
+    "id": "edge-272",
+    "from_node_id": "chance-016",
+    "to_node_id": "fuel-048"
   }
 ]

@@ -19,6 +19,66 @@ SHIP_MASKS = {
     'cars': '/static/assets/ships/recolorable/cars_mask.png',
 }
 
+SHIP_FILL_MASKS = {
+    'bulk': '/static/assets/ships/recolorable/bulk_fill_mask.png',
+    'container': '/static/assets/ships/recolorable/container_fill_mask.png',
+    'oil': '/static/assets/ships/recolorable/oil_fill_mask.png',
+    'gas': '/static/assets/ships/recolorable/gas_fill_mask.png',
+    'cruise': '/static/assets/ships/recolorable/cruise_fill_mask.png',
+    'cars': '/static/assets/ships/recolorable/cars_fill_mask.png',
+}
+
+SHIP_SPRITES = {
+    'bulk': {
+        'blue': '/static/assets/ships/colored/bulk_blue.png',
+        'yellow': '/static/assets/ships/colored/bulk_yellow.png',
+        'green': '/static/assets/ships/colored/bulk_green.png',
+        'red': '/static/assets/ships/colored/bulk_red.png',
+        'orange': '/static/assets/ships/colored/bulk_orange.png',
+        'purple': '/static/assets/ships/colored/bulk_purple.png',
+    },
+    'container': {
+        'blue': '/static/assets/ships/colored/container_blue.png',
+        'yellow': '/static/assets/ships/colored/container_yellow.png',
+        'green': '/static/assets/ships/colored/container_green.png',
+        'red': '/static/assets/ships/colored/container_red.png',
+        'orange': '/static/assets/ships/colored/container_orange.png',
+        'purple': '/static/assets/ships/colored/container_purple.png',
+    },
+    'oil': {
+        'blue': '/static/assets/ships/colored/oil_blue.png',
+        'yellow': '/static/assets/ships/colored/oil_yellow.png',
+        'green': '/static/assets/ships/colored/oil_green.png',
+        'red': '/static/assets/ships/colored/oil_red.png',
+        'orange': '/static/assets/ships/colored/oil_orange.png',
+        'purple': '/static/assets/ships/colored/oil_purple.png',
+    },
+    'gas': {
+        'blue': '/static/assets/ships/colored/gas_blue.png',
+        'yellow': '/static/assets/ships/colored/gas_yellow.png',
+        'green': '/static/assets/ships/colored/gas_green.png',
+        'red': '/static/assets/ships/colored/gas_red.png',
+        'orange': '/static/assets/ships/colored/gas_orange.png',
+        'purple': '/static/assets/ships/colored/gas_purple.png',
+    },
+    'cruise': {
+        'blue': '/static/assets/ships/colored/cruise_blue.png',
+        'yellow': '/static/assets/ships/colored/cruise_yellow.png',
+        'green': '/static/assets/ships/colored/cruise_green.png',
+        'red': '/static/assets/ships/colored/cruise_red.png',
+        'orange': '/static/assets/ships/colored/cruise_orange.png',
+        'purple': '/static/assets/ships/colored/cruise_purple.png',
+    },
+    'cars': {
+        'blue': '/static/assets/ships/colored/cars_blue.png',
+        'yellow': '/static/assets/ships/colored/cars_yellow.png',
+        'green': '/static/assets/ships/colored/cars_green.png',
+        'red': '/static/assets/ships/colored/cars_red.png',
+        'orange': '/static/assets/ships/colored/cars_orange.png',
+        'purple': '/static/assets/ships/colored/cars_purple.png',
+    },
+}
+
 CARGO_ICONS = {
     'bulk': '/static/assets/cargo/bulk.png',
     'container': '/static/assets/cargo/container.png',
@@ -171,6 +231,8 @@ def build_ui_bootstrap(
         },
         'assets': {
             'ship_masks': SHIP_MASKS,
+            'ship_fill_masks': SHIP_FILL_MASKS,
+            'ship_sprites': SHIP_SPRITES,
             'cargo_icons': CARGO_ICONS,
         },
         'players': players,

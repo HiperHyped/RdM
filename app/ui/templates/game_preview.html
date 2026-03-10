@@ -13,6 +13,11 @@
   <div id="game-preview-ships" class="game-preview-ships" aria-hidden="true"></div>
   <div id="game-preview-hitlayer" class="game-preview-hitlayer" aria-hidden="true"></div>
 
+  <section id="game-action-log" class="game-action-log" aria-live="polite">
+    <p class="eyebrow">Acoes do turno</p>
+    <div id="game-action-feed" class="game-action-feed"></div>
+  </section>
+
   <div id="game-setup-overlay" class="game-setup-overlay">
     <section class="game-setup-modal" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
@@ -174,6 +179,24 @@
     </section>
   </div>
 
+  <div id="chance-draw-overlay" class="chance-draw-overlay is-hidden">
+    <section class="chance-draw-modal" aria-labelledby="chance-draw-title">
+      <div class="chance-draw-head">
+        <div>
+          <p class="eyebrow">Sorte / Reves</p>
+          <h2 id="chance-draw-title">Embaralhar e revelar uma carta</h2>
+        </div>
+        <span id="chance-draw-active" class="chance-draw-badge">Aguardando sorteio</span>
+      </div>
+      <p id="chance-draw-copy" class="body-copy compact chance-draw-copy">O baralho inteiro entra misturado, combinando cartas verdes e vermelhas no mesmo sorteio.</p>
+      <div id="chance-draw-stage" class="chance-draw-stage" aria-live="polite"></div>
+      <div class="chance-draw-footer">
+        <p id="chance-draw-result" class="chance-draw-result">Clique em embaralhar para sortear uma carta.</p>
+        <button id="chance-draw-button" type="button" class="chance-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </div>
+
   <div id="decision-overlay" class="decision-overlay is-hidden">
     <section class="decision-modal" aria-labelledby="decision-title">
       <p class="eyebrow">Resolucao</p>
@@ -191,5 +214,5 @@
   </section>
 </main>
 
-<script src="{{ request.url_for('static', path='js/game-preview.js') }}"></script>
+<script src="{{ request.url_for('static', path='js/game-preview.js') }}?v=chance-log-v2"></script>
 {% endblock %}

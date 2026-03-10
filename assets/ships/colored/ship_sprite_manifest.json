@@ -1,0 +1,52 @@
+{
+  "ships": {
+    "bulk": {
+      "blue": "/static/assets/ships/colored/bulk_blue.png",
+      "yellow": "/static/assets/ships/colored/bulk_yellow.png",
+      "green": "/static/assets/ships/colored/bulk_green.png",
+      "red": "/static/assets/ships/colored/bulk_red.png",
+      "orange": "/static/assets/ships/colored/bulk_orange.png",
+      "purple": "/static/assets/ships/colored/bulk_purple.png"
+    },
+    "container": {
+      "blue": "/static/assets/ships/colored/container_blue.png",
+      "yellow": "/static/assets/ships/colored/container_yellow.png",
+      "green": "/static/assets/ships/colored/container_green.png",
+      "red": "/static/assets/ships/colored/container_red.png",
+      "orange": "/static/assets/ships/colored/container_orange.png",
+      "purple": "/static/assets/ships/colored/container_purple.png"
+    },
+    "oil": {
+      "blue": "/static/assets/ships/colored/oil_blue.png",
+      "yellow": "/static/assets/ships/colored/oil_yellow.png",
+      "green": "/static/assets/ships/colored/oil_green.png",
+      "red": "/static/assets/ships/colored/oil_red.png",
+      "orange": "/static/assets/ships/colored/oil_orange.png",
+      "purple": "/static/assets/ships/colored/oil_purple.png"
+    },
+    "gas": {
+      "blue": "/static/assets/ships/colored/gas_blue.png",
+      "yellow": "/static/assets/ships/colored/gas_yellow.png",
+      "green": "/static/assets/ships/colored/gas_green.png",
+      "red": "/static/assets/ships/colored/gas_red.png",
+      "orange": "/static/assets/ships/colored/gas_orange.png",
+      "purple": "/static/assets/ships/colored/gas_purple.png"
+    },
+    "cruise": {
+      "blue": "/static/assets/ships/colored/cruise_blue.png",
+      "yellow": "/static/assets/ships/colored/cruise_yellow.png",
+      "green": "/static/assets/ships/colored/cruise_green.png",
+      "red": "/static/assets/ships/colored/cruise_red.png",
+      "orange": "/static/assets/ships/colored/cruise_orange.png",
+      "purple": "/static/assets/ships/colored/cruise_purple.png"
+    },
+    "cars": {
+      "blue": "/static/assets/ships/colored/cars_blue.png",
+      "yellow": "/static/assets/ships/colored/cars_yellow.png",
+      "green": "/static/assets/ships/colored/cars_green.png",
+      "red": "/static/assets/ships/colored/cars_red.png",
+      "orange": "/static/assets/ships/colored/cars_orange.png",
+      "purple": "/static/assets/ships/colored/cars_purple.png"
+    }
+  }
+}

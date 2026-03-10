@@ -4,37 +4,49 @@
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\bulk_v2.png",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\bulk_mask.png",
       "web_mask": "/static/assets/ships/recolorable/bulk_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\bulk_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/bulk_fill_mask.png"
     },
     "container": {
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\container_v2.jpg",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\container_mask.png",
       "web_mask": "/static/assets/ships/recolorable/container_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\container_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/container_fill_mask.png"
     },
     "oil": {
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\petrol_v2.png",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\oil_mask.png",
       "web_mask": "/static/assets/ships/recolorable/oil_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\oil_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/oil_fill_mask.png"
     },
     "gas": {
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\gaser_v2.jpg",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\gas_mask.png",
       "web_mask": "/static/assets/ships/recolorable/gas_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\gas_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/gas_fill_mask.png"
     },
     "cruise": {
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\cruiser_v2.png",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cruise_mask.png",
       "web_mask": "/static/assets/ships/recolorable/cruise_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cruise_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/cruise_fill_mask.png"
     },
     "cars": {
       "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\roro_v2.png",
       "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cars_mask.png",
       "web_mask": "/static/assets/ships/recolorable/cars_mask.png",
-      "usage": "css-mask"
+      "usage": "css-mask",
+      "fill_mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cars_fill_mask.png",
+      "web_fill_mask": "/static/assets/ships/recolorable/cars_fill_mask.png"
     }
   },
   "colors": {
