@@ -1389,7 +1389,7 @@ async function maybeBuyExtraPermissionForHuman(player) {
   return true;
 }
 
-function prepareCpuNextContractAfterDelivery(player) {
+async function prepareCpuNextContractAfterDelivery(player) {
   if (!player?.needs_new_contract || player.is_human) return null;
 
   const currentPort = getPropertyCard(player.location_code || '');
@@ -1421,31 +1421,12 @@ function prepareCpuNextContractAfterDelivery(player) {
     }
   }
 
-  const contract = resetContractFromCurrentPort(player, {
-    updateSession: false,
-    actionLabel: `${player.name}: novo contrato`,
-    note: `${player.location_code} agora e o novo porto de partida de ${player.name}.`,
+  const contract = await runContractOpeningForPlayer(player, {
+    phaseLabel: `${player.name}: novo turno`,
+    needsPermission: false,
+    originMode: 'current',
   });
   if (!contract) return null;
-
-  const tollCard = randomChoice(state.tollCards);
-  if (tollCard) {
-    applyTollSelectionForPlayer(player, tollCard, {
-      updateSession: false,
-      actionLabel: `${player.name}: pedagio definido`,
-      note: `${player.name} vai precisar passar por ${tollCard.code}.`,
-    });
-  }
-
-  const destinationPool = destinationCandidatesForOrigin(player.location_code || contract.origin);
-  const destinationCard = randomChoice(destinationPool);
-  if (destinationCard) {
-    applyDestinationSelectionForPlayer(player, destinationCard, {
-      updateSession: false,
-      actionLabel: `${player.name}: destino definido`,
-      note: `${player.name} abriu um novo contrato saindo de ${player.location_code} para ${destinationCard.code}.`,
-    });
-  }
 
   player.needs_new_contract = false;
   player.status_label = 'novo contrato pronto';
@@ -1476,28 +1457,13 @@ async function runHumanPostDeliveryTurn() {
     await maybeBuyExtraPermissionForHuman(player);
     await delay(PREP_STEP_DELAY_MS);
 
-    const contract = resetContractFromCurrentPort(player, {
-      updateSession: true,
-      actionLabel: 'Novo porto de partida',
-      note: `${player.location_code} agora e o novo porto de partida.`,
+    const contract = await runContractOpeningForPlayer(player, {
+      phaseLabel: 'Novo turno',
+      needsPermission: false,
+      originMode: 'current',
     });
     if (!contract) return;
 
-    await delay(PREP_STEP_DELAY_MS);
-    setSession({
-      active_player_id: player.id,
-      action_label: 'Sortear pedagio',
-      note: 'Agora o jogo vai sortear o novo pedagio obrigatorio.',
-    });
-    await openHumanTollDraw();
-    await delay(PREP_STEP_DELAY_MS);
-    setSession({
-      active_player_id: player.id,
-      action_label: 'Sortear porto de destino',
-      note: 'Agora o jogo vai sortear o novo porto de destino e calcular o novo contrato.',
-    });
-    await openHumanDestinationPortDraw();
-    await delay(PREP_STEP_DELAY_LONG_MS);
     setSession({
       active_player_id: player.id,
       action_label: 'Rolar 2 dados',
@@ -1982,7 +1948,7 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
         runHumanPostDeliveryTurn().catch(() => {});
       }, PREP_STEP_DELAY_LONG_MS);
     } else if (!player.is_human) {
-      prepareCpuNextContractAfterDelivery(player);
+      await prepareCpuNextContractAfterDelivery(player);
     }
   }
   renderHud();
@@ -3343,59 +3309,129 @@ function cpuShouldBuyOrigin(player, card) {
   return player.cash >= card.price;
 }
 
+function preparationDelayFor(player, longDelay = false) {
+  return player?.is_human
+    ? (longDelay ? PREP_STEP_DELAY_LONG_MS : PREP_STEP_DELAY_MS)
+    : CPU_STEP_DELAY_MS;
+}
+
+async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', needsPermission = true, originMode = 'draw' } = {}) {
+  if (!player) return null;
+
+  const shortDelay = preparationDelayFor(player, false);
+  const longDelay = preparationDelayFor(player, true);
+  let originResult = null;
+
+  if (needsPermission) {
+    if (player.is_human) {
+      await openHumanPermissionDraw();
+      await delay(shortDelay);
+    } else {
+      setSession({
+        active_player_id: player.id,
+        phase: phaseLabel,
+        action_label: `${player.name}: permissao`,
+        dice: [0, 0],
+        note: `${player.name} esta sorteando a permissao de frete.`,
+      });
+      renderHud();
+      renderNodeOverlay();
+      renderShipOverlay();
+      await delay(shortDelay);
+      const permissionCard = randomChoice(state.freightPermissionCards);
+      applyPermissionSelectionForPlayer(player, permissionCard, {
+        updateSession: true,
+        actionLabel: `${player.name}: permissao sorteada`,
+        note: `${player.name} recebeu a permissao ${permissionCard.title}.`,
+      });
+      await delay(shortDelay);
+    }
+  }
+
+  if (originMode === 'draw') {
+    if (player.is_human) {
+      setSession({
+        active_player_id: player.id,
+        action_label: 'Sortear porto de partida',
+        note: 'Agora o jogo vai sortear o porto de partida e perguntar se voce quer comprar a posse dele.',
+      });
+      await openHumanOriginPortDraw();
+      await delay(longDelay);
+      originResult = { bought: Boolean(player.property_codes?.includes(player.location_code || '')), note: ensurePlayerContractDraft(player)?.note || '' };
+    } else {
+      const originCard = randomChoice(state.portCards);
+      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard);
+      originResult = applyOriginSelectionForPlayer(player, originCard, shouldBuyOrigin, {
+        updateSession: true,
+        actionLabel: `${player.name}: porto inicial`,
+        note: shouldBuyOrigin
+          ? `${player.name} sorteou ${originCard.code} e comprou o porto inicial.`
+          : `${player.name} sorteou ${originCard.code} sem comprar o porto inicial.`,
+      });
+      await delay(shortDelay);
+    }
+  } else {
+    resetContractFromCurrentPort(player, {
+      updateSession: true,
+      actionLabel: player.is_human ? 'Novo porto de partida' : `${player.name}: novo porto de partida`,
+      note: `${player.location_code} agora e o novo porto de partida${player.is_human ? '' : ` de ${player.name}`}.`,
+    });
+    originResult = { bought: Boolean(player.property_codes?.includes(player.location_code || '')), note: ensurePlayerContractDraft(player)?.note || '' };
+    await delay(shortDelay);
+  }
+
+  if (player.is_human) {
+    setSession({
+      active_player_id: player.id,
+      action_label: 'Sortear pedagio',
+      note: 'Agora o jogo vai sortear o pedagio obrigatorio da rota inicial.',
+    });
+    await openHumanTollDraw();
+    await delay(shortDelay);
+  } else {
+    const tollCard = randomChoice(state.tollCards);
+    applyTollSelectionForPlayer(player, tollCard, {
+      updateSession: true,
+      actionLabel: `${player.name}: pedagio definido`,
+      note: `${player.name} vai precisar passar por ${tollCard.code}.`,
+    });
+    await delay(shortDelay);
+  }
+
+  if (player.is_human) {
+    setSession({
+      active_player_id: player.id,
+      action_label: 'Sortear porto de destino',
+      note: 'Agora o jogo vai sortear o porto de destino e calcular o valor inicial do contrato.',
+    });
+    await openHumanDestinationPortDraw();
+    await delay(longDelay);
+  } else {
+    const originCode = player.location_code || ensurePlayerContractDraft(player)?.origin || '';
+    const destinationPool = destinationCandidatesForOrigin(originCode);
+    const destinationCard = randomChoice(destinationPool);
+    applyDestinationSelectionForPlayer(player, destinationCard, {
+      updateSession: true,
+      actionLabel: `${player.name}: destino definido`,
+      note: originResult?.bought
+        ? `${player.name} vai de ${originCode} para ${destinationCard.code} com multiplicador de posse no porto inicial.`
+        : `${player.name} vai de ${originCode} para ${destinationCard.code}.`,
+    });
+    await delay(shortDelay);
+  }
+
+  return ensurePlayerContractDraft(player);
+}
+
 async function runCpuOpeningTurn(player) {
   if (!player) return;
 
   state.view.openRivalDrawerId = player.id;
-  setSession({
-    active_player_id: player.id,
-    phase: `Primeiro turno - ${player.name}`,
-    action_label: `${player.name}: permissao`,
-    dice: [0, 0],
-    note: `${player.name} esta sorteando a permissao de frete.`,
+  await runContractOpeningForPlayer(player, {
+    phaseLabel: `Primeiro turno - ${player.name}`,
+    needsPermission: true,
+    originMode: 'draw',
   });
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  await delay(CPU_STEP_DELAY_MS);
-
-  const permissionCard = randomChoice(state.freightPermissionCards);
-  applyPermissionSelectionForPlayer(player, permissionCard, {
-    updateSession: true,
-    actionLabel: `${player.name}: permissao sorteada`,
-    note: `${player.name} recebeu a permissao ${permissionCard.title}.`,
-  });
-  await delay(CPU_STEP_DELAY_MS);
-
-  const originCard = randomChoice(state.portCards);
-  const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard);
-  const originResult = applyOriginSelectionForPlayer(player, originCard, shouldBuyOrigin, {
-    updateSession: true,
-    actionLabel: `${player.name}: porto inicial`,
-    note: shouldBuyOrigin
-      ? `${player.name} sorteou ${originCard.code} e comprou o porto inicial.`
-      : `${player.name} sorteou ${originCard.code} sem comprar o porto inicial.`,
-  });
-  await delay(CPU_STEP_DELAY_MS);
-
-  const tollCard = randomChoice(state.tollCards);
-  applyTollSelectionForPlayer(player, tollCard, {
-    updateSession: true,
-    actionLabel: `${player.name}: pedagio definido`,
-    note: `${player.name} vai precisar passar por ${tollCard.code}.`,
-  });
-  await delay(CPU_STEP_DELAY_MS);
-
-  const destinationPool = destinationCandidatesForOrigin(originCard.code);
-  const destinationCard = randomChoice(destinationPool);
-  applyDestinationSelectionForPlayer(player, destinationCard, {
-    updateSession: true,
-    actionLabel: `${player.name}: destino definido`,
-    note: originResult.bought
-      ? `${player.name} vai de ${originCard.code} para ${destinationCard.code} com multiplicador de posse no porto inicial.`
-      : `${player.name} vai de ${originCard.code} para ${destinationCard.code}.`,
-  });
-  await delay(CPU_STEP_DELAY_MS);
 
   const dice = [randomDie(), randomDie()];
   player.last_roll = [...dice];
@@ -3464,29 +3500,11 @@ async function submitSetupSelection(event) {
     setSetupOverlayVisible(false);
     await renderMap();
     await delay(140);
-    await openHumanPermissionDraw();
-    await delay(PREP_STEP_DELAY_MS);
-    setSession({
-      active_player_id: 'human',
-      action_label: 'Sortear porto de partida',
-      note: 'Agora o jogo vai sortear o porto de partida e perguntar se voce quer comprar a posse dele.',
+    await runContractOpeningForPlayer(humanPlayer(), {
+      phaseLabel: 'Primeiro turno',
+      needsPermission: true,
+      originMode: 'draw',
     });
-    await openHumanOriginPortDraw();
-    await delay(PREP_STEP_DELAY_LONG_MS);
-    setSession({
-      active_player_id: 'human',
-      action_label: 'Sortear pedagio',
-      note: 'Agora o jogo vai sortear o pedagio obrigatorio da rota inicial.',
-    });
-    await openHumanTollDraw();
-    await delay(PREP_STEP_DELAY_MS);
-    setSession({
-      active_player_id: 'human',
-      action_label: 'Sortear porto de destino',
-      note: 'Agora o jogo vai sortear o porto de destino e calcular o valor inicial do contrato.',
-    });
-    await openHumanDestinationPortDraw();
-    await delay(PREP_STEP_DELAY_LONG_MS);
     setSession({
       active_player_id: 'human',
       action_label: 'Rolar 2 dados',
