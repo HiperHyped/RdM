@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block body %}
+<main class="permission-draw-preview-shell">
+  <header class="topbar permission-draw-preview-topbar">
+    <div>
+      <p class="eyebrow">Acessorios do jogo</p>
+      <h1>Sorteio da Permissao de Frete</h1>
+      <p class="body-copy compact">Preview isolado da animacao que substitui o dado D6 de tipos de carga.</p>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao inicio</a>
+      <a href="/preview/freight-permissions">Permissoes de frete</a>
+      <a href="/preview/game-ui">Preview do jogo</a>
+    </nav>
+  </header>
+
+  <section class="permission-draw-preview-frame">
+    <section class="permission-draw-modal permission-draw-modal-preview" aria-labelledby="permission-draw-preview-title">
+      <div class="permission-draw-head">
+        <div>
+          <p class="eyebrow">Dado de carga</p>
+          <h2 id="permission-draw-preview-title">Embaralhar e revelar uma permissao</h2>
+        </div>
+        <span id="permission-draw-preview-active" class="permission-draw-preview-badge">Aguardando sorteio</span>
+      </div>
+      <p class="body-copy compact permission-draw-copy">As seis cartas sao embaralhadas visualmente e uma delas e escolhida ao final do sorteio.</p>
+      <div id="permission-draw-preview-stage" class="permission-draw-stage" aria-live="polite"></div>
+      <div class="permission-draw-footer">
+        <p id="permission-draw-preview-result" class="permission-draw-result">Clique em embaralhar para sortear uma permissao.</p>
+        <button id="permission-draw-preview-button" type="button" class="permission-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script id="permission-draw-preview-data" type="application/json">{{ cards|tojson }}</script>
+<script src="{{ request.url_for('static', path='js/permission-draw-preview.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,90 @@
+﻿{% extends "base.html" %}
+
+{% block body %}
+<main class="screen-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Browser rebuild</p>
+      <h1>Rei dos Mares</h1>
+    </div>
+    <nav class="topbar-links">
+      <a href="/preview/game-ui">Preview do jogo</a>
+      <a href="/preview/port-titles">Titulos de porto</a>
+      <a href="/preview/chance-cards">Cartoes sorte/reves</a>
+      <a href="/preview/chance-card-draw">Sorteio sorte/reves</a>
+      <a href="/preview/freight-permissions">Permissoes de frete</a>
+      <a href="/preview/freight-permission-draw">Sorteio de permissao</a>
+      <a href="/preview/origin-port-draw">Sorteio porto de saida</a>
+      <a href="/preview/destination-port-draw">Sorteio porto de destino</a>
+      <a href="/preview/toll-draw">Sorteio de pedagio</a>
+      <a href="/preview/movement-dice">Dados de movimento</a>
+      <a href="/tools/map">Ferramenta de coordenadas</a>
+    </nav>
+  </header>
+
+  <section class="play-layout">
+    <aside class="panel left-panel">
+      <div class="panel-block">
+        <p class="eyebrow">Jogador humano</p>
+        <h2 id="human-name">Voce</h2>
+        <div id="human-summary" class="metric-stack"></div>
+      </div>
+
+      <div class="panel-block">
+        <p class="eyebrow">Foco desta fase</p>
+        <p class="body-copy">
+          Esta primeira versao web prepara o shell visual definitivo: mapa central, paineis fixos
+          e faixa de jogadores do sistema sempre visivel.
+        </p>
+      </div>
+
+      <div class="panel-block">
+        <p class="eyebrow">Captura do tabuleiro</p>
+        <div id="capture-status" class="metric-stack"></div>
+      </div>
+    </aside>
+
+    <section class="map-card">
+      <div class="map-card-header">
+        <div>
+          <p class="eyebrow">Mapa principal</p>
+          <h2>Plotly Geo + tabuleiro capturado</h2>
+        </div>
+        <p class="body-copy compact">
+          Portos e pedagios reais ja entram no mapa. O tracado fiel das rotas vai nascer da ferramenta
+          de coordenadas.
+        </p>
+      </div>
+      <div id="main-map" class="map-stage"></div>
+    </section>
+
+    <aside class="panel right-panel">
+      <div class="panel-block">
+        <p class="eyebrow">Contrato ativo</p>
+        <div class="contract-card">
+          <span>RIO</span>
+          <span>CAP</span>
+          <span>HAM</span>
+        </div>
+        <p class="body-copy compact">
+          O contrato visual final vai ocupar esta coluna sem criar rolagem nem barra de botoes.
+        </p>
+      </div>
+
+      <div class="panel-block">
+        <p class="eyebrow">Direcao de UI</p>
+        <ul class="flat-list">
+          <li>Mapa como protagonista</li>
+          <li>Contexto de turno sem janelas flutuantes excessivas</li>
+          <li>Jogadores do sistema visiveis o tempo todo</li>
+          <li>Interacao por elementos do jogo, nao por formulario</li>
+        </ul>
+      </div>
+    </aside>
+  </section>
+
+  <section class="player-strip" id="player-strip"></section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/main.js') }}"></script>
+{% endblock %}

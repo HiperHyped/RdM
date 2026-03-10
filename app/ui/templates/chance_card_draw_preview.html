@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block body %}
+<main class="chance-draw-preview-shell">
+  <header class="topbar chance-draw-preview-topbar">
+    <div>
+      <p class="eyebrow">Acessorios do jogo</p>
+      <h1>Sorteio de Sorte / Rev?s</h1>
+      <p class="body-copy compact">Preview isolado do embaralhamento do baralho completo de sorte e rev?s.</p>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao inicio</a>
+      <a href="/preview/chance-cards">Cartoes sorte/reves</a>
+      <a href="/preview/game-ui">Preview do jogo</a>
+    </nav>
+  </header>
+
+  <section class="chance-draw-preview-frame">
+    <section class="chance-draw-modal" aria-labelledby="chance-draw-title">
+      <div class="chance-draw-head">
+        <div>
+          <p class="eyebrow">Baralho misto</p>
+          <h2 id="chance-draw-title">Embaralhar e revelar uma carta</h2>
+        </div>
+        <span id="chance-draw-active" class="chance-draw-badge">Aguardando sorteio</span>
+      </div>
+      <p class="body-copy compact chance-draw-copy">O baralho inteiro entra misturado desde o inicio, combinando cartas verdes e vermelhas no mesmo sorteio.</p>
+      <div id="chance-draw-stage" class="chance-draw-stage" aria-live="polite"></div>
+      <div class="chance-draw-footer">
+        <p id="chance-draw-result" class="chance-draw-result">Clique em embaralhar para sortear uma carta.</p>
+        <button id="chance-draw-button" type="button" class="chance-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script id="chance-draw-preview-data" type="application/json">{{ cards|tojson }}</script>
+<script src="{{ request.url_for('static', path='js/chance-draw-preview.js') }}"></script>
+{% endblock %}

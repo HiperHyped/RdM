@@ -1,0 +1,12 @@
+{
+  "icons": {
+    "cars": "cars.png",
+    "cruise": "cruise.png",
+    "bulk": "bulk.png",
+    "gas": "gas.png",
+    "container": "container.png",
+    "oil": "oil.png"
+  },
+  "source": "assets/cargo/D6 - CARGAS.jpg",
+  "format": "png-transparent"
+}

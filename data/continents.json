@@ -1,0 +1,74 @@
+{
+  "AF": {
+    "ports": [
+      "DAK",
+      "DAR",
+      "LAG"
+    ],
+    "fill": "#1db159",
+    "text": "#edf6ff"
+  },
+  "AS": {
+    "ports": [
+      "HKG",
+      "JAK",
+      "MAN",
+      "SHA",
+      "TOK"
+    ],
+    "fill": "#f0b429",
+    "text": "#06111a"
+  },
+  "EU": {
+    "ports": [
+      "ATE",
+      "GIO",
+      "HAM",
+      "LON",
+      "SPE"
+    ],
+    "fill": "#ff4b99",
+    "text": "#edf6ff"
+  },
+  "NA": {
+    "ports": [
+      "HOU",
+      "LAX",
+      "MAZ",
+      "NYC",
+      "VAN"
+    ],
+    "fill": "#8f5ad7",
+    "text": "#edf6ff"
+  },
+  "OC": {
+    "ports": [
+      "AUC",
+      "SYD"
+    ],
+    "fill": "#2ccaf0",
+    "text": "#06111a"
+  },
+  "OM": {
+    "ports": [
+      "DUB",
+      "JED",
+      "MUM",
+      "SRI"
+    ],
+    "fill": "#2f67d8",
+    "text": "#edf6ff"
+  },
+  "SA": {
+    "ports": [
+      "BUE",
+      "CAR",
+      "GUA",
+      "REC",
+      "RIO",
+      "VAL"
+    ],
+    "fill": "#C65911",
+    "text": "#06111a"
+  }
+}

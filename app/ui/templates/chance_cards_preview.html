@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block body %}
+<main class="chance-cards-shell">
+  <header class="topbar chance-cards-topbar">
+    <div>
+      <p class="eyebrow">Acess?rios do jogo</p>
+      <h1>Cartões de Sorte / Revés</h1>
+      <p class="body-copy compact">Template simples, em duas cores, montado diretamente a partir de <strong>cards.json</strong>.</p>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao in?cio</a>
+      <a href="/preview/port-titles">T?tulos de porto</a>
+    </nav>
+  </header>
+
+  <section class="chance-section">
+    <div class="chance-section-head">
+      <p class="eyebrow">Baralho verde</p>
+      <h2>Sorte</h2>
+    </div>
+    <div class="chance-cards-grid">
+      {% for card in fortune_cards %}
+        <article class="chance-card" style="--chance-accent: {{ card.accent }}; --chance-text: {{ card.text }};" aria-label="Cartao {{ card.title }}">
+          <header class="chance-card-head">{{ card.title }}</header>
+          <div class="chance-card-body">{{ card.description }}</div>
+          <footer class="chance-card-foot">{{ card.effect_text }}</footer>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="chance-section">
+    <div class="chance-section-head">
+      <p class="eyebrow">Baralho vermelho</p>
+      <h2>Revés</h2>
+    </div>
+    <div class="chance-cards-grid">
+      {% for card in setback_cards %}
+        <article class="chance-card" style="--chance-accent: {{ card.accent }}; --chance-text: {{ card.text }};" aria-label="Cartao {{ card.title }}">
+          <header class="chance-card-head">{{ card.title }}</header>
+          <div class="chance-card-body">{{ card.description }}</div>
+          <footer class="chance-card-foot">{{ card.effect_text }}</footer>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

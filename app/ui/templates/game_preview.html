@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+{% endblock %}
+
+{% block body %}
+<main class="game-preview-shell">
+  <div id="game-preview-map" class="game-preview-map"></div>
+  <svg id="game-preview-routes" class="game-preview-routes" aria-hidden="true"></svg>
+  <svg id="game-preview-nodes" class="game-preview-nodes" aria-hidden="true"></svg>
+  <div id="game-preview-ships" class="game-preview-ships" aria-hidden="true"></div>
+  <div id="game-preview-hitlayer" class="game-preview-hitlayer" aria-hidden="true"></div>
+
+  <div id="game-setup-overlay" class="game-setup-overlay">
+    <section class="game-setup-modal" aria-labelledby="game-setup-title">
+      <p class="eyebrow">Inicio da partida</p>
+      <h1 id="game-setup-title">Monte sua companhia</h1>
+      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia e quantos adversarios do sistema entrarao na partida.</p>
+
+      <form id="game-setup-form" class="game-setup-form">
+        <label class="game-setup-field">
+          <span>Nome da companhia</span>
+          <input id="setup-company-name" class="game-setup-input" type="text" maxlength="28" autocomplete="off" />
+        </label>
+
+        <div class="game-setup-field">
+          <span>Cor da companhia</span>
+          <div id="setup-color-grid" class="game-setup-color-grid"></div>
+        </div>
+
+        <div class="game-setup-field">
+          <span>Numero de adversarios</span>
+          <div id="setup-rival-counts" class="game-setup-counts"></div>
+        </div>
+
+        <div class="game-setup-actions">
+          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="preview-left-stack">
+    <section class="preview-panel preview-contract">
+      <div class="preview-section-head">
+        <div>
+          <p class="eyebrow">Contrato Atual</p>
+          <h1 id="preview-turn">Turno 01</h1>
+        </div>
+        <span id="preview-phase" class="preview-badge">Preparacao inicial</span>
+      </div>
+
+      <div class="preview-turn-strip">
+        <div class="preview-mini-card">
+          <span>Prazo</span>
+          <strong id="preview-deadline">--</strong>
+        </div>
+        <div class="preview-dice">
+          <div id="preview-die-1" class="preview-die-mini">-</div>
+          <div id="preview-die-2" class="preview-die-mini">-</div>
+        </div>
+        <div class="preview-mini-card preview-mini-card-accent">
+          <span>Acao</span>
+          <strong id="preview-action">Sortear permissao</strong>
+        </div>
+      </div>
+
+      <div class="preview-contract-route">
+        <span id="preview-origin" class="preview-route-chip port">--</span>
+        <span class="preview-route-arrow">&rsaquo;</span>
+        <span id="preview-toll" class="preview-route-chip toll">--</span>
+        <span class="preview-route-arrow">&rsaquo;</span>
+        <span id="preview-destination" class="preview-route-chip port">--</span>
+      </div>
+
+      <div id="preview-contract-metrics" class="preview-metric-row"></div>
+      <p id="preview-contract-note" class="body-copy compact">A partida comeca sem permissao, sem porto de partida e sem contrato ativo.</p>
+    </section>
+
+    <section class="preview-panel preview-company">
+      <div class="preview-section-head">
+        <div>
+          <p class="eyebrow">Sua Empresa</p>
+          <h2 id="preview-human-name">Minha Companhia</h2>
+        </div>
+        <span id="preview-human-port" class="preview-soft-badge">--</span>
+      </div>
+
+      <p id="preview-cash" class="preview-money">$ 1.960</p>
+      <div class="preview-company-list">
+        <div class="preview-company-row">
+          <span>Porto atual</span>
+          <strong id="preview-company-location">--</strong>
+        </div>
+        <div class="preview-company-row">
+          <span>Permissao ativa</span>
+          <strong id="preview-company-active-permission">--</strong>
+        </div>
+        <div class="preview-company-row">
+          <span>Permissoes</span>
+          <div id="preview-company-permissions" class="preview-inline-list"></div>
+        </div>
+        <div class="preview-company-row">
+          <span>Titulos e pedagios</span>
+          <div id="preview-company-properties" class="preview-inline-list"></div>
+        </div>
+        <div class="preview-company-row">
+          <span>Situacao</span>
+          <strong id="preview-company-status">aguardando primeiro turno</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="permission-draw-overlay" class="permission-draw-overlay is-hidden">
+    <section class="permission-draw-modal" aria-labelledby="permission-draw-title">
+      <div class="permission-draw-head">
+        <div>
+          <p class="eyebrow">Primeiro turno</p>
+          <h2 id="permission-draw-title">Sorteio da permissao de frete</h2>
+        </div>
+      </div>
+      <p id="permission-draw-copy" class="body-copy compact permission-draw-copy">O jogador humano comeca escolhendo a permissao de frete por embaralhamento.</p>
+      <div id="permission-draw-stage" class="permission-draw-stage" aria-live="polite"></div>
+      <div class="permission-draw-footer">
+        <p id="permission-draw-result" class="permission-draw-result">Clique em embaralhar para sortear uma permissao.</p>
+        <button id="start-permission-draw" type="button" class="permission-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="port-draw-overlay" class="port-draw-overlay is-hidden">
+    <section class="port-draw-modal" aria-labelledby="port-draw-title">
+      <div class="port-draw-head">
+        <div>
+          <p id="port-draw-eyebrow" class="eyebrow">Primeiro turno</p>
+          <h2 id="port-draw-title">Sorteio de porto</h2>
+        </div>
+        <span id="port-draw-active" class="port-draw-badge">Aguardando sorteio</span>
+      </div>
+      <p id="port-draw-copy" class="body-copy compact port-draw-copy">O jogo vai embaralhar as cartas e revelar uma selecao.</p>
+      <div id="port-draw-stage" class="port-draw-stage" aria-live="polite"></div>
+      <div id="port-draw-extra" class="port-draw-extra is-hidden">
+        <p id="port-draw-extra-copy" class="port-draw-extra-copy"></p>
+        <div class="port-draw-extra-actions">
+          <button id="port-draw-extra-primary" type="button" class="port-draw-extra-button primary">Confirmar</button>
+          <button id="port-draw-extra-secondary" type="button" class="port-draw-extra-button secondary is-hidden">Cancelar</button>
+        </div>
+      </div>
+      <div class="port-draw-footer">
+        <p id="port-draw-result" class="port-draw-result">Clique em embaralhar para sortear.</p>
+        <button id="port-draw-button" type="button" class="port-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="movement-dice-overlay" class="movement-dice-overlay is-hidden">
+    <section class="movement-dice-modal" aria-labelledby="movement-dice-title">
+      <div class="movement-dice-head">
+        <div>
+          <p class="eyebrow">Movimentacao</p>
+          <h2 id="movement-dice-title">Rolar 2 dados e revelar o total</h2>
+        </div>
+        <span id="movement-dice-active" class="movement-dice-badge">Aguardando rolagem</span>
+      </div>
+      <p class="body-copy compact movement-dice-copy">Os dois dados numericos definem quantas casas o navio vai percorrer no menor caminho ate o destino.</p>
+      <div id="movement-dice-stage" class="movement-dice-stage" aria-live="polite"></div>
+      <div class="movement-dice-footer">
+        <p id="movement-dice-result" class="movement-dice-result">Clique em rolar para sortear os dois dados.</p>
+        <button id="movement-dice-button" type="button" class="movement-dice-button">Rolar 2 dados</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="decision-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal" aria-labelledby="decision-title">
+      <p class="eyebrow">Resolucao</p>
+      <h2 id="decision-title">Confirmar acao</h2>
+      <p id="decision-copy" class="body-copy compact">Descricao da acao.</p>
+      <div class="decision-actions">
+        <button id="decision-primary" type="button" class="decision-button primary">Continuar</button>
+        <button id="decision-secondary" type="button" class="decision-button secondary is-hidden">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="preview-panel preview-rivals">
+    <div id="preview-rival-list" class="preview-rival-grid"></div>
+  </section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/game-preview.js') }}"></script>
+{% endblock %}

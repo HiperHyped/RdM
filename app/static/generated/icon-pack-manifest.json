@@ -1,0 +1,18 @@
+{
+  "ships": {
+    "bulk": "/static/assets/ships/recolorable/bulk_mask.png",
+    "container": "/static/assets/ships/recolorable/container_mask.png",
+    "oil": "/static/assets/ships/recolorable/oil_mask.png",
+    "gas": "/static/assets/ships/recolorable/gas_mask.png",
+    "cruise": "/static/assets/ships/recolorable/cruise_mask.png",
+    "cars": "/static/assets/ships/recolorable/cars_mask.png"
+  },
+  "cargo": {
+    "cars": "/static/assets/cargo/cars.png",
+    "cruise": "/static/assets/cargo/cruise.png",
+    "bulk": "/static/assets/cargo/bulk.png",
+    "gas": "/static/assets/cargo/gas.png",
+    "container": "/static/assets/cargo/container.png",
+    "oil": "/static/assets/cargo/oil.png"
+  }
+}

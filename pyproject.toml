@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rei-dos-mares-reboot"
+version = "0.1.0"
+description = "Browser-first rebuild of the Rei dos Mares board game"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116,<1.0",
+  "uvicorn>=0.35,<1.0",
+  "jinja2>=3.1,<4.0",
+  "pydantic>=2.11,<3.0",
+  "plotly>=6.0,<7.0",
+  "numpy>=2.0,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["vendor_libs", ".deps", ".pytest_cache", "__pycache__"]

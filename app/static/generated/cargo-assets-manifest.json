@@ -1,0 +1,10 @@
+{
+  "cargo": {
+    "cars": "/static/assets/cargo/cars.png",
+    "cruise": "/static/assets/cargo/cruise.png",
+    "bulk": "/static/assets/cargo/bulk.png",
+    "gas": "/static/assets/cargo/gas.png",
+    "container": "/static/assets/cargo/container.png",
+    "oil": "/static/assets/cargo/oil.png"
+  }
+}

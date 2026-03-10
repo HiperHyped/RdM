@@ -1,0 +1,26 @@
+[
+  {
+    "id": "bulk",
+    "name_pt": "Graneleiro"
+  },
+  {
+    "id": "container",
+    "name_pt": "Porta-Container"
+  },
+  {
+    "id": "oil",
+    "name_pt": "Petroleiro"
+  },
+  {
+    "id": "gas",
+    "name_pt": "Gaseiro"
+  },
+  {
+    "id": "cruise",
+    "name_pt": "Cruzeiro"
+  },
+  {
+    "id": "cars",
+    "name_pt": "Ro-Ro"
+  }
+]

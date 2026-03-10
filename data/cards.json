@@ -1,0 +1,487 @@
+[
+  {
+    "id": "baleias",
+    "title": "Baleias",
+    "description": "Você poderá estocar óleo e comida!",
+    "effect_text": "Ganhe $40",
+    "effect": {
+      "type": "gain_money",
+      "amount": 40
+    },
+    "order": 1,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "sardinhas",
+    "title": "Sardinhas",
+    "description": "Você poderá estocar comida!",
+    "effect_text": "Ganhe $50",
+    "effect": {
+      "type": "gain_money",
+      "amount": 50
+    },
+    "order": 2,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "atalho",
+    "title": "Atalho",
+    "description": "Ignore o Pedágio e faça o caminho mais curto!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "shortcut_ignore_toll"
+    },
+    "order": 3,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "corrente_a_favor",
+    "title": "Corrente a favor",
+    "description": "Navegue muito mais rápido!",
+    "effect_text": "Dados x2",
+    "effect": {
+      "type": "double_dice_once"
+    },
+    "order": 4,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "pedagio_livre",
+    "title": "Pedágio Livre",
+    "description": "Não pague o próximo pedágio!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "free_toll"
+    },
+    "order": 5,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "gasolina_livre",
+    "title": "Gasolina Livre",
+    "description": "Não pague o próximo abastecimento!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "free_fuel"
+    },
+    "order": 6,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "nova_especie",
+    "title": "Nova Espécie",
+    "description": "Você descobriu uma nova espécie marítima.",
+    "effect_text": "Ganhe $55",
+    "effect": {
+      "type": "gain_money",
+      "amount": 55
+    },
+    "order": 7,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "manutencao_total",
+    "title": "Manutenção Total",
+    "description": "Seu motor está funcionando 100%!",
+    "effect_text": "Avance 7 casas",
+    "effect": {
+      "type": "move_steps",
+      "steps": 7
+    },
+    "order": 8,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "time_campeao",
+    "title": "Time campeão",
+    "description": "A tripulação trabalha a todo vapor!",
+    "effect_text": "Avance 5 casas",
+    "effect": {
+      "type": "move_steps",
+      "steps": 5
+    },
+    "order": 9,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "reliquias",
+    "title": "Relíquias",
+    "description": "Você descobriu relíquias submarinas!",
+    "effect_text": "Ganhe $60",
+    "effect": {
+      "type": "gain_money",
+      "amount": 60
+    },
+    "order": 10,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "lucro_extra",
+    "title": "Lucro Extra",
+    "description": "Você recebe o valor do frete em dobro!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "double_freight"
+    },
+    "order": 11,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "porto_livre",
+    "title": "Porto Livre",
+    "description": "Não pague a próxima estadia!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "free_port_stay"
+    },
+    "order": 12,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "vento_a_favor",
+    "title": "Vento a favor",
+    "description": "Navegue muito mais rápido!",
+    "effect_text": "Dados x2",
+    "effect": {
+      "type": "double_dice_once"
+    },
+    "order": 13,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "aposta",
+    "title": "Aposta",
+    "description": "Você ganhou uma aposta contra todos os jogadores!",
+    "effect_text": "Ganhe $50 de cada",
+    "effect": {
+      "type": "gain_from_each",
+      "amount": 50
+    },
+    "order": 14,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "naufrago",
+    "title": "Náufrago",
+    "description": "Você resgatou um náufrago milionário!",
+    "effect_text": "Ganhe $45",
+    "effect": {
+      "type": "gain_money",
+      "amount": 45
+    },
+    "order": 15,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "atlantida",
+    "title": "Atlântida",
+    "description": "Você descobriu a ilha perdida de Atlântida!",
+    "effect_text": "Ganhe $50",
+    "effect": {
+      "type": "gain_money",
+      "amount": 50
+    },
+    "order": 16,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "quebra_de_contrato",
+    "title": "Quebra de Contrato",
+    "description": "Você não precisa pagar a parte do dono do Porto!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "skip_owner_share"
+    },
+    "order": 17,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "mudanca_de_rota",
+    "title": "Mudança de Rota",
+    "description": "Você pode escolher o Porto de Destino pelo mesmo valor do Frete atual.",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "reroute_same_value"
+    },
+    "order": 18,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "motim",
+    "title": "Motim",
+    "description": "Sua tripulação está em motim!",
+    "effect_text": "Pague $40",
+    "effect": {
+      "type": "pay_money",
+      "amount": 40
+    },
+    "order": 19,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "maelstrom",
+    "title": "Maelström",
+    "description": "Sua embarcação está presa num redemoinho!",
+    "effect_text": "Pare 1 rodada",
+    "effect": {
+      "type": "skip_turns",
+      "turns": 1
+    },
+    "order": 20,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "nautilus",
+    "title": "Nautilus",
+    "description": "Sua embarcação foi atacada pelo Nautilus!",
+    "effect_text": "Pague $50",
+    "effect": {
+      "type": "pay_money",
+      "amount": 50
+    },
+    "order": 21,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "bermudas",
+    "title": "Bermudas",
+    "description": "Sua embarcação se perdeu no triângulo das Bermudas!",
+    "effect_text": "Pare 2 rodadas",
+    "effect": {
+      "type": "skip_turns",
+      "turns": 2
+    },
+    "order": 22,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "tempestade",
+    "title": "Tempestade",
+    "description": "Sua embarcação adentrou uma terrível tempestade!",
+    "effect_text": "Volte 7 casas",
+    "effect": {
+      "type": "move_steps",
+      "steps": -7
+    },
+    "order": 23,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "vazamento",
+    "title": "Vazamento",
+    "description": "Sua embarcação é responsável por um vazamento de óleo!",
+    "effect_text": "Pague $80",
+    "effect": {
+      "type": "pay_money",
+      "amount": 80
+    },
+    "order": 24,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "pedagio_extra",
+    "title": "Pedágio Extra",
+    "description": "Você terá que pagar pedágio!",
+    "effect_text": "Vá para o Pedágio de sua rota",
+    "effect": {
+      "type": "move_to_toll"
+    },
+    "order": 25,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "iceberg",
+    "title": "Iceberg",
+    "description": "Um Iceberg destruiu a lateral de sua embarcação!",
+    "effect_text": "Volte 1 porto",
+    "effect": {
+      "type": "move_ports",
+      "offset": -1
+    },
+    "order": 26,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "lula_gigante",
+    "title": "Lula Gigante",
+    "description": "Sua embarcação ficou presa em seus tentáculos!",
+    "effect_text": "Pague $60",
+    "effect": {
+      "type": "pay_money",
+      "amount": 60
+    },
+    "order": 27,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "atraso_de_entrega",
+    "title": "Atraso de Entrega",
+    "description": "Seu cliente está insatisfeito!",
+    "effect_text": "Receba metade do Frete atual",
+    "effect": {
+      "type": "receive_half_current_freight"
+    },
+    "order": 28,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "alfandega",
+    "title": "Alfândega",
+    "description": "Você deve pagar taxas alfandegárias!",
+    "effect_text": "Pague $70",
+    "effect": {
+      "type": "pay_money",
+      "amount": 70
+    },
+    "order": 29,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "ataque_submarino",
+    "title": "Ataque Submarino",
+    "description": "Você foi torpedeado por um submarino!",
+    "effect_text": "Volte ao Porto de Origem",
+    "effect": {
+      "type": "move_to_origin_port"
+    },
+    "order": 30,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "banco_de_gelo",
+    "title": "Banco de Gelo",
+    "description": "Sua embarcação está presa em um banco de gelo!",
+    "effect_text": "Pare 2 rodadas",
+    "effect": {
+      "type": "skip_turns",
+      "turns": 2
+    },
+    "order": 31,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "sabotagem",
+    "title": "Sabotagem",
+    "description": "Sabotadores furaram o tanque de combustível!",
+    "effect_text": "Volte 8 casas",
+    "effect": {
+      "type": "move_steps",
+      "steps": -8
+    },
+    "order": 32,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "piratas",
+    "title": "Piratas",
+    "description": "Sua embarcação foi atacada por piratas!",
+    "effect_text": "Pague $70",
+    "effect": {
+      "type": "pay_money",
+      "amount": 70
+    },
+    "order": 33,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "greve",
+    "title": "Greve",
+    "description": "Seu Porto de Destino está em greve!",
+    "effect_text": "Pare 1 rodada",
+    "effect": {
+      "type": "skip_turns",
+      "turns": 1
+    },
+    "order": 34,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "desastre_maritimo",
+    "title": "Desastre Marítimo",
+    "description": "Todos os jogadores precisam de sua ajuda!",
+    "effect_text": "Pague $50 a cada um",
+    "effect": {
+      "type": "pay_each",
+      "amount": 50
+    },
+    "order": 35,
+    "category": "reves",
+    "accent": "#F01B12",
+    "text": "#FFFFFF"
+  }
+]

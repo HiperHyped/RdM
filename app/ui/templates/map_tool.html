@@ -1,0 +1,117 @@
+﻿{% extends "base.html" %}
+
+{% block body %}
+<main class="tool-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Ferramenta fase 1</p>
+      <h1>Captura de coordenadas do tabuleiro</h1>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao shell do jogo</a>
+    </nav>
+  </header>
+
+  <section class="tool-layout">
+    <section class="capture-stage">
+      <div class="capture-frame">
+        <img id="board-image" src="/static/assets/board-source-updated.png" alt="Mapa base do tabuleiro" />
+        <div id="capture-marker" class="capture-marker hidden"></div>
+      </div>
+      <p class="body-copy compact">
+        Clique no tabuleiro para registrar um ponto. Portos e pedagios aceitam o codigo como label
+        e recebem latitude/longitude reais automaticamente quando o codigo existe na base.
+      </p>
+    </section>
+
+    <aside class="panel tool-panel">
+      <div class="panel-block">
+        <p class="eyebrow">Novo ponto</p>
+        <form id="node-form" class="stack-form">
+          <label>
+            Tipo
+            <select name="kind">
+              <option value="port">Porto</option>
+              <option value="toll">Pedagio</option>
+              <option value="route">Rota</option>
+              <option value="fuel">Abastecimento</option>
+              <option value="chance">Sorte/Azar</option>
+            </select>
+          </label>
+          <label>
+            Label
+            <input type="text" name="label" placeholder="RIO, CAP ou waypoint" />
+          </label>
+          <label>
+            Grupo de rota
+            <input type="text" name="route_id" placeholder="atlantic-01" />
+          </label>
+          <label>
+            Ordem na rota
+            <input type="number" name="order" min="0" step="1" />
+          </label>
+          <label>
+            X
+            <input type="number" name="x" step="0.01" readonly />
+          </label>
+          <label>
+            Y
+            <input type="number" name="y" step="0.01" readonly />
+          </label>
+          <button type="submit">Salvar ponto</button>
+        </form>
+      </div>
+
+      <div class="panel-block">
+        <p class="eyebrow">Calibracao inicial</p>
+        <form id="calibration-form" class="stack-form">
+          <label>
+            Largura da imagem
+            <input type="number" name="image_width" />
+          </label>
+          <label>
+            Altura da imagem
+            <input type="number" name="image_height" />
+          </label>
+          <label>
+            Longitude minima
+            <input type="number" name="lon_min" step="0.01" />
+          </label>
+          <label>
+            Longitude maxima
+            <input type="number" name="lon_max" step="0.01" />
+          </label>
+          <label>
+            Latitude minima
+            <input type="number" name="lat_min" step="0.01" />
+          </label>
+          <label>
+            Latitude maxima
+            <input type="number" name="lat_max" step="0.01" />
+          </label>
+          <button type="submit">Salvar calibracao</button>
+        </form>
+      </div>
+    </aside>
+  </section>
+
+  <section class="tool-bottom">
+    <section class="panel preview-panel">
+      <div class="panel-block">
+        <p class="eyebrow">Preview Plotly Geo</p>
+        <div id="tool-preview-map" class="tool-preview-map"></div>
+      </div>
+    </section>
+
+    <section class="panel nodes-panel">
+      <div class="panel-block">
+        <p class="eyebrow">Pontos capturados</p>
+        <ul id="node-list" class="flat-list node-list"></ul>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/map-tool.js') }}"></script>
+{% endblock %}
+

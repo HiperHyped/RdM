@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% macro cargo_icon(kind) -%}
+  {% if kind == 'bulk' %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <polygon points="16,4 28,26 4,26" fill="#8ed26a" stroke="#00a651" stroke-width="2.8"></polygon>
+    </svg>
+  {% elif kind == 'container' %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <rect x="5" y="7" width="22" height="18" fill="#4f7de8" stroke="#355fb6" stroke-width="2.6"></rect>
+      <polygon points="27,7 30,10 30,28 27,25" fill="#355fb6" stroke="#355fb6" stroke-width="1"></polygon>
+      <line x1="10" y1="10" x2="10" y2="23" stroke="#6e94ef" stroke-width="1.6"></line>
+      <line x1="16" y1="10" x2="16" y2="23" stroke="#6e94ef" stroke-width="1.6"></line>
+      <line x1="22" y1="10" x2="22" y2="23" stroke="#6e94ef" stroke-width="1.6"></line>
+    </svg>
+  {% elif kind == 'oil' %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <path d="M16 4 C20 10, 26 15, 26 21 C26 27, 21.5 30, 16 30 C10.5 30, 6 27, 6 21 C6 15, 12 10, 16 4 Z" fill="#b9babd" stroke="#7d7d81" stroke-width="2.6"></path>
+    </svg>
+  {% elif kind == 'gas' %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <polygon points="16,3 20,12 29,16 20,20 16,29 12,20 3,16 12,12" fill="#f5b33d" stroke="#c66b1d" stroke-width="2.6"></polygon>
+    </svg>
+  {% elif kind == 'cruise' %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <circle cx="16" cy="16" r="11.5" fill="#ffb49e" stroke="#df4f3f" stroke-width="2.6"></circle>
+      <circle cx="12" cy="13" r="1.7" fill="#df4f3f"></circle>
+      <circle cx="20" cy="13" r="1.7" fill="#df4f3f"></circle>
+      <path d="M10 20 C12.5 22.5, 19.5 22.5, 22 20" fill="none" stroke="#df4f3f" stroke-width="2.4" stroke-linecap="round"></path>
+    </svg>
+  {% else %}
+    <svg viewBox="0 0 32 32" class="port-title-icon-svg" aria-hidden="true">
+      <rect x="4.5" y="18" width="23" height="6" rx="1.8" fill="#d5f1fb" stroke="#12b8e6" stroke-width="2.4"></rect>
+      <rect x="9" y="9" width="14" height="9" rx="1.6" fill="#d5f1fb" stroke="#12b8e6" stroke-width="2.4"></rect>
+      <circle cx="10.5" cy="26.5" r="2.7" fill="none" stroke="#12b8e6" stroke-width="2.2"></circle>
+      <circle cx="21.5" cy="26.5" r="2.7" fill="none" stroke="#12b8e6" stroke-width="2.2"></circle>
+    </svg>
+  {% endif %}
+{%- endmacro %}
+
+{% macro toll_diamond() -%}
+  <svg viewBox="0 0 28 18" class="toll-title-diamond" aria-hidden="true">
+    <polygon points="14,2 26,9 14,16 2,9" fill="none" stroke="#05070a" stroke-width="2.8"></polygon>
+  </svg>
+{%- endmacro %}
+
+{% macro render_property_card(card) -%}
+  <article class="port-title-card{% if card.is_toll %} toll-title-card{% endif %}" style="--title-fill: {{ card.fill }}; --title-text: {{ card.text }};{% if card.is_toll %} --title-col-mult: 56px;{% endif %}" aria-label="Titulo {{ card.code }}">
+    <header class="port-title-head{% if card.is_toll %} toll-title-head{% endif %}">
+      {% if card.is_toll %}
+        <span class="toll-title-side-icon">{{ toll_diamond() }}</span>
+      {% else %}
+        <span class="port-title-number">{{ card.number_display }}</span>
+      {% endif %}
+      <div class="port-title-heading">
+        <strong class="port-title-code">{{ card.code }}</strong>
+        <span class="port-title-name">{{ card.name }} ({{ card.country }})</span>
+      </div>
+      {% if card.is_toll %}
+        <span class="toll-title-side-icon">{{ toll_diamond() }}</span>
+      {% endif %}
+    </header>
+
+    <div class="port-title-body">
+      <div class="port-title-table-head">
+        <span>Carga</span>
+        <span>{{ card.column_fee_label }}</span>
+        <span>{{ card.column_multiplier_label }}</span>
+      </div>
+
+      <div class="port-title-rows">
+        {% for row in card.rows %}
+          <div class="port-title-row">
+            <div class="port-title-icon" title="{{ row.label }}">
+              {{ cargo_icon(row.kind) }}
+            </div>
+            <span class="port-title-fee">{{ row.fee }}</span>
+            <span class="port-title-multiplier">{{ row.multiplier }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <footer class="port-title-foot">
+      <span>Preco</span>
+      <strong>{{ card.price }}</strong>
+    </footer>
+  </article>
+{%- endmacro %}
+
+{% block body %}
+<main class="port-titles-shell">
+  <header class="topbar port-titles-topbar">
+    <div>
+      <p class="eyebrow">Acessorios do jogo</p>
+      <h1>Titulos de Porto e Pedagio</h1>
+      <p class="body-copy compact">Templates preenchidos automaticamente a partir de <strong>ports.json</strong>, com portos e pedagios em secoes separadas.</p>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao inicio</a>
+      <a href="/preview/game-ui">Preview do jogo</a>
+    </nav>
+  </header>
+
+  <section class="port-title-section">
+    <div class="port-title-section-head">
+      <p class="eyebrow">Titulos</p>
+      <h2>Portos</h2>
+    </div>
+    <section class="port-titles-grid">
+      {% for card in port_cards %}
+        {{ render_property_card(card) }}
+      {% endfor %}
+    </section>
+  </section>
+
+  <section class="port-title-section">
+    <div class="port-title-section-head">
+      <p class="eyebrow">Titulos</p>
+      <h2>Pedagios</h2>
+    </div>
+    <section class="port-titles-grid toll-titles-grid">
+      {% for card in toll_cards %}
+        {{ render_property_card(card) }}
+      {% endfor %}
+    </section>
+  </section>
+</main>
+{% endblock %}

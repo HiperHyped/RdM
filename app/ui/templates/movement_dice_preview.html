@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block body %}
+<main class="movement-dice-preview-shell">
+  <header class="topbar movement-dice-preview-topbar">
+    <div>
+      <p class="eyebrow">Acessorios do jogo</p>
+      <h1>Dados de Movimento</h1>
+      <p class="body-copy compact">Preview isolado da animacao dos dois dados D6 numericos usados na movimentacao do navio.</p>
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao inicio</a>
+      <a href="/preview/game-ui">Preview do jogo</a>
+    </nav>
+  </header>
+
+  <section class="movement-dice-preview-frame">
+    <section class="movement-dice-modal" aria-labelledby="movement-dice-title">
+      <div class="movement-dice-head">
+        <div>
+          <p class="eyebrow">Movimentacao</p>
+          <h2 id="movement-dice-title">Rolar 2 dados e revelar o total</h2>
+        </div>
+        <span id="movement-dice-active" class="movement-dice-badge">Aguardando rolagem</span>
+      </div>
+      <p class="body-copy compact movement-dice-copy">Os dois dados mostram numeros de 1 a 6 e param no resultado final da rodada. Se sair dupla, a interface destaca isso.</p>
+      <div id="movement-dice-stage" class="movement-dice-stage" aria-live="polite"></div>
+      <div class="movement-dice-footer">
+        <p id="movement-dice-result" class="movement-dice-result">Clique em rolar para sortear os dois dados.</p>
+        <button id="movement-dice-button" type="button" class="movement-dice-button">Rolar 2 dados</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/movement-dice-preview.js') }}"></script>
+{% endblock %}

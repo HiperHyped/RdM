@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+{% endblock %}
+
+{% block body %}
+<main class="editor-shell">
+  <div id="editor-map" class="editor-map"></div>
+  <svg id="editor-routes" class="editor-routes" aria-hidden="true"></svg>
+  <svg id="editor-nodes" class="editor-nodes" aria-hidden="true"></svg>
+  <div id="editor-hitlayer" class="editor-hitlayer" aria-hidden="true"></div>
+
+  <section class="editor-hud editor-hud-left">
+    <p class="eyebrow">Editor Manual</p>
+    <h1>Mapa em correcao</h1>
+    <p id="editor-mode" class="body-copy compact">Modo: navegar</p>
+    <p id="editor-status" class="body-copy compact">Clique curto edita. Arraste na horizontal para mover o globo.</p>
+  </section>
+
+  <section class="editor-hud editor-hud-right">
+    <p class="eyebrow">Atalhos</p>
+    <ul class="editor-shortcuts">
+      <li><kbd>1</kbd><span>Abast. 1</span></li>
+      <li><kbd>2</kbd><span>Abast. 2</span></li>
+      <li><kbd>3</kbd><span>Abast. 3</span></li>
+      <li><kbd>4</kbd><span>Abast. 4</span></li>
+      <li><kbd>5</kbd><span>Abast. 5</span></li>
+      <li><kbd>s</kbd><span>Sorte / reves</span></li>
+      <li><kbd>r</kbd><span>Rota</span></li>
+      <li><kbd>p</kbd><span>Porto / pedagio</span></li>
+      <li><kbd>Esc</kbd><span>Cancelar</span></li>
+    </ul>
+  </section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/map-editor.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block body %}
+<main class="port-draw-preview-shell" data-port-draw-mode="{{ mode }}">
+  <header class="topbar port-draw-preview-topbar">
+    <div>
+      <p class="eyebrow">Acessorios do jogo</p>
+      {% if mode == 'origin' %}
+        <h1>Sorteio do Porto de Saida</h1>
+        <p class="body-copy compact">Preview do embaralhamento usado para definir o porto inicial ou o porto de uma nova permissao.</p>
+      {% elif mode == 'destination' %}
+        <h1>Sorteio do Porto de Destino</h1>
+        <p class="body-copy compact">Preview do embaralhamento com regra: o destino nao pode ser o mesmo porto nem estar na mesma regiao da saida.</p>
+      {% else %}
+        <h1>Sorteio do Pedagio</h1>
+        <p class="body-copy compact">Preview do embaralhamento dos seis pedagios, usando o mesmo formato visual dos titulos oficiais.</p>
+      {% endif %}
+    </div>
+    <nav class="topbar-links">
+      <a href="/">Voltar ao inicio</a>
+      <a href="/preview/port-titles">Titulos de porto</a>
+      <a href="/preview/game-ui">Preview do jogo</a>
+    </nav>
+  </header>
+
+  <section class="port-draw-preview-frame">
+    <section class="port-draw-modal" aria-labelledby="port-draw-title">
+      <div class="port-draw-head">
+        <div>
+          <p class="eyebrow">Sorteio de porto</p>
+          {% if mode == 'origin' %}
+            <h2 id="port-draw-title">Embaralhar e revelar o porto de saida</h2>
+          {% elif mode == 'destination' %}
+            <h2 id="port-draw-title">Embaralhar e revelar o porto de destino</h2>
+          {% else %}
+            <h2 id="port-draw-title">Embaralhar e revelar o pedagio</h2>
+          {% endif %}
+        </div>
+        <span id="port-draw-active" class="port-draw-badge">Aguardando sorteio</span>
+      </div>
+
+      {% if mode == 'destination' %}
+        <div class="port-draw-controls">
+          <label class="port-draw-field">
+            <span>Porto de saida</span>
+            <select id="port-draw-origin-select" class="port-draw-select">
+              {% for card in cards %}
+                <option value="{{ card.code }}" {% if card.code == default_origin %}selected{% endif %}>{{ card.code }} - {{ card.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="port-draw-rule-box">
+            <span>Regra</span>
+            <strong id="port-draw-rule-copy">Destino deve ser de outra regiao.</strong>
+          </div>
+        </div>
+      {% endif %}
+
+      <p id="port-draw-copy" class="body-copy compact port-draw-copy"></p>
+      <div id="port-draw-stage" class="port-draw-stage" aria-live="polite"></div>
+      <div class="port-draw-footer">
+        <p id="port-draw-result" class="port-draw-result">Clique em embaralhar para sortear um porto.</p>
+        <button id="port-draw-button" type="button" class="port-draw-button">Embaralhar e sortear</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script id="port-draw-preview-data" type="application/json">{{ cards|tojson }}</script>
+<script id="port-draw-preview-config" type="application/json">{{ {'mode': mode, 'default_origin': default_origin}|tojson }}</script>
+<script src="{{ request.url_for('static', path='js/port-draw-preview.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{
+  "ships": {
+    "bulk": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\bulk_v2.png",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\bulk_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/bulk_mask.png",
+      "usage": "css-mask"
+    },
+    "container": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\container_v2.jpg",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\container_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/container_mask.png",
+      "usage": "css-mask"
+    },
+    "oil": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\petrol_v2.png",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\oil_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/oil_mask.png",
+      "usage": "css-mask"
+    },
+    "gas": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\gaser_v2.jpg",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\gas_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/gas_mask.png",
+      "usage": "css-mask"
+    },
+    "cruise": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\cruiser_v2.png",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cruise_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/cruise_mask.png",
+      "usage": "css-mask"
+    },
+    "cars": {
+      "source": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\roro_v2.png",
+      "mask": "C:\\Users\\Haroldo Duraes\\Desktop\\GOvGO\\RdM\\assets\\ships\\recolorable\\cars_mask.png",
+      "web_mask": "/static/assets/ships/recolorable/cars_mask.png",
+      "usage": "css-mask"
+    }
+  },
+  "colors": {
+    "blue": "#2563eb",
+    "yellow": "#eab308",
+    "green": "#22c55e",
+    "red": "#ef4444",
+    "orange": "#f97316",
+    "purple": "#a855f7"
+  }
+}

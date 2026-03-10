@@ -1,0 +1,32 @@
+[
+  {
+    "id": "blue",
+    "label": "Azul",
+    "hex": "#2563eb"
+  },
+  {
+    "id": "yellow",
+    "label": "Amarelo",
+    "hex": "#eab308"
+  },
+  {
+    "id": "green",
+    "label": "Verde",
+    "hex": "#22c55e"
+  },
+  {
+    "id": "red",
+    "label": "Vermelho",
+    "hex": "#ef4444"
+  },
+  {
+    "id": "orange",
+    "label": "Laranja",
+    "hex": "#f97316"
+  },
+  {
+    "id": "purple",
+    "label": "Roxo",
+    "hex": "#a855f7"
+  }
+]

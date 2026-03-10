@@ -1,0 +1,1226 @@
+[
+  {
+    "code": "ATE",
+    "name": "Athens",
+    "country": "GRC",
+    "kind": "port",
+    "purchase_price": 370,
+    "rates": {
+      "bulk": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 6
+      },
+      "oil": {
+        "fee": 5,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 5,
+        "multiplier": 5
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "AUC",
+    "name": "Auckland",
+    "country": "NZL",
+    "kind": "port",
+    "purchase_price": 360,
+    "rates": {
+      "bulk": {
+        "fee": 7,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 5,
+        "multiplier": 6
+      },
+      "oil": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 9,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 6,
+        "multiplier": 2
+      }
+    },
+    "continent": "OC"
+  },
+  {
+    "code": "BUE",
+    "name": "Buenos Aires",
+    "country": "ARG",
+    "kind": "port",
+    "purchase_price": 360,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 4,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 2
+      },
+      "cruise": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 6,
+        "multiplier": 4
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "CAP",
+    "name": "Cape Town",
+    "country": "ZAF",
+    "kind": "toll",
+    "purchase_price": 2040,
+    "rates": {
+      "bulk": {
+        "fee": 20,
+        "multiplier": 6
+      },
+      "container": {
+        "fee": 15,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 15,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 20,
+        "multiplier": 6
+      },
+      "cruise": {
+        "fee": 20,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 4
+      }
+    },
+    "continent": "AF"
+  },
+  {
+    "code": "CAR",
+    "name": "Cartagena",
+    "country": "COL",
+    "kind": "port",
+    "purchase_price": 340,
+    "rates": {
+      "bulk": {
+        "fee": 9,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 4,
+        "multiplier": 2
+      },
+      "oil": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 4,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 3,
+        "multiplier": 3
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "DAK",
+    "name": "Dakar",
+    "country": "SEN",
+    "kind": "port",
+    "purchase_price": 340,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 3,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 9,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 7,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 5,
+        "multiplier": 2
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 2
+      }
+    },
+    "continent": "AF"
+  },
+  {
+    "code": "DAR",
+    "name": "Dar Es Salaam",
+    "country": "TZA",
+    "kind": "port",
+    "purchase_price": 330,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 2
+      }
+    },
+    "continent": "AF"
+  },
+  {
+    "code": "DUB",
+    "name": "Dubai",
+    "country": "UAE",
+    "kind": "port",
+    "purchase_price": 480,
+    "rates": {
+      "bulk": {
+        "fee": 2,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 3,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 15,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 12,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 3,
+        "multiplier": 2
+      }
+    },
+    "continent": "OM"
+  },
+  {
+    "code": "GIB",
+    "name": "Gibraltar",
+    "country": "GIB",
+    "kind": "toll",
+    "purchase_price": 2040,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 6
+      },
+      "container": {
+        "fee": 15,
+        "multiplier": 6
+      },
+      "oil": {
+        "fee": 20,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 20,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 20,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 20,
+        "multiplier": 5
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "GIO",
+    "name": "Gioia Tauro",
+    "country": "ITA",
+    "kind": "port",
+    "purchase_price": 410,
+    "rates": {
+      "bulk": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 7,
+        "multiplier": 6
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "GUA",
+    "name": "Guayaquil",
+    "country": "ECU",
+    "kind": "port",
+    "purchase_price": 320,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 3,
+        "multiplier": 2
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 2
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "HAM",
+    "name": "Hamburg",
+    "country": "DEU",
+    "kind": "port",
+    "purchase_price": 430,
+    "rates": {
+      "bulk": {
+        "fee": 3,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 3,
+        "multiplier": 2
+      },
+      "gas": {
+        "fee": 15,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 10,
+        "multiplier": 5
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "HKG",
+    "name": "Hong Kong",
+    "country": "CHN",
+    "kind": "port",
+    "purchase_price": 390,
+    "rates": {
+      "bulk": {
+        "fee": 3,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 9,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 3
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "HOU",
+    "name": "Houston",
+    "country": "USA",
+    "kind": "port",
+    "purchase_price": 380,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 2
+      },
+      "container": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 12,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 9,
+        "multiplier": 3
+      }
+    },
+    "continent": "NA"
+  },
+  {
+    "code": "JAK",
+    "name": "Jakarta",
+    "country": "IDN",
+    "kind": "port",
+    "purchase_price": 390,
+    "rates": {
+      "bulk": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 8,
+        "multiplier": 3
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "JED",
+    "name": "Jeddah",
+    "country": "SAU",
+    "kind": "port",
+    "purchase_price": 440,
+    "rates": {
+      "bulk": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 3,
+        "multiplier": 2
+      },
+      "oil": {
+        "fee": 12,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 5,
+        "multiplier": 2
+      }
+    },
+    "continent": "OM"
+  },
+  {
+    "code": "LAG",
+    "name": "Lagos",
+    "country": "NIG",
+    "kind": "port",
+    "purchase_price": 450,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 4,
+        "multiplier": 6
+      },
+      "oil": {
+        "fee": 9,
+        "multiplier": 6
+      },
+      "gas": {
+        "fee": 9,
+        "multiplier": 6
+      },
+      "cruise": {
+        "fee": 2,
+        "multiplier": 2
+      },
+      "cars": {
+        "fee": 3,
+        "multiplier": 2
+      }
+    },
+    "continent": "AF"
+  },
+  {
+    "code": "LAX",
+    "name": "Los Angeles",
+    "country": "USA",
+    "kind": "port",
+    "purchase_price": 460,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 7,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 6
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 4
+      }
+    },
+    "continent": "NA"
+  },
+  {
+    "code": "LON",
+    "name": "London",
+    "country": "GBR",
+    "kind": "port",
+    "purchase_price": 420,
+    "rates": {
+      "bulk": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 7,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 5,
+        "multiplier": 2
+      },
+      "gas": {
+        "fee": 10,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 8,
+        "multiplier": 6
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "MAN",
+    "name": "Manilla",
+    "country": "PHI",
+    "kind": "port",
+    "purchase_price": 380,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 9,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 5,
+        "multiplier": 3
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "MAZ",
+    "name": "Manzanillo",
+    "country": "MEX",
+    "kind": "port",
+    "purchase_price": 360,
+    "rates": {
+      "bulk": {
+        "fee": 4,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 10,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 4
+      }
+    },
+    "continent": "NA"
+  },
+  {
+    "code": "MUM",
+    "name": "Mumbai",
+    "country": "IND",
+    "kind": "port",
+    "purchase_price": 410,
+    "rates": {
+      "bulk": {
+        "fee": 7,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 8,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 3,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 6,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 6,
+        "multiplier": 5
+      }
+    },
+    "continent": "OM"
+  },
+  {
+    "code": "NYC",
+    "name": "New York",
+    "country": "USA",
+    "kind": "port",
+    "purchase_price": 430,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 2,
+        "multiplier": 2
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 4
+      }
+    },
+    "continent": "NA"
+  },
+  {
+    "code": "PAN",
+    "name": "Panama",
+    "country": "PAN",
+    "kind": "toll",
+    "purchase_price": 2040,
+    "rates": {
+      "bulk": {
+        "fee": 20,
+        "multiplier": 6
+      },
+      "container": {
+        "fee": 20,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 20,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 20,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 15,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 5
+      }
+    },
+    "continent": "NA"
+  },
+  {
+    "code": "REC",
+    "name": "Recife",
+    "country": "BRA",
+    "kind": "port",
+    "purchase_price": 320,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 5,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 9,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 3,
+        "multiplier": 4
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "RIO",
+    "name": "Rio de Janeiro",
+    "country": "BRA",
+    "kind": "port",
+    "purchase_price": 460,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 9,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 6,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 3
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "SHA",
+    "name": "Shanghai",
+    "country": "CHN",
+    "kind": "port",
+    "purchase_price": 480,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "container": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 3,
+        "multiplier": 2
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 5
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "SIN",
+    "name": "Singapura",
+    "country": "SIN",
+    "kind": "toll",
+    "purchase_price": 2000,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 20,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 15,
+        "multiplier": 6
+      },
+      "cars": {
+        "fee": 25,
+        "multiplier": 6
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "SPE",
+    "name": "St. Petersburg",
+    "country": "RUS",
+    "kind": "port",
+    "purchase_price": 370,
+    "rates": {
+      "bulk": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 5,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 7,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "cruise": {
+        "fee": 4,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 5,
+        "multiplier": 3
+      }
+    },
+    "continent": "EU"
+  },
+  {
+    "code": "SRI",
+    "name": "Colombo",
+    "country": "SRI",
+    "kind": "port",
+    "purchase_price": 400,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "oil": {
+        "fee": 8,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 7,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 10,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 3,
+        "multiplier": 2
+      }
+    },
+    "continent": "OM"
+  },
+  {
+    "code": "SUZ",
+    "name": "Suez",
+    "country": "EGY",
+    "kind": "toll",
+    "purchase_price": 2000,
+    "rates": {
+      "bulk": {
+        "fee": 15,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 10,
+        "multiplier": 7
+      },
+      "oil": {
+        "fee": 25,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 25,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 20,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 10,
+        "multiplier": 4
+      }
+    },
+    "continent": "OM"
+  },
+  {
+    "code": "SYD",
+    "name": "Sydney",
+    "country": "AUS",
+    "kind": "port",
+    "purchase_price": 410,
+    "rates": {
+      "bulk": {
+        "fee": 8,
+        "multiplier": 6
+      },
+      "container": {
+        "fee": 7,
+        "multiplier": 8
+      },
+      "oil": {
+        "fee": 3,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 2
+      },
+      "cruise": {
+        "fee": 6,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 7,
+        "multiplier": 4
+      }
+    },
+    "continent": "OC"
+  },
+  {
+    "code": "TOK",
+    "name": "Tokyo",
+    "country": "JPN",
+    "kind": "port",
+    "purchase_price": 450,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 2
+      },
+      "container": {
+        "fee": 10,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 3,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 5
+      },
+      "cruise": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 5
+      }
+    },
+    "continent": "AS"
+  },
+  {
+    "code": "USH",
+    "name": "Ushuaia",
+    "country": "ARG",
+    "kind": "toll",
+    "purchase_price": 1960,
+    "rates": {
+      "bulk": {
+        "fee": 20,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 20,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 15,
+        "multiplier": 5
+      },
+      "gas": {
+        "fee": 20,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 20,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 15,
+        "multiplier": 5
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "VAL",
+    "name": "Valparaiso",
+    "country": "CHL",
+    "kind": "port",
+    "purchase_price": 390,
+    "rates": {
+      "bulk": {
+        "fee": 10,
+        "multiplier": 5
+      },
+      "container": {
+        "fee": 5,
+        "multiplier": 5
+      },
+      "oil": {
+        "fee": 4,
+        "multiplier": 4
+      },
+      "gas": {
+        "fee": 4,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 8,
+        "multiplier": 3
+      },
+      "cars": {
+        "fee": 8,
+        "multiplier": 4
+      }
+    },
+    "continent": "SA"
+  },
+  {
+    "code": "VAN",
+    "name": "Vancouver",
+    "country": "CAN",
+    "kind": "port",
+    "purchase_price": 340,
+    "rates": {
+      "bulk": {
+        "fee": 5,
+        "multiplier": 4
+      },
+      "container": {
+        "fee": 8,
+        "multiplier": 4
+      },
+      "oil": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "gas": {
+        "fee": 5,
+        "multiplier": 3
+      },
+      "cruise": {
+        "fee": 9,
+        "multiplier": 5
+      },
+      "cars": {
+        "fee": 4,
+        "multiplier": 3
+      }
+    },
+    "continent": "NA"
+  }
+]

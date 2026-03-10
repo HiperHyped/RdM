@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang='pt-BR'>
+<head>
+  <meta charset='utf-8'>
+  <title>Cargo Extract Preview</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; padding: 24px; font-family: system-ui, sans-serif; background: #03101a; color: #e9f3ff; }
+    h1 { margin: 0 0 18px; font-size: 28px; }
+    .cargo-preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .cargo-preview-card { padding: 16px; border-radius: 18px; background: linear-gradient(180deg, rgba(7,24,39,.95), rgba(5,18,31,.92)); border: 1px solid rgba(215,230,245,.10); display: grid; gap: 12px; justify-items: center; }
+    .cargo-preview-card h2 { margin: 0; font-size: 18px; text-transform: capitalize; }
+    .cargo-preview-figure { min-height: 120px; width: 100%; display: grid; place-items: center; background: rgba(255,255,255,.03); border-radius: 12px; }
+    .cargo-preview-figure img { max-width: 120px; max-height: 120px; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Preview de Extra??o das Cargas</h1>
+  <div class='cargo-preview-grid'>
+    <section class='cargo-preview-card'><h2>cars</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/cars.png' alt='cars'></div></section><section class='cargo-preview-card'><h2>cruise</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/cruise.png' alt='cruise'></div></section><section class='cargo-preview-card'><h2>bulk</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/bulk.png' alt='bulk'></div></section><section class='cargo-preview-card'><h2>gas</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/gas.png' alt='gas'></div></section><section class='cargo-preview-card'><h2>container</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/container.png' alt='container'></div></section><section class='cargo-preview-card'><h2>oil</h2><div class='cargo-preview-figure'><img src='/static/assets/cargo/oil.png' alt='oil'></div></section>
+  </div>
+</body>
+</html>
