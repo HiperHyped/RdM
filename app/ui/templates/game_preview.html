@@ -22,6 +22,10 @@
     <span>||</span>
   </div>
 
+  <div id="property-inspector-overlay" class="property-inspector-overlay is-hidden" aria-hidden="true">
+    <div id="property-inspector-stage" class="property-inspector-stage"></div>
+  </div>
+
   <div id="game-setup-overlay" class="game-setup-overlay">
     <section class="game-setup-modal" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
@@ -53,42 +57,17 @@
 
   <div class="preview-left-stack">
     <section class="preview-panel preview-contract">
-      <div class="preview-section-head">
-        <div>
-          <p class="eyebrow">Contrato Atual</p>
-          <h1 id="preview-turn">Turno 01</h1>
+      <div class="preview-contract-topline">
+        <div class="preview-contract-head-actions">
+          <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
+          <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
+          <button type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
         </div>
-        <span id="preview-phase" class="preview-badge">Preparacao inicial</span>
+        <h1 id="preview-turn">Turno 01</h1>
       </div>
-
-      <div class="preview-turn-strip">
-        <div class="preview-mini-card">
-          <span>Prazo</span>
-          <strong id="preview-deadline">--</strong>
-        </div>
-        <div class="preview-dice">
-          <div id="preview-die-1" class="preview-die-mini">-</div>
-          <div id="preview-die-2" class="preview-die-mini">-</div>
-        </div>
-        <div class="preview-mini-card preview-mini-card-accent">
-          <span>Acao</span>
-          <strong id="preview-action">Sortear permissao</strong>
-        </div>
-      </div>
-
-      <div class="preview-contract-route">
-        <span id="preview-origin" class="preview-route-chip port">--</span>
-        <span class="preview-route-arrow">&rsaquo;</span>
-        <span id="preview-toll" class="preview-route-chip toll">--</span>
-        <span class="preview-route-arrow">&rsaquo;</span>
-        <span id="preview-destination" class="preview-route-chip port">--</span>
-      </div>
-
-      <div id="preview-contract-metrics" class="preview-metric-row"></div>
-      <p id="preview-contract-note" class="body-copy compact">A partida comeca sem permissao, sem porto de partida e sem contrato ativo.</p>
     </section>
 
-    <section class="preview-panel preview-company">
+    <section class="preview-panel preview-company is-hidden" aria-hidden="true">
       <div class="preview-section-head">
         <div>
           <p class="eyebrow">Sua Empresa</p>
@@ -131,11 +110,11 @@
           <h2 id="permission-draw-title">Sorteio da permissao de frete</h2>
         </div>
       </div>
-      <p id="permission-draw-copy" class="body-copy compact permission-draw-copy">O jogador humano comeca escolhendo a permissao de frete por embaralhamento.</p>
+      <p id="permission-draw-copy" class="body-copy compact permission-draw-copy">Embaralhe para sortear sua primeira permissao.</p>
       <div id="permission-draw-stage" class="permission-draw-stage" aria-live="polite"></div>
       <div class="permission-draw-footer">
-        <p id="permission-draw-result" class="permission-draw-result">Clique em embaralhar para sortear uma permissao.</p>
-        <button id="start-permission-draw" type="button" class="permission-draw-button">Embaralhar e sortear</button>
+        <p id="permission-draw-result" class="permission-draw-result">Pressione Enter ou clique para embaralhar.</p>
+        <button id="start-permission-draw" type="button" class="permission-draw-button">Sortear</button>
       </div>
     </section>
   </div>
@@ -149,7 +128,7 @@
         </div>
         <span id="port-draw-active" class="port-draw-badge">Aguardando sorteio</span>
       </div>
-      <p id="port-draw-copy" class="body-copy compact port-draw-copy">O jogo vai embaralhar as cartas e revelar uma selecao.</p>
+      <p id="port-draw-copy" class="body-copy compact port-draw-copy">Embaralhe para sortear a carta.</p>
       <div id="port-draw-stage" class="port-draw-stage" aria-live="polite"></div>
       <div id="port-draw-extra" class="port-draw-extra is-hidden">
         <p id="port-draw-extra-copy" class="port-draw-extra-copy"></p>
@@ -159,8 +138,8 @@
         </div>
       </div>
       <div class="port-draw-footer">
-        <p id="port-draw-result" class="port-draw-result">Clique em embaralhar para sortear.</p>
-        <button id="port-draw-button" type="button" class="port-draw-button">Embaralhar e sortear</button>
+        <p id="port-draw-result" class="port-draw-result">Pressione Enter ou clique para embaralhar.</p>
+        <button id="port-draw-button" type="button" class="port-draw-button">Sortear</button>
       </div>
     </section>
   </div>
@@ -170,15 +149,15 @@
       <div class="movement-dice-head">
         <div>
           <p class="eyebrow">Movimentacao</p>
-          <h2 id="movement-dice-title">Rolar 2 dados e revelar o total</h2>
+          <h2 id="movement-dice-title">Rolar os dados</h2>
         </div>
         <span id="movement-dice-active" class="movement-dice-badge">Aguardando rolagem</span>
       </div>
-      <p class="body-copy compact movement-dice-copy">Os dois dados numericos definem quantas casas o navio vai percorrer no menor caminho ate o destino.</p>
+      <p class="body-copy compact movement-dice-copy">Pressione Enter ou clique para rolar.</p>
       <div id="movement-dice-stage" class="movement-dice-stage" aria-live="polite"></div>
       <div class="movement-dice-footer">
-        <p id="movement-dice-result" class="movement-dice-result">Clique em rolar para sortear os dois dados.</p>
-        <button id="movement-dice-button" type="button" class="movement-dice-button">Rolar 2 dados</button>
+        <p id="movement-dice-result" class="movement-dice-result">Pressione Enter ou clique para rolar.</p>
+        <button id="movement-dice-button" type="button" class="movement-dice-button">Rolar Dados</button>
       </div>
     </section>
   </div>
@@ -188,15 +167,15 @@
       <div class="chance-draw-head">
         <div>
           <p class="eyebrow">Sorte / Reves</p>
-          <h2 id="chance-draw-title">Embaralhar e revelar uma carta</h2>
+          <h2 id="chance-draw-title">Sortear uma carta</h2>
         </div>
         <span id="chance-draw-active" class="chance-draw-badge">Aguardando sorteio</span>
       </div>
-      <p id="chance-draw-copy" class="body-copy compact chance-draw-copy">O baralho inteiro entra misturado, combinando cartas verdes e vermelhas no mesmo sorteio.</p>
+      <p id="chance-draw-copy" class="body-copy compact chance-draw-copy">Embaralhe para revelar uma carta.</p>
       <div id="chance-draw-stage" class="chance-draw-stage" aria-live="polite"></div>
       <div class="chance-draw-footer">
-        <p id="chance-draw-result" class="chance-draw-result">Clique em embaralhar para sortear uma carta.</p>
-        <button id="chance-draw-button" type="button" class="chance-draw-button">Embaralhar e sortear</button>
+        <p id="chance-draw-result" class="chance-draw-result">Pressione Enter ou clique para sortear.</p>
+        <button id="chance-draw-button" type="button" class="chance-draw-button">Sortear</button>
       </div>
     </section>
   </div>
@@ -206,6 +185,7 @@
       <p class="eyebrow">Resolucao</p>
       <h2 id="decision-title">Confirmar acao</h2>
       <p id="decision-copy" class="body-copy compact">Descricao da acao.</p>
+      <div id="decision-card-stage" class="decision-card-stage is-hidden"></div>
       <div class="decision-actions">
         <button id="decision-primary" type="button" class="decision-button primary">Continuar</button>
         <button id="decision-secondary" type="button" class="decision-button secondary is-hidden">Cancelar</button>
@@ -218,5 +198,5 @@
   </section>
 </main>
 
-<script src="{{ request.url_for('static', path='js/game-preview.js') }}?v=chance-log-v2"></script>
+<script src="{{ request.url_for('static', path='js/game-preview.js') }}?v=property-inspector-v1"></script>
 {% endblock %}

@@ -68,6 +68,7 @@ const state = {
   },
   movementDice: {
     rolling: false,
+    rolled: false,
     values: [1, 1],
     finalValues: [1, 1],
     rafId: 0,
@@ -92,10 +93,14 @@ const state = {
     waiters: [],
   },
   view: {
-    rotationLon: -18,
+    rotationLon: 0,
     zoom: 1,
-    openRivalDrawerId: null,
+    openSystemDrawerId: null,
+    humanDrawerOpen: true,
+    selectedMiniCardsByPlayer: {},
     paused: false,
+    actionFeedExpanded: false,
+    propertyInspectorCode: '',
   },
   projection: {
     plot: null,
@@ -108,6 +113,7 @@ const state = {
     startRotationLon: 0,
     lastRelayoutPromise: null,
     rafScheduled: false,
+    blockClickUntil: 0,
   },
 };
 
@@ -119,6 +125,9 @@ function getPauseIndicator() {
   return byId('game-pause-indicator');
 }
 
+function getPropertyInspectorOverlay() { return byId('property-inspector-overlay'); }
+function getPropertyInspectorStage() { return byId('property-inspector-stage'); }
+
 function hasCentralOverlayOpen() {
   const ids = [
     'game-setup-overlay',
@@ -127,6 +136,7 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
+    'property-inspector-overlay',
   ];
   return ids.some((id) => {
     const node = byId(id);
@@ -138,6 +148,91 @@ function renderPauseIndicator() {
   const node = getPauseIndicator();
   if (!node) return;
   node.classList.toggle('is-hidden', !state.view.paused);
+}
+
+function propertyInspectorMarkup(card) {
+  if (!card) return '';
+  return `
+    <article class="port-draw-card${card.is_toll ? ' toll-draw-card' : ''} property-inspector-card" style="--title-fill:${card.fill}; --title-text:${card.text};">
+      <header class="port-draw-card-head${card.is_toll ? ' toll-draw-title-head' : ''}">
+        ${card.is_toll ? `<span class="port-draw-toll-side-icon">${tollDiamondSvg()}</span>` : `<span class="port-draw-title-number">${card.number_display}</span>`}
+        <div class="port-draw-title-heading">
+          <strong class="port-draw-title-code">${card.code}</strong>
+          <span class="port-draw-title-name">${card.name} (${card.country})</span>
+        </div>
+        ${card.is_toll ? `<span class="port-draw-toll-side-icon">${tollDiamondSvg()}</span>` : '<span></span>'}
+      </header>
+      <div class="port-draw-title-body">
+        <div class="port-draw-table-head">
+          <span>Carga</span>
+          <span>${card.column_fee_label}</span>
+          <span>${card.column_multiplier_label}</span>
+        </div>
+        <div class="port-draw-title-rows">${renderPortDrawRows(card)}</div>
+      </div>
+      <footer class="port-draw-card-foot">
+        <span>Preco</span>
+        <strong>${card.price}</strong>
+      </footer>
+    </article>
+  `;
+}
+
+function renderPropertyInspector() {
+  const overlay = getPropertyInspectorOverlay();
+  const stage = getPropertyInspectorStage();
+  if (!overlay || !stage) return;
+  const code = String(state.view.propertyInspectorCode || '').toUpperCase();
+  const card = getPropertyCard(code);
+  overlay.classList.toggle('is-hidden', !card);
+  stage.innerHTML = card ? propertyInspectorMarkup(card) : '';
+}
+
+function openPropertyInspector(code) {
+  state.view.propertyInspectorCode = String(code || '').toUpperCase();
+  renderPropertyInspector();
+}
+
+function closePropertyInspector() {
+  if (!state.view.propertyInspectorCode) return;
+  state.view.propertyInspectorCode = '';
+  renderPropertyInspector();
+}
+
+function findPropertyCardAtClientPoint(clientX, clientY) {
+  const layer = getHitLayer();
+  if (!layer) return null;
+  const rect = layer.getBoundingClientRect();
+  const localX = clientX - rect.left;
+  const localY = clientY - rect.top;
+  let best = null;
+  let bestDistance = Infinity;
+  state.projectedNodes.forEach((node) => {
+    if (!(node.kind === 'port' || node.kind === 'toll')) return;
+    if (node.lat === null || node.lon === null) return;
+    const projected = projectLonLat(node.lon, node.lat);
+    if (!projected) return;
+    const [x, y] = projected;
+    const dx = localX - x;
+    const dy = localY - y;
+    const distance = Math.sqrt((dx * dx) + (dy * dy));
+    const threshold = node.kind === 'toll' ? 20 : 18;
+    if (distance <= threshold && distance < bestDistance) {
+      best = getPropertyCard(node.label || '');
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+function handleMapClick(event) {
+  if (!state.setup.started) return;
+  if (Date.now() < Number(state.drag.blockClickUntil || 0)) return;
+  if (hasCentralOverlayOpen()) return;
+  const card = findPropertyCardAtClientPoint(event.clientX, event.clientY);
+  if (card) {
+    openPropertyInspector(card.code);
+  }
 }
 
 function waitForResume() {
@@ -181,6 +276,7 @@ async function delay(ms) {
 function formatCurrency(value) {
   return `$ ${Number(value || 0).toLocaleString('pt-BR')}`;
 }
+
 
 function normalizeLon(value) {
   let lon = value;
@@ -315,8 +411,9 @@ function renderActionFeed() {
   const target = byId('game-action-feed');
   if (!target || !panel) return;
   const now = Date.now();
-  state.actionFeed = (state.actionFeed || []).filter((entry) => (entry.expiresAt || 0) > now).slice(0, 4);
+  state.actionFeed = (state.actionFeed || []).filter((entry) => (entry.expiresAt || 0) > now).slice(0, 8);
   panel.classList.toggle('is-hidden', state.actionFeed.length === 0);
+  panel.classList.toggle('is-collapsed', !state.view.actionFeedExpanded);
   if (!state.actionFeed.length) {
     target.innerHTML = '';
     return;
@@ -343,14 +440,14 @@ function pushActionLog(player, action, detail) {
     color,
     glow: brightenHex(color, 0.42),
     turnLabel: state.session?.turn_label || 'Turno --',
-    expiresAt: Date.now() + 4200,
+    expiresAt: Date.now() + 12000,
   };
-  state.actionFeed = [entry, ...(state.actionFeed || [])].slice(0, 4);
+  state.actionFeed = [entry, ...(state.actionFeed || [])].slice(0, 8);
   renderActionFeed();
   window.setTimeout(() => {
     state.actionFeed = (state.actionFeed || []).filter((item) => item.id !== entry.id);
     renderActionFeed();
-  }, 4300);
+  }, 12100);
 }
 
 function chanceCategoryLabel(card) {
@@ -532,7 +629,7 @@ function propertyMiniMarkup(card) {
   return `
     <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
       <header class="preview-property-mini-head${tollHeadClass}">
-        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number">${card.number_display}</span>`}
+        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
           <strong class="preview-property-mini-code">${card.code}</strong>
           <span class="preview-property-mini-name">${card.name}</span>
@@ -609,102 +706,304 @@ function couponMiniMarkup(coupon) {
   return `<span class="preview-inline-chip preview-rival-coupon">${label}</span>`;
 }
 
-function rivalDrawerMarkup(player) {
-  const contract = player.active_contract;
-  const routeLabel = contract
-    ? `${contract.origin} › ${contract.mandatory_toll} › ${contract.destination}`
-    : 'primeiro turno pendente';
-  const lastRoll = Array.isArray(player.last_roll)
-    ? `${player.last_roll[0]} + ${player.last_roll[1]}`
-    : '--';
-  const permissionsMarkup = (player.permissions || []).map((permission) => permissionMiniMarkup(permission)).join('');
-  const propertiesMarkup = (player.property_codes || [])
-    .map((code) => getPropertyCard(code))
-    .filter(Boolean)
-    .map((card) => propertyMiniMarkup(card))
-    .join('');
-  const couponsMarkup = (player.coupons || []).map((coupon) => couponMiniMarkup(coupon)).join('');
+function contractDeadlineTone(contract) {
+  const progress = String(contract?.deadline_progress || '0/4').split('/').map((value) => Number(value) || 0);
+  const current = progress[0] || 0;
+  const target = progress[1] || 4;
+  if (current >= 5 || current > target) return 'danger';
+  if (current >= 4) return 'warning';
+  return 'good';
+}
+
+
+function miniHandStyle(type, count) {
+  if (!count || count <= 1) return '';
+  const config = {
+    permission: { overlap: 46, scale: 1 },
+    property: { overlap: 44, scale: 0.82 },
+    coupon: { overlap: 14, scale: 1 },
+  }[type] || { overlap: 40, scale: 1 };
+  return ` style="--stack-overlap:${config.overlap}px; --stack-scale:${config.scale};"`;
+}
+
+function contractSummaryMarkup(player, contract) {
+  if (!contract || !player?.active_permission_label) {
+    return `
+      <div class="preview-rival-contract-line is-empty">
+        <span class="preview-rival-contract-muted">primeiro turno pendente</span>
+      </div>
+    `;
+  }
+  const tone = contractDeadlineTone(contract);
+  const lastRollMarkup = Array.isArray(player?.last_roll) && player.last_roll.length === 2
+    ? `
+      <div class="preview-rival-last-roll" aria-label="Ultima jogada">
+        <span class="preview-rival-die">${player.last_roll[0]}</span>
+        <span class="preview-rival-die">${player.last_roll[1]}</span>
+      </div>
+    `
+    : '';
+  return `
+    <div class="preview-rival-contract-line">
+      <span class="preview-rival-contract-cargo">${cargoIconMarkup(player.active_permission_id, 'preview-rival-contract-cargo-icon')}${player.active_permission_label}</span>
+      <span class="preview-rival-contract-turns is-${tone}">(${contract.deadline_progress || '0/4'}) turnos</span>
+      <span class="preview-rival-contract-freight">${contract.freight_label || 'Sem frete'}</span>
+    </div>
+    <div class="preview-rival-bottomline">
+      <div class="preview-rival-route">${contractRouteMarkup(contract, { emptyText: 'primeiro turno pendente' })}</div>
+      ${lastRollMarkup}
+    </div>
+  `;
+}
+
+function miniHandMarkup(content, extraClass = '', style = '') {
+  const empty = /is-muted/.test(content || '');
+  return `<div class="preview-rival-mini-strip${extraClass ? ` ${extraClass}` : ''}${empty ? ' is-empty' : ''}"${style}>${content}</div>`;
+}
+
+let miniHandLayoutFrame = 0;
+
+function miniHandMinVisible(strip) {
+  if (strip.classList.contains('properties-hand')) return 8;
+  if (strip.classList.contains('permissions-hand')) return 18;
+  if (strip.classList.contains('coupons-hand')) return 18;
+  return 12;
+}
+
+function layoutMiniHand(strip) {
+  if (!strip || strip.classList.contains('is-empty')) return;
+  const items = [...strip.children].filter((node) => node.nodeType === 1);
+  if (items.length <= 1) {
+    strip.style.setProperty('--stack-overlap', '0px');
+    return;
+  }
+
+  const availableWidth = Math.floor(strip.clientWidth || strip.getBoundingClientRect().width || 0);
+  const itemWidth = Math.ceil(items[0].getBoundingClientRect().width || items[0].offsetWidth || 0);
+  if (!availableWidth || !itemWidth) return;
+
+  const minVisible = miniHandMinVisible(strip);
+  const visibleWidth = Math.max(minVisible, Math.floor((availableWidth - itemWidth) / Math.max(1, items.length - 1)));
+  const overlap = Math.max(0, Math.min(itemWidth - minVisible, itemWidth - visibleWidth));
+  strip.style.setProperty('--stack-overlap', `${overlap}px`);
+}
+
+function layoutMiniHands() {
+  document.querySelectorAll('.preview-rival-mini-strip').forEach((strip) => layoutMiniHand(strip));
+}
+
+function scheduleMiniHandLayout() {
+  if (miniHandLayoutFrame) {
+    window.cancelAnimationFrame(miniHandLayoutFrame);
+  }
+  miniHandLayoutFrame = window.requestAnimationFrame(() => {
+    miniHandLayoutFrame = 0;
+    layoutMiniHands();
+  });
+}
+
+function propertyCardSortValue(card) {
+  return `${card?.fill || ''}|${card?.code || ''}`;
+}
+
+function selectedMiniKey(playerId, type) {
+  return state.view.selectedMiniCardsByPlayer?.[playerId]?.[type] || '';
+}
+
+function setSelectedMiniKey(playerId, type, key) {
+  state.view.selectedMiniCardsByPlayer[playerId] = {
+    ...(state.view.selectedMiniCardsByPlayer[playerId] || {}),
+    [type]: key,
+  };
+}
+
+function moveSelectedToEnd(items, selectedKey, keyFn) {
+  if (!selectedKey) return items.slice();
+  const sorted = [];
+  let selected = null;
+  items.forEach((item) => {
+    if (String(keyFn(item)) === String(selectedKey)) {
+      selected = item;
+    } else {
+      sorted.push(item);
+    }
+  });
+  if (selected) sorted.push(selected);
+  return selected ? sorted : items.slice();
+}
+
+function miniCardWrapper({ playerId, type, key, selected = false, innerMarkup = '', extraClass = '' }) {
+  return `
+    <button type="button" class="preview-mini-selectable ${extraClass}${selected ? ' is-selected' : ''}" data-player-id="${playerId}" data-mini-type="${type}" data-mini-key="${key}">
+      ${innerMarkup}
+    </button>
+  `;
+}
+
+function miniCouponMarkup(playerId, coupon, selected = false) {
+  const label = typeof coupon === 'string'
+    ? coupon
+    : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom');
+  return miniCardWrapper({
+    playerId,
+    type: 'coupon',
+    key: label,
+    selected,
+    extraClass: 'preview-mini-selectable-coupon',
+    innerMarkup: `<span class="preview-inline-chip preview-rival-coupon">${label}</span>`,
+  });
+}
+
+function routeStopMarkup(code, { large = false } = {}) {
+  const normalized = String(code || '').toUpperCase();
+  const largeClass = large ? ' is-large' : '';
+  if (!normalized || normalized === '--') {
+    return `<span class="preview-route-stop port is-empty${largeClass}"><span class="preview-route-stop-label">--</span></span>`;
+  }
+  const card = getPropertyCard(normalized);
+  if (!card) {
+    return `<span class="preview-route-stop port is-empty${largeClass}"><span class="preview-route-stop-label">${normalized}</span></span>`;
+  }
+  return `
+    <span class="preview-route-stop ${card.is_toll ? 'toll' : 'port'}${largeClass}" style="--route-fill:${card.fill}; --route-text:${card.text};">
+      <span class="preview-route-stop-label">${card.code}</span>
+    </span>
+  `;
+}
+
+function contractRouteMarkup(contract, { emptyText = 'primeiro turno pendente', large = false } = {}) {
+  if (!contract) {
+    return `<span class="preview-route-empty">${emptyText}</span>`;
+  }
+  const hasAnySelection = [contract.origin, contract.mandatory_toll, contract.destination].some((code) => code && code !== '--');
+  if (!hasAnySelection) {
+    return `<span class="preview-route-empty">${emptyText}</span>`;
+  }
+  return `
+    <div class="preview-route-inline${large ? ' is-large' : ''}">
+      ${routeStopMarkup(contract.origin, { large })}
+      <span class="preview-route-arrow">&rsaquo;</span>
+      ${routeStopMarkup(contract.mandatory_toll, { large })}
+      <span class="preview-route-arrow">&rsaquo;</span>
+      ${routeStopMarkup(contract.destination, { large })}
+    </div>
+  `;
+}
+
+function playerDrawerMarkup(player) {
+  const selectedPermissionKey = selectedMiniKey(player.id, 'permission');
+  const selectedPropertyKey = selectedMiniKey(player.id, 'property');
+  const selectedCouponKey = selectedMiniKey(player.id, 'coupon');
+
+  const permissionItems = moveSelectedToEnd(
+    [...(player.permissions || [])].sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''))),
+    selectedPermissionKey,
+    (permission) => permission.id,
+  );
+  const propertyItems = moveSelectedToEnd(
+    (player.property_codes || [])
+      .map((code) => getPropertyCard(code))
+      .filter(Boolean)
+      .sort((a, b) => propertyCardSortValue(a).localeCompare(propertyCardSortValue(b))),
+    selectedPropertyKey,
+    (card) => card.code,
+  );
+  const couponItems = moveSelectedToEnd(
+    [...(player.coupons || [])].sort((a, b) => couponLabelFromCode(typeof a === 'string' ? a : a?.kind).localeCompare(couponLabelFromCode(typeof b === 'string' ? b : b?.kind))),
+    selectedCouponKey,
+    (coupon) => (typeof coupon === 'string' ? coupon : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom')),
+  );
+
+  const permissionsMarkup = permissionItems.map((permission) => miniCardWrapper({
+    playerId: player.id,
+    type: 'permission',
+    key: permission.id,
+    selected: String(permission.id) === String(selectedPermissionKey),
+    extraClass: 'preview-mini-selectable-permission',
+    innerMarkup: permissionMiniMarkup(permission),
+  })).join('');
+
+  const propertiesMarkup = propertyItems.map((card) => miniCardWrapper({
+    playerId: player.id,
+    type: 'property',
+    key: card.code,
+    selected: String(card.code) === String(selectedPropertyKey),
+    extraClass: 'preview-mini-selectable-property',
+    innerMarkup: propertyMiniMarkup(card),
+  })).join('');
+
+  const couponsMarkup = couponItems.map((coupon) => miniCouponMarkup(
+    player.id,
+    coupon,
+    String(typeof coupon === 'string' ? coupon : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom')) === String(selectedCouponKey),
+  )).join('');
 
   return `
     <div class="preview-rival-drawer">
-      <div class="preview-rival-drawer-route">${routeLabel}</div>
-      <div class="preview-rival-drawer-metrics">
-        <span class="preview-rival-drawer-chip">${contract?.distance_label || 'Sem distancia'}</span>
-        <span class="preview-rival-drawer-chip">${contract?.freight_label || 'Sem frete'}</span>
-        <span class="preview-rival-drawer-chip">Prazo ${contract?.deadline_progress || '0/4'}</span>
-        <span class="preview-rival-drawer-chip">Dados ${lastRoll}</span>
-      </div>
       <div class="preview-rival-drawer-section">
         <span class="preview-rival-drawer-label">Permissoes</span>
-        <div class="preview-rival-mini-strip">${permissionsMarkup || '<span class="preview-inline-chip is-muted">sem permissao</span>'}</div>
+        ${miniHandMarkup(permissionsMarkup || '<span class="preview-inline-chip is-muted">sem permissao</span>', 'permissions-hand', miniHandStyle('permission', permissionItems.length))}
       </div>
       <div class="preview-rival-drawer-section">
         <span class="preview-rival-drawer-label">Titulos e pedagios</span>
-        <div class="preview-rival-mini-strip">${propertiesMarkup || '<span class="preview-inline-chip is-muted">sem titulos</span>'}</div>
+        ${miniHandMarkup(propertiesMarkup || '<span class="preview-inline-chip is-muted">sem titulos</span>', 'properties-hand', miniHandStyle('property', propertyItems.length))}
       </div>
+      ${couponItems.length ? `
       <div class="preview-rival-drawer-section">
         <span class="preview-rival-drawer-label">Cupons</span>
-        <div class="preview-rival-mini-strip preview-rival-coupons">${couponsMarkup || '<span class="preview-inline-chip is-muted">sem cupons</span>'}</div>
+        ${miniHandMarkup(couponsMarkup, 'coupons-hand preview-rival-coupons', miniHandStyle('coupon', couponItems.length))}
       </div>
+      ` : ''}
     </div>
   `;
 }
 
 function renderRivals() {
+
   const target = byId('preview-rival-list');
   if (!target) return;
   target.innerHTML = '';
-  state.rivals.forEach((player) => {
+
+  const human = humanPlayer();
+  const rivals = state.rivals || [];
+  const players = [human, ...rivals].filter(Boolean);
+  const active = activePlayer();
+  target.style.setProperty('--rival-count', String(Math.max(1, players.length)));
+
+  players.forEach((player) => {
     const contract = player.active_contract;
-    const isOpen = state.view.openRivalDrawerId === player.id;
+    const isHuman = Boolean(player.is_human);
+    const isOpen = isHuman ? state.view.humanDrawerOpen : state.view.openSystemDrawerId === player.id;
+    const isActive = Boolean(active && active.id === player.id);
     const card = document.createElement('article');
-    card.className = `preview-rival-card${isOpen ? ' is-open' : ''}`;
+    card.className = `preview-rival-card${isOpen ? ' is-open' : ''}${isHuman ? ' is-human' : ''}${isActive ? ' is-active-player' : ''}`;
     card.dataset.playerId = player.id;
     card.style.setProperty('--rival-accent', player.color_hex || '#8fd7ff');
+    card.style.setProperty('--card-grow', '1');
     card.innerHTML = `
       <div class="preview-rival-top">
         <span class="preview-rival-dot" style="background:${player.color_hex}"></span>
-        <strong>${player.name}</strong>
+        <strong>${isHuman ? player.name : `&#129302; ${player.name}`}</strong>
         <span class="preview-rival-cash">${player.cash_display}</span>
       </div>
-      <div class="preview-rival-meta">${contract ? `${player.active_permission_label} | ${contract.deadline_progress}` : player.status_label}</div>
-      <div class="preview-rival-route">${contract ? `${contract.origin} › ${contract.mandatory_toll} › ${contract.destination}` : 'primeiro turno pendente'}</div>
-      ${isOpen ? rivalDrawerMarkup(player) : ''}
+      ${contractSummaryMarkup(player, contract)}
+      ${isOpen ? playerDrawerMarkup(player) : ''}
     `;
     target.appendChild(card);
   });
+  scheduleMiniHandLayout();
 }
 
 function renderHud() {
+
   const human = humanPlayer();
   const contract = human?.active_contract || null;
   setText('preview-turn', state.session?.turn_label || 'Turno 01');
-  setText('preview-phase', state.session?.phase || 'Preparacao inicial');
-  setText('preview-action', state.session?.action_label || 'Sortear permissao de frete');
-  setText('preview-deadline', contract?.deadline_label || '--');
-  setText('preview-die-1', String(state.session?.dice?.[0] ?? '-'));
-  setText('preview-die-2', String(state.session?.dice?.[1] ?? '-'));
-  setText('preview-origin', contract?.origin || '--');
-  setText('preview-toll', contract?.mandatory_toll || '--');
-  setText('preview-destination', contract?.destination || '--');
-  setText('preview-contract-note', contract?.note || state.session?.note || 'A partida comeca sem navios, sem contratos e sem porto de partida definido.');
+  const active = activePlayer();
+  const activeContract = active?.active_contract || null;
   setText('preview-human-name', human?.name || 'Minha Companhia');
   setText('preview-human-port', human?.location_label || '--');
   setText('preview-cash', human?.cash_display || formatCurrency(state.rules.initial_cash || 0));
-
-  const metricsTarget = byId('preview-contract-metrics');
-  if (metricsTarget) {
-    metricsTarget.innerHTML = '';
-    const metrics = contract
-      ? [contract.distance_label || 'Sem distancia', contract.cargo_label || 'Sem carga', contract.freight_label || 'Sem frete']
-      : ['Sem contrato'];
-    metrics.forEach((value) => {
-      const chip = document.createElement('span');
-      chip.className = 'preview-chip';
-      chip.textContent = value;
-      metricsTarget.appendChild(chip);
-    });
-  }
 
   renderCompanyList(human);
   renderRivals();
@@ -843,7 +1142,8 @@ function renderPermissionDraw() {
 
   if (button) {
     button.disabled = state.permissionDraw.drawing;
-    button.textContent = state.permissionDraw.drawing ? 'Embaralhando...' : 'Embaralhar e sortear';
+    button.textContent = state.permissionDraw.drawing ? 'Embaralhando...' : 'Sortear';
+    button.style.display = state.permissionDraw.selectedCardId ? 'none' : 'inline-flex';
   }
 }
 
@@ -912,7 +1212,7 @@ function startPermissionDraw() {
   state.permissionDraw.selectedCardId = '';
   state.permissionDraw.frame = 0;
   state.permissionDraw.order = shuffleArray(drawCards.map((card) => card.id));
-  setPermissionDrawResult('Embaralhando as permissoes...');
+  setPermissionDrawResult('Embaralhando...');
   renderPermissionDraw();
 
   const durationMs = 1800;
@@ -963,7 +1263,7 @@ function startPermissionDraw() {
   state.permissionDraw.rafId = window.requestAnimationFrame(step);
 }
 
-function openHumanPermissionDraw({ promptText = 'Clique em embaralhar para sortear uma permissao.', onSelected = null, cards = null } = {}) {
+function openHumanPermissionDraw({ promptText = 'Pressione Enter ou clique para embaralhar.', onSelected = null, cards = null } = {}) {
   const drawCards = Array.isArray(cards) && cards.length ? cards : state.freightPermissionCards;
   state.permissionDraw.drawing = false;
   state.permissionDraw.selectedCardId = '';
@@ -1041,7 +1341,10 @@ function clearPortDrawExtra() {
   const extra = getPortDrawExtra();
   const primary = getPortDrawExtraPrimary();
   const secondary = getPortDrawExtraSecondary();
-  if (extra) extra.classList.add('is-hidden');
+  if (extra) {
+    extra.classList.add('is-hidden');
+    extra.classList.remove('is-inline');
+  }
   if (primary) {
     primary.textContent = 'Confirmar';
     primary.onclick = null;
@@ -1053,7 +1356,7 @@ function clearPortDrawExtra() {
   }
 }
 
-function configurePortDrawExtra({ copy, primaryLabel, secondaryLabel = 'Cancelar', onPrimary, onSecondary = null, hideSecondary = false }) {
+function configurePortDrawExtra({ copy = '', copyHtml = '', primaryLabel, secondaryLabel = 'Cancelar', onPrimary, onSecondary = null, hideSecondary = false, layout = 'stack' }) {
   const extra = getPortDrawExtra();
   const copyNode = getPortDrawExtraCopy();
   const primary = getPortDrawExtraPrimary();
@@ -1062,7 +1365,9 @@ function configurePortDrawExtra({ copy, primaryLabel, secondaryLabel = 'Cancelar
     return;
   }
   extra.classList.remove('is-hidden');
-  copyNode.textContent = copy;
+  extra.classList.toggle('is-inline', layout === 'inline');
+  if (copyHtml) copyNode.innerHTML = copyHtml;
+  else copyNode.textContent = copy;
   primary.textContent = primaryLabel;
   primary.onclick = onPrimary;
   secondary.textContent = secondaryLabel;
@@ -1128,11 +1433,18 @@ function renderPortDraw() {
   const copy = getPortDrawCopy();
   const eyebrow = byId('port-draw-eyebrow');
   const title = byId('port-draw-title');
+  const modal = getPortDrawOverlay()?.querySelector('.port-draw-modal') || null;
   if (!stage) return;
 
   const isTollMode = state.portDraw.mode === 'toll';
   const isDestinationMode = state.portDraw.mode === 'destination';
   const cards = currentPortDrawCards();
+
+  if (modal) {
+    modal.classList.toggle('is-origin', state.portDraw.mode === 'origin');
+    modal.classList.toggle('is-destination', isDestinationMode);
+    modal.classList.toggle('is-toll', isTollMode);
+  }
 
   if (eyebrow) eyebrow.textContent = 'Primeiro turno';
   if (title) {
@@ -1142,10 +1454,10 @@ function renderPortDraw() {
   }
   if (copy) {
     copy.textContent = isTollMode
-      ? 'Os 6 pedagios entram no embaralhamento. O sorteio define o pedagio obrigatorio da rota inicial.'
+      ? 'Embaralhe para sortear o pedagio.'
       : (isDestinationMode
-          ? 'O destino nao pode ser o mesmo porto de partida nem estar na mesma regiao do porto de partida.'
-          : 'Os 30 portos entram no embaralhamento. Depois do sorteio, voce decide se quer comprar a posse do porto inicial.');
+          ? 'Embaralhe para sortear o porto de destino.'
+          : 'Embaralhe para sortear o porto de partida.');
   }
 
   const orderedCards = state.portDraw.order
@@ -1182,9 +1494,15 @@ function renderPortDraw() {
     `;
   }).join('');
 
+  const footer = getPortDrawFooter();
+  const hasSelection = Boolean(state.portDraw.selectedCardCode);
   if (button) {
-    button.disabled = state.portDraw.drawing || Boolean(state.portDraw.selectedCardCode);
-    button.textContent = state.portDraw.drawing ? 'Embaralhando...' : (state.portDraw.selectedCardCode ? 'Sorteado' : 'Embaralhar e sortear');
+    button.disabled = state.portDraw.drawing || hasSelection;
+    button.textContent = state.portDraw.drawing ? 'Embaralhando...' : 'Sortear';
+    button.style.display = hasSelection ? 'none' : 'inline-flex';
+  }
+  if (footer) {
+    footer.classList.toggle('is-hidden', hasSelection);
   }
 }
 
@@ -1417,6 +1735,7 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
         copy: `Deseja comprar o porto ${card.code} por ${formatCurrency(card.price)} antes de abrir o novo contrato?`,
         primaryLabel: `Comprar ${formatCurrency(card.price)}`,
         secondaryLabel: 'Nao comprar',
+        cardCode: card.code,
       });
       if (choice === 'primary' && buyProperty(player, card.code)) {
         player.status_label = `comprou ${card.code}`;
@@ -1433,6 +1752,7 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
       copy: `Deseja negociar a compra do porto ${card.code} por ${formatCurrency(negotiationPrice)} antes do novo contrato?`,
       primaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
       secondaryLabel: 'Nao negociar',
+      cardCode: card.code,
     });
     if (choice === 'primary' && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
@@ -1627,7 +1947,7 @@ function finishOriginPortDraw() {
   state.portDraw.selectedCardCode = selectedCode;
   const card = state.portCards.find((item) => item.code === selectedCode) || null;
   setPortDrawActive(card ? `Saida: ${card.code}` : 'Saida definida');
-  setPortDrawResult(`Porto de partida sorteado: ${card?.code || '--'}.`);
+  setPortDrawResult('');
   renderPortDraw();
 
   if (!card) {
@@ -1636,7 +1956,8 @@ function finishOriginPortDraw() {
   }
 
   configurePortDrawExtra({
-    copy: `Deseja comprar a posse do porto ${card.code} por ${card.price}?`,
+    copy: `Comprar ${card.code} por ${card.price}?`,
+    layout: 'inline',
     primaryLabel: 'Sim',
     secondaryLabel: 'Nao',
     onPrimary: () => {
@@ -1657,7 +1978,7 @@ function finishTollDraw() {
   state.portDraw.selectedCardCode = selectedCode;
   const card = state.tollCards.find((item) => item.code === selectedCode) || null;
   setPortDrawActive(card ? `Pedagio: ${card.code}` : 'Pedagio definido');
-  setPortDrawResult(`Pedagio sorteado: ${card?.code || '--'}.`);
+  setPortDrawResult('');
   renderPortDraw();
 
   if (!card) {
@@ -1679,7 +2000,7 @@ function finishDestinationDraw() {
   state.portDraw.selectedCardCode = selectedCode;
   const card = candidates.find((item) => item.code === selectedCode) || null;
   setPortDrawActive(card ? `Destino: ${card.code}` : 'Destino definido');
-  setPortDrawResult(`Porto de destino sorteado: ${card?.code || '--'}.`);
+  setPortDrawResult('');
   renderPortDraw();
 
   if (!card) {
@@ -1688,10 +2009,14 @@ function finishDestinationDraw() {
   }
 
   const preview = calculateHumanContractPreview(card);
-  const modeLabel = preview.ownsOrigin ? 'D x E x M' : 'D x E';
+  const cargoIcon = cargoIconMarkup(humanPlayer()?.active_permission_id || '', 'port-draw-contract-cargo-icon');
+  const detailParts = [`Distancia: ${preview.distance}`, `Estadia: ${preview.fee}`];
+  if (preview.ownsOrigin) detailParts.push(`Multiplicador: ${preview.multiplier}`);
+  const detailLine = `${cargoIcon}${detailParts.join(' | ')} &rarr; ${preview.formula}`;
   configurePortDrawExtra({
-    copy: `Calculo do contrato: ${preview.formula} (${modeLabel}). D = distancia, E = estadia, M = multiplicador.`,
+    copyHtml: `<div class="port-draw-contract-preview"><span class="port-draw-contract-legend">${detailLine}</span></div>`,
     primaryLabel: 'Confirmar contrato',
+    layout: 'inline',
     onPrimary: () => {
       applyHumanDestinationSelection(card);
       closePortDraw({ card, contract: preview });
@@ -1710,7 +2035,7 @@ function startCurrentPortDraw() {
   state.portDraw.frame = 0;
   state.portDraw.order = shuffleArray(cards.map((card) => card.code));
   setPortDrawActive('Embaralhando');
-  setPortDrawResult(state.portDraw.mode === 'toll' ? 'Embaralhando os pedagios...' : 'Embaralhando os portos de partida...');
+  setPortDrawResult('Embaralhando...');
   renderPortDraw();
 
   const durationMs = 1800;
@@ -1759,7 +2084,7 @@ function openHumanOriginPortDraw() {
   state.portDraw.order = state.portCards.map((card) => card.code);
   clearPortDrawExtra();
   setPortDrawActive('Aguardando sorteio');
-  setPortDrawResult('Clique em embaralhar para sortear o porto de partida.');
+  setPortDrawResult('Pressione Enter ou clique para embaralhar.');
   renderPortDraw();
   setPortDrawVisible(true);
   return new Promise((resolve) => {
@@ -1775,7 +2100,7 @@ function openHumanTollDraw() {
   state.portDraw.order = state.tollCards.map((card) => card.code);
   clearPortDrawExtra();
   setPortDrawActive('Aguardando sorteio');
-  setPortDrawResult('Clique em embaralhar para sortear o pedagio obrigatorio.');
+  setPortDrawResult('Pressione Enter ou clique para embaralhar.');
   renderPortDraw();
   setPortDrawVisible(true);
   return new Promise((resolve) => {
@@ -1791,7 +2116,7 @@ function openHumanDestinationPortDraw() {
   state.portDraw.order = destinationCandidates().map((card) => card.code);
   clearPortDrawExtra();
   setPortDrawActive('Aguardando sorteio');
-  setPortDrawResult('Clique em embaralhar para sortear o porto de destino.');
+  setPortDrawResult('Pressione Enter ou clique para embaralhar.');
   renderPortDraw();
   setPortDrawVisible(true);
   return new Promise((resolve) => {
@@ -1835,6 +2160,37 @@ function setMovementDiceActive(message) {
   if (node) node.textContent = message;
 }
 
+function triggerEnterOnOverlay() {
+  if (!hasCentralOverlayOpen()) return false;
+  if (!getPermissionDrawOverlay()?.classList.contains('is-hidden')) {
+    const button = getPermissionDrawButton();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  if (!getPortDrawOverlay()?.classList.contains('is-hidden')) {
+    const extra = getPortDrawExtra();
+    const primary = getPortDrawExtraPrimary();
+    if (extra && !extra.classList.contains('is-hidden') && primary && !primary.disabled) {
+      primary.click();
+      return true;
+    }
+    const button = getPortDrawButton();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  if (!getMovementDiceOverlay()?.classList.contains('is-hidden')) {
+    const button = getMovementDiceButton();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  if (!getChanceDrawOverlay()?.classList.contains('is-hidden')) {
+    const button = getChanceDrawButton();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
+    const button = getDecisionPrimary();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  return false;
+}
+
 function renderMovementDice() {
   const stage = getMovementDiceStage();
   const button = getMovementDiceButton();
@@ -1845,7 +2201,7 @@ function renderMovementDice() {
   const rollingClass = state.movementDice.rolling ? ' is-rolling' : '';
   const note = state.movementDice.rolling
     ? 'Rolando...'
-    : (isDouble ? 'Dupla. A jogada extra sera tratada depois.' : 'Sem dupla nesta rolagem.');
+    : (isDouble ? 'Dupla.' : 'Sem dupla.');
 
   stage.innerHTML = `
     <div class="movement-dice-pair">
@@ -1864,7 +2220,8 @@ function renderMovementDice() {
 
   if (button) {
     button.disabled = state.movementDice.rolling;
-    button.textContent = state.movementDice.rolling ? 'Rolando...' : 'Rolar 2 dados';
+    button.textContent = state.movementDice.rolling ? 'Rolando...' : 'Rolar Dados';
+    button.style.display = state.movementDice.rolled ? 'none' : 'inline-flex';
   }
 }
 
@@ -2187,6 +2544,7 @@ function startMovementDiceRoll() {
   if (state.movementDice.rolling) return;
 
   state.movementDice.rolling = true;
+  state.movementDice.rolled = false;
   state.movementDice.finalValues = [randomDie(), randomDie()];
   setMovementDiceActive('Rolando');
   setMovementDiceResult('Os dois dados estao rolando...');
@@ -2212,6 +2570,7 @@ function startMovementDiceRoll() {
     }
 
     state.movementDice.rolling = false;
+    state.movementDice.rolled = true;
     state.movementDice.values = [...state.movementDice.finalValues];
     const [left, right] = state.movementDice.values;
     const total = left + right;
@@ -2235,10 +2594,11 @@ function startMovementDiceRoll() {
 
 function openHumanMovementDice() {
   state.movementDice.rolling = false;
+  state.movementDice.rolled = false;
   state.movementDice.values = [randomDie(), randomDie()];
   state.movementDice.finalValues = [1, 1];
   setMovementDiceActive('Aguardando rolagem');
-  setMovementDiceResult('Clique em rolar para sortear os dois dados.');
+  setMovementDiceResult('Pressione Enter ou clique para rolar.');
   renderMovementDice();
   setMovementDiceVisible(true);
   return new Promise((resolve) => {
@@ -2256,6 +2616,14 @@ function getDecisionTitle() {
 
 function getDecisionCopy() {
   return byId('decision-copy');
+}
+
+function getDecisionCardStage() {
+  return byId('decision-card-stage');
+}
+
+function getPortDrawFooter() {
+  return getPortDrawOverlay()?.querySelector('.port-draw-footer') || null;
 }
 
 function getDecisionPrimary() {
@@ -2279,13 +2647,19 @@ function closeDecision(result = 'primary') {
   if (resolver) resolver(result);
 }
 
-function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false } = {}) {
+function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, cardCode = '' } = {}) {
   const titleNode = getDecisionTitle();
   const copyNode = getDecisionCopy();
+  const cardStage = getDecisionCardStage();
   const primary = getDecisionPrimary();
   const secondary = getDecisionSecondary();
   if (titleNode) titleNode.textContent = title || 'Confirmar acao';
   if (copyNode) copyNode.textContent = copy || '';
+  if (cardStage) {
+    const card = cardCode ? getPropertyCard(cardCode) : null;
+    cardStage.innerHTML = card ? propertyInspectorMarkup(card) : '';
+    cardStage.classList.toggle('is-hidden', !card);
+  }
   if (primary) {
     primary.textContent = primaryLabel;
     primary.onclick = () => closeDecision('primary');
@@ -2388,7 +2762,12 @@ function chanceCardTransform(index, cardId) {
 function renderChanceDraw() {
   const stage = getChanceDrawStage();
   const button = getChanceDrawButton();
+  const modal = getChanceDrawOverlay()?.querySelector('.chance-draw-modal') || null;
   if (!stage) return;
+
+  if (modal) {
+    modal.classList.toggle('is-reveal-only', Boolean(state.chanceDraw.revealOnly));
+  }
 
   const cards = chanceVisibleCards();
   stage.innerHTML = cards.map((card, index) => {
@@ -2406,8 +2785,8 @@ function renderChanceDraw() {
 
   if (button) {
     button.disabled = state.chanceDraw.drawing;
-    button.textContent = state.chanceDraw.drawing ? 'Embaralhando...' : 'Embaralhar e sortear';
-    button.style.display = state.chanceDraw.revealOnly ? 'none' : 'inline-flex';
+    button.textContent = state.chanceDraw.drawing ? 'Embaralhando...' : 'Sortear';
+    button.style.display = (state.chanceDraw.revealOnly || Boolean(state.chanceDraw.selectedCardId)) ? 'none' : 'inline-flex';
   }
 }
 
@@ -2427,7 +2806,7 @@ function startChanceDraw() {
   state.chanceDraw.selectedCardId = '';
   state.chanceDraw.frame = 0;
   setChanceDrawActive('Embaralhando');
-  setChanceDrawResult('Misturando o baralho de sorte e reves...');
+  setChanceDrawResult('Embaralhando...');
   renderChanceDraw();
 
   const durationMs = 1900;
@@ -2488,18 +2867,18 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
     setChanceDrawActive(card ? `${chanceCategoryLabel(card)}: ${card.title}` : 'Carta revelada');
     setChanceDrawResult(card ? `${playerActionName(player)} revelou ${card.title}.` : 'Carta revelada.');
     if (copy) {
-      copy.textContent = `${playerActionName(player)} parou em Sorte / Reves. A carta escolhida aleatoriamente aparece abaixo.`;
+      copy.textContent = '';
     }
     renderChanceDraw();
     setChanceDrawVisible(true);
     return new Promise((resolve) => {
       state.chanceDraw.resolver = resolve;
-      window.setTimeout(() => closeChanceDraw(card), 1300);
+      window.setTimeout(() => closeChanceDraw(card), 1800);
     });
   }
 
   setChanceDrawActive('Aguardando sorteio');
-  setChanceDrawResult('Clique em embaralhar para sortear uma carta.');
+  setChanceDrawResult('Pressione Enter ou clique para sortear.');
   if (copy) {
     copy.textContent = 'Voce parou em Sorte / Reves. Embaralhe o baralho e revele a carta.';
   }
@@ -2771,6 +3150,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(fee)}`,
       secondaryLabel: `Pagar ${formatCurrency(fee)}`,
       hideSecondary: !canBuy,
+      cardCode: card.code,
     });
 
     if (canBuy && choice === 'primary' && buyProperty(player, card.code)) {
@@ -2800,6 +3180,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         copy: `O porto ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
         primaryLabel: 'Continuar',
         hideSecondary: true,
+        cardCode: card.code,
       });
     }
     player.status_label = `porto proprio ${card.code}`;
@@ -2833,6 +3214,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     primaryLabel: `Pagar ${formatCurrency(ownerCharge)}`,
     secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
     hideSecondary: !canNegotiate,
+    cardCode: card.code,
   });
 
   if (canNegotiate && choice === 'secondary' && transferProperty(owner, player, card.code, negotiationPrice)) {
@@ -2908,6 +3290,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(fee)}`,
       secondaryLabel: `Pagar ${formatCurrency(fee)}`,
       hideSecondary: !canBuy,
+      cardCode: card.code,
     });
 
     if (canBuy && choice === 'primary' && buyProperty(player, card.code)) {
@@ -2937,6 +3320,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         copy: `O pedagio ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
         primaryLabel: 'Continuar',
         hideSecondary: true,
+        cardCode: card.code,
       });
     }
     player.status_label = `pedagio proprio ${card.code}`;
@@ -2970,6 +3354,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     primaryLabel: `Pagar ${formatCurrency(ownerCharge)}`,
     secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
     hideSecondary: !canNegotiate,
+    cardCode: card.code,
   });
 
   if (canNegotiate && choice === 'secondary' && transferProperty(owner, player, card.code, negotiationPrice)) {
@@ -3304,7 +3689,7 @@ function renderShipOverlay() {
       token.style.marginLeft = '0';
       token.style.marginTop = '0';
       token.style.transform = 'translate(-50%, -50%)';
-      token.innerHTML = sprite ? `<img class="game-ship-image" alt="" src="${sprite}" style="display:block;width:34px;height:18px;object-fit:contain;">` : '';
+      token.innerHTML = sprite ? `<img class="game-ship-image" alt="" src="${sprite}" style="display:block;width:41px;height:22px;object-fit:contain;">` : '';
       overlay.appendChild(token);
     });
   });
@@ -3388,6 +3773,7 @@ function moveDrag(event) {
 async function endDrag(event) {
   if (event.button !== 0 || !state.drag.pointerDown) return;
   state.drag.pointerDown = false;
+  if (state.drag.dragging) state.drag.blockClickUntil = Date.now() + 180;
   state.drag.dragging = false;
   updateCursor();
   await settleProjection();
@@ -3437,7 +3823,10 @@ function applyBootstrapPayload(payload) {
   state.distances = payload.distances || {};
   state.session = payload.session || null;
   state.activeContract = payload.active_contract || null;
-  state.view.openRivalDrawerId = null;
+  state.view.openSystemDrawerId = null;
+  state.view.humanDrawerOpen = true;
+  state.view.actionFeedExpanded = false;
+  state.view.selectedMiniCardsByPlayer = {};
   state.flow.openingRoundRunning = false;
   state.flow.followupSetupRunning = false;
   state.flow.turnCycleRunning = false;
@@ -3447,6 +3836,7 @@ function applyBootstrapPayload(payload) {
   renderHud();
   renderShipOverlay();
   renderActionFeed();
+  renderPropertyInspector();
 }
 
 function setSetupOverlayVisible(visible) {
@@ -3867,25 +4257,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   byId('chance-draw-button')?.addEventListener('click', startChanceDraw);
 
   document.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.repeat) return;
     const active = document.activeElement;
     const tag = active?.tagName || '';
     if (active?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    if (event.code === 'Enter' && !event.repeat) {
+      if (triggerEnterOnOverlay()) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.code !== 'Space' || event.repeat) return;
     if (hasCentralOverlayOpen()) return;
     event.preventDefault();
     togglePaused();
   });
 
   byId('preview-rival-list')?.addEventListener('click', (event) => {
+    const mini = event.target.closest('.preview-mini-selectable');
+    if (mini?.dataset?.playerId && mini?.dataset?.miniType && mini?.dataset?.miniKey) {
+      event.stopPropagation();
+      setSelectedMiniKey(mini.dataset.playerId, mini.dataset.miniType, mini.dataset.miniKey);
+      renderRivals();
+      return;
+    }
     const card = event.target.closest('.preview-rival-card');
     if (!card?.dataset?.playerId) return;
-    state.view.openRivalDrawerId = state.view.openRivalDrawerId === card.dataset.playerId
-      ? null
-      : card.dataset.playerId;
+    if (card.dataset.playerId === 'human') {
+      state.view.humanDrawerOpen = !state.view.humanDrawerOpen;
+    } else {
+      state.view.openSystemDrawerId = state.view.openSystemDrawerId === card.dataset.playerId
+        ? null
+        : card.dataset.playerId;
+    }
     renderRivals();
   });
 
+  byId('game-action-log')?.addEventListener('click', () => {
+    state.view.actionFeedExpanded = !state.view.actionFeedExpanded;
+    renderActionFeed();
+  });
+
+  getPropertyInspectorOverlay()?.addEventListener('click', () => {
+    closePropertyInspector();
+  });
+
   layer?.addEventListener('mousedown', beginDrag);
+  layer?.addEventListener('click', handleMapClick);
   window.addEventListener('mousemove', moveDrag);
   window.addEventListener('mouseup', (event) => {
     endDrag(event).catch(() => {});
@@ -3897,6 +4316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (plot && window.Plotly?.Plots?.resize) {
       window.Plotly.Plots.resize(plot);
     }
+    scheduleMiniHandLayout();
   });
 
   try {

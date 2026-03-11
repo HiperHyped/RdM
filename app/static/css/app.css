@@ -497,7 +497,7 @@ kbd {
 
 
 .game-preview-shell {
-  --preview-map-left: 132px;
+  --preview-map-left: 0px;
   position: relative;
   min-height: 100vh;
   overflow: hidden;
@@ -508,9 +508,9 @@ kbd {
 .game-preview-nodes,
 .game-preview-hitlayer {
   position: fixed;
-  top: 0;
+  top: -10px;
   right: 0;
-  bottom: 0;
+  bottom: 10px;
   left: var(--preview-map-left);
 }
 
@@ -553,7 +553,7 @@ kbd {
   z-index: 5;
   top: 16px;
   left: 16px;
-  width: min(258px, calc(100vw - 32px));
+  width: min(214px, calc(100vw - 32px));
   display: grid;
   gap: 10px;
 }
@@ -573,6 +573,10 @@ kbd {
   position: relative;
   width: 100%;
   padding: 11px 12px;
+}
+
+.preview-company.is-hidden {
+  display: none;
 }
 
 .preview-rivals {
@@ -695,33 +699,96 @@ kbd {
 
 .preview-contract-route {
   margin-top: 8px;
+  min-height: 52px;
   display: flex;
   align-items: center;
+}
+
+.preview-route-inline {
+  display: inline-flex;
+  align-items: center;
   gap: 5px;
+  min-width: 0;
 }
 
-.preview-route-chip {
-  min-width: 50px;
-  min-height: 30px;
-  padding: 0 8px;
-  border-radius: 11px;
-  font-size: 0.7rem;
-  font-weight: 700;
+.preview-route-inline.is-large {
+  gap: 7px;
 }
 
-.preview-route-chip.port {
-  color: #06111a;
-  background: linear-gradient(135deg, #ffcf4c, #d9971e);
+.preview-route-stop {
+  --route-fill: #ffcf4c;
+  --route-text: #06111a;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 2px solid #08111a;
+  background: var(--route-fill);
+  color: var(--route-text);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
 }
 
-.preview-route-chip.toll {
-  color: #edf6ff;
-  background: linear-gradient(135deg, #2ca58d, #1b7f6c);
+.preview-route-stop.port {
+  border-radius: 999px;
+}
+
+.preview-route-stop.toll {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+
+.preview-route-stop.is-large {
+  width: 46px;
+  height: 46px;
+  border-width: 3px;
+}
+
+.preview-route-stop.toll.is-large {
+  width: 40px;
+  height: 40px;
+}
+
+.preview-route-stop.is-empty {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  border-color: rgba(215, 230, 245, 0.18);
+  box-shadow: none;
+}
+
+.preview-route-stop-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.preview-route-stop.is-large .preview-route-stop-label {
+  font-size: 0.72rem;
+}
+
+.preview-route-stop.toll .preview-route-stop-label {
+  transform: rotate(-45deg);
 }
 
 .preview-route-arrow {
   color: rgba(237, 246, 255, 0.7);
   font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.preview-route-empty {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
 }
 
 .preview-metric-row {
@@ -774,7 +841,7 @@ kbd {
 }
 
 .preview-rival-card {
-  flex: 1 1 0;
+  flex: var(--card-grow, 1) 1 0;
   min-width: 0;
   display: grid;
   gap: 4px;
@@ -783,6 +850,16 @@ kbd {
   border-radius: 12px;
   border: 1px solid rgba(215, 230, 245, 0.08);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.preview-rival-card.is-human {
+  min-height: 78px;
+  padding: 9px 10px;
+  border-color: rgba(143, 215, 255, 0.2);
+  background:
+    radial-gradient(circle at top left, rgba(36, 124, 191, 0.16), transparent 48%),
+    linear-gradient(180deg, rgba(8, 27, 44, 0.9), rgba(7, 20, 33, 0.84));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
 }
 
 .preview-rival-top {
@@ -809,17 +886,62 @@ kbd {
 }
 
 .preview-rival-route {
+  min-height: 30px;
   display: flex;
   align-items: center;
-  gap: 4px;
   color: #dfefff;
   font-size: 0.66rem;
   font-weight: 600;
 }
 
+.preview-rival-route .preview-route-inline {
+  gap: 4px;
+}
+
+.preview-rival-route .preview-route-stop {
+  width: 26px;
+  height: 26px;
+}
+
+.preview-rival-route .preview-route-stop.toll {
+  width: 24px;
+  height: 24px;
+}
+
+.preview-rival-route .preview-route-stop-label {
+  font-size: 0.5rem;
+}
+
+.preview-rival-card.is-human .preview-rival-top strong,
+.preview-rival-card.is-human .preview-rival-cash {
+  font-size: 0.82rem;
+}
+
+.preview-rival-card.is-human .preview-rival-meta {
+  font-size: 0.66rem;
+}
+
+.preview-rival-card.is-human .preview-rival-route {
+  min-height: 34px;
+}
+
+.preview-rival-card.is-human .preview-rival-route .preview-route-stop {
+  width: 30px;
+  height: 30px;
+}
+
+.preview-rival-card.is-human .preview-rival-route .preview-route-stop.toll {
+  width: 28px;
+  height: 28px;
+}
+
+.preview-rival-card.is-human .preview-rival-route .preview-route-stop-label {
+  font-size: 0.56rem;
+}
+
 @media (max-width: 1500px) {
   .game-preview-shell {
-    --preview-map-left: 108px;
+    --preview-map-left: 0px;
   }
 
   .preview-rival-grid {
@@ -847,7 +969,7 @@ kbd {
 
 @media (max-width: 1120px) {
   .game-preview-shell {
-    --preview-map-left: 24px;
+    --preview-map-left: 0px;
   }
 
   .preview-left-stack {
@@ -2319,9 +2441,9 @@ kbd {
 
 .game-preview-ships {
   position: fixed;
-  top: 0;
+  top: -10px;
   right: 0;
-  bottom: 0;
+  bottom: 10px;
   left: var(--preview-map-left);
   z-index: 4;
   pointer-events: none;
@@ -2856,9 +2978,16 @@ kbd {
 }
 
 .preview-rival-drawer-route {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
   color: #edf6ff;
   font-size: 0.66rem;
   font-weight: 700;
+}
+
+.preview-rival-drawer-route .preview-route-inline {
+  gap: 5px;
 }
 
 .preview-rival-drawer-metrics {
@@ -2904,4 +3033,1074 @@ kbd {
 .preview-rival-coupon {
   min-height: 22px;
   font-size: 0.56rem;
+}
+
+
+.permission-draw-overlay,
+.port-draw-overlay,
+.movement-dice-overlay,
+.chance-draw-overlay,
+.decision-overlay {
+  background: rgba(4, 12, 20, 0.46);
+  backdrop-filter: none;
+}
+
+.permission-draw-modal {
+  width: min(720px, calc(100vw - 36px));
+  padding: 15px 15px 14px;
+}
+
+.permission-draw-stage {
+  height: 250px;
+}
+
+.port-draw-modal {
+  width: min(880px, calc(100vw - 36px));
+  padding: 15px 15px 14px;
+}
+
+.port-draw-stage {
+  height: 360px;
+}
+
+.chance-draw-modal {
+  width: min(900px, calc(100vw - 36px));
+  padding: 15px 15px 14px;
+}
+
+.chance-draw-stage {
+  height: 250px;
+}
+
+.movement-dice-modal {
+  width: min(520px, calc(100vw - 36px));
+  padding: 15px 15px 14px;
+}
+
+.movement-dice-stage {
+  min-height: 170px;
+}
+
+.decision-modal {
+  width: min(400px, calc(100vw - 36px));
+  padding: 15px 15px 14px;
+}
+
+
+.preview-contract-head-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.preview-ghost-button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 230, 245, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #d6e5f5;
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.preview-rival-grid {
+  align-items: stretch;
+}
+
+.preview-rival-card {
+  align-self: stretch;
+}
+
+.preview-rival-card.is-human {
+  align-self: stretch;
+}
+
+.preview-rival-drawer {
+  max-height: min(58vh, 460px);
+  overflow: hidden;
+}
+
+.preview-rival-mini-strip {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  overflow: hidden;
+  min-height: 28px;
+}
+
+.preview-rival-mini-strip.permissions-hand {
+  min-height: 82px;
+}
+
+.preview-rival-mini-strip.properties-hand {
+  min-height: 128px;
+}
+
+.preview-rival-mini-strip.coupons-hand {
+  min-height: 26px;
+}
+
+.preview-rival-mini-strip.permissions-hand > *,
+.preview-rival-mini-strip.properties-hand > *,
+.preview-rival-mini-strip.coupons-hand > * {
+  flex: 0 0 auto;
+}
+
+.preview-rival-mini-strip.permissions-hand > * + * {
+  margin-left: -46px;
+}
+
+.preview-rival-mini-strip.properties-hand > * + * {
+  margin-left: -64px;
+}
+
+.preview-rival-mini-strip.coupons-hand > * + * {
+  margin-left: -14px;
+}
+
+.preview-rival-drawer .preview-permission-mini {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.preview-rival-drawer .preview-property-mini {
+  transform: scale(0.78);
+  transform-origin: top left;
+  margin-right: -18px;
+}
+
+.preview-rival-drawer .preview-inline-chip {
+  font-size: 0.58rem;
+}
+
+.preview-rival-drawer .preview-inline-chip.preview-rival-coupon {
+  min-height: 22px;
+  padding: 0 8px;
+}
+
+
+.preview-contract {
+  padding: 9px 10px;
+}
+
+.preview-contract-topline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-contract-topline h1 {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1;
+}
+
+.preview-contract-head-actions {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.preview-ghost-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(215, 230, 245, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #d6e5f5;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.preview-rival-card {
+  flex: 1 1 0;
+}
+
+.preview-rival-card.is-human {
+  min-height: 64px;
+  padding: 7px 8px;
+  border-color: rgba(215, 230, 245, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 0 16px color-mix(in srgb, var(--rival-accent) 46%, transparent),
+    0 0 28px color-mix(in srgb, var(--rival-accent) 28%, transparent);
+}
+
+.preview-rival-card.is-human .preview-rival-top strong,
+.preview-rival-card.is-human .preview-rival-cash,
+.preview-rival-card.is-human .preview-rival-meta,
+.preview-rival-card.is-human .preview-rival-route .preview-route-stop-label {
+  font-size: inherit;
+}
+
+.preview-rival-drawer {
+  overflow: visible;
+}
+
+.preview-rival-mini-strip {
+  overflow: visible;
+}
+
+.preview-mini-selectable {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.preview-mini-selectable.is-selected {
+  z-index: 12;
+}
+
+.preview-rival-mini-strip.permissions-hand > * + * {
+  margin-left: -44px;
+}
+
+.preview-rival-mini-strip.properties-hand > * + * {
+  margin-left: -58px;
+}
+
+.preview-rival-mini-strip.coupons-hand > * + * {
+  margin-left: -14px;
+}
+
+.preview-rival-mini-strip.permissions-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.properties-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.coupons-hand > .preview-mini-selectable.is-selected {
+  margin-left: 10px !important;
+  transform: translateY(-2px);
+}
+
+.preview-property-mini-head {
+  align-items: start;
+}
+
+.preview-property-mini-heading {
+  justify-items: start;
+  align-content: start;
+}
+
+.preview-property-mini-code {
+  font-size: 0.62rem;
+  justify-self: start;
+}
+
+.preview-property-mini-name {
+  justify-self: start;
+}
+
+
+.game-preview-map,
+.game-preview-routes,
+.game-preview-nodes,
+.game-preview-hitlayer,
+.game-preview-ships {
+  top: -30px;
+  bottom: 30px;
+}
+
+.game-action-log {
+  width: min(220px, calc(100vw - 32px));
+  gap: 4px;
+  padding: 8px 8px 7px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.game-action-log .eyebrow {
+  margin-bottom: 0;
+}
+
+.game-action-log.is-collapsed .game-action-entry:not(:first-child) {
+  display: none;
+}
+
+.game-action-log.is-collapsed .game-action-feed {
+  gap: 0;
+}
+
+.preview-property-mini {
+  width: 106px;
+  min-height: 139px;
+}
+
+.preview-property-mini {
+  grid-template-rows: 22px 1fr 18px;
+}
+
+.preview-property-mini-head {
+  grid-template-columns: 12px 1fr 12px;
+  align-items: start;
+  justify-items: start;
+}
+
+.preview-property-mini-head-toll {
+  grid-template-columns: 16px 1fr 16px;
+}
+
+.preview-property-mini-heading {
+  justify-items: start;
+  align-content: start;
+}
+
+.preview-property-mini-code {
+  font-size: 0.64rem;
+  justify-self: start;
+}
+
+.preview-property-mini-name {
+  justify-self: start;
+}
+
+.preview-property-mini-body {
+  padding: 2px 4px 1px;
+}
+
+.preview-property-mini-table-head,
+.preview-property-mini-rowdata,
+.preview-property-mini-foot {
+  grid-template-columns: 1fr 20px 16px;
+}
+
+.preview-property-mini-rowdata {
+  min-height: 13px;
+}
+
+.preview-property-mini-image {
+  width: 11px;
+  height: 11px;
+}
+
+.preview-rival-card {
+  min-height: 72px;
+}
+
+.preview-rival-card.is-human {
+  min-height: 72px;
+}
+
+.preview-rival-contract-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.preview-rival-contract-line.is-empty {
+  min-height: 24px;
+}
+
+.preview-rival-contract-muted {
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.preview-rival-contract-cargo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: #edf6ff;
+  font-size: 0.64rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-rival-contract-cargo-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.preview-rival-contract-turns {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #06111a;
+  font-size: 0.56rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.preview-rival-contract-turns.is-good {
+  background: #35d36b;
+}
+
+.preview-rival-contract-turns.is-warning {
+  background: #f0c04b;
+}
+
+.preview-rival-contract-turns.is-danger {
+  background: #ef5a5a;
+  color: #fff6f6;
+}
+
+.preview-rival-contract-freight {
+  color: #edf6ff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  white-space: nowrap;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.preview-rival-route {
+  min-height: 28px;
+}
+
+.preview-rival-drawer {
+  gap: 6px;
+}
+
+.preview-rival-mini-strip.permissions-hand {
+  min-height: 84px;
+}
+
+.preview-rival-mini-strip.properties-hand {
+  min-height: 142px;
+}
+
+.preview-rival-mini-strip.coupons-hand {
+  min-height: 30px;
+}
+
+.preview-rival-mini-strip.permissions-hand > * + * {
+  margin-left: -44px;
+}
+
+.preview-rival-mini-strip.properties-hand > * + * {
+  margin-left: -66px;
+}
+
+.preview-rival-mini-strip.coupons-hand > * + * {
+  margin-left: -14px;
+}
+
+.preview-rival-drawer .preview-property-mini {
+  transform: scale(0.82);
+  transform-origin: top left;
+  margin-right: -20px;
+}
+
+.preview-rival-drawer .preview-permission-mini {
+  transform: scale(1);
+}
+
+.preview-mini-selectable.is-selected {
+  z-index: 18;
+  transform: none;
+}
+
+.preview-rival-mini-strip.permissions-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.properties-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.coupons-hand > .preview-mini-selectable.is-selected {
+  margin-left: inherit !important;
+  transform: none;
+}
+.preview-rival-mini-strip.permissions-hand > * + .preview-mini-selectable.is-selected {
+  margin-left: -44px !important;
+}
+
+.preview-rival-mini-strip.properties-hand > * + .preview-mini-selectable.is-selected {
+  margin-left: -66px !important;
+}
+
+.preview-rival-mini-strip.coupons-hand > * + .preview-mini-selectable.is-selected {
+  margin-left: -14px !important;
+}
+
+
+.game-preview-map,
+.game-preview-routes,
+.game-preview-nodes,
+.game-preview-hitlayer,
+.game-preview-ships {
+  top: -40px;
+  bottom: 40px;
+}
+
+.preview-rival-card.is-human {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.preview-rival-card.is-active-player {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.12),
+    0 0 18px color-mix(in srgb, var(--rival-accent) 52%, transparent),
+    0 0 30px color-mix(in srgb, var(--rival-accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--rival-accent) 42%, rgba(215, 230, 245, 0.1));
+}
+
+.preview-rival-card.is-human.is-active-player {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.14),
+    0 0 22px color-mix(in srgb, var(--rival-accent) 56%, transparent),
+    0 0 36px color-mix(in srgb, var(--rival-accent) 34%, transparent);
+}
+
+.preview-property-mini {
+  width: 108px;
+  min-height: 143px;
+  grid-template-rows: 22px 1fr 18px;
+}
+
+.preview-property-mini-head {
+  grid-template-columns: 6px 1fr 6px;
+  padding: 1px 2px 1px 1px;
+  gap: 1px;
+}
+
+.preview-property-mini-head-toll {
+  grid-template-columns: 14px 1fr 14px;
+}
+
+.preview-property-mini-number,
+.preview-property-mini-number-spacer {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.preview-property-mini-code {
+  font-size: 0.71rem;
+  letter-spacing: 0.02em;
+}
+
+.preview-property-mini-name {
+  font-size: 0.37rem;
+}
+
+.preview-property-mini-table-head {
+  font-size: 0.46rem;
+}
+
+.preview-property-mini-fee,
+.preview-property-mini-mult {
+  font-size: 0.53rem;
+}
+
+.preview-property-mini-foot {
+  font-size: 0.49rem;
+}
+
+.preview-rival-contract-turns {
+  min-height: 18px;
+  padding: 0 6px;
+  line-height: 1;
+}
+
+
+.game-preview-map,
+.game-preview-routes,
+.game-preview-nodes,
+.game-preview-hitlayer,
+.game-preview-ships {
+  top: -50px;
+  bottom: 50px;
+}
+
+.preview-rival-contract-line {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+
+.preview-rival-mini-strip.permissions-hand > * + *,
+.preview-rival-mini-strip.properties-hand > * + *,
+.preview-rival-mini-strip.coupons-hand > * + * {
+  margin-left: calc(-1 * var(--stack-overlap, 44px));
+}
+
+.preview-rival-mini-strip.permissions-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.properties-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.coupons-hand > .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.permissions-hand > * + .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.properties-hand > * + .preview-mini-selectable.is-selected,
+.preview-rival-mini-strip.coupons-hand > * + .preview-mini-selectable.is-selected {
+  margin-left: calc(-1 * var(--stack-overlap, 44px)) !important;
+}
+
+
+.property-inspector-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 12, 20, 0.08);
+}
+
+.property-inspector-overlay.is-hidden {
+  display: none;
+}
+
+.property-inspector-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.property-inspector-card {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 0;
+  transform: none !important;
+  opacity: 1 !important;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+}
+
+
+.preview-rival-drawer,
+.preview-rival-drawer-section,
+.preview-rival-mini-strip {
+  overflow: hidden !important;
+}
+
+.preview-rival-mini-strip {
+  width: 100%;
+}
+
+.preview-rival-mini-strip > * {
+  min-width: 0;
+}
+
+.preview-rival-drawer .preview-permission-mini {
+  transform: scale(var(--stack-scale, 1));
+  transform-origin: top left;
+}
+
+.preview-rival-drawer .preview-property-mini {
+  transform: scale(var(--stack-scale, 0.82));
+  transform-origin: top left;
+  margin-right: calc(-1 * (1 - var(--stack-scale, 0.82)) * 108px);
+}
+
+.preview-rival-drawer .preview-inline-chip.preview-rival-coupon {
+  transform: scale(var(--stack-scale, 1));
+  transform-origin: top left;
+}
+
+.preview-rival-mini-strip.permissions-hand {
+  min-height: calc(84px * var(--stack-scale, 1));
+}
+
+.preview-rival-mini-strip.properties-hand {
+  min-height: calc(142px * var(--stack-scale, 0.82));
+}
+
+.preview-rival-mini-strip.coupons-hand {
+  min-height: calc(30px * var(--stack-scale, 1));
+}
+
+
+.permission-draw-modal {
+  width: min(640px, calc(100vw - 36px)) !important;
+}
+
+.permission-draw-stage {
+  height: 228px !important;
+}
+
+.port-draw-modal {
+  width: min(1020px, calc(100vw - 28px)) !important;
+}
+
+.port-draw-stage {
+  height: 388px !important;
+}
+
+.movement-dice-modal {
+  width: min(500px, calc(100vw - 36px)) !important;
+}
+
+.movement-dice-stage {
+  min-height: 190px !important;
+}
+
+.port-draw-extra.is-inline {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.port-draw-extra.is-inline .port-draw-extra-actions {
+  justify-content: flex-end;
+}
+
+.port-draw-contract-preview {
+  display: grid;
+  gap: 4px;
+}
+
+.port-draw-contract-formula {
+  color: #edf6ff;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.port-draw-contract-legend {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.movement-die-face {
+  width: 74px;
+  height: 74px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+}
+
+.movement-die-pip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #071119;
+  opacity: 0;
+}
+
+.movement-die-pip.is-on {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .port-draw-extra.is-inline {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+
+.permission-draw-modal {
+  width: min(600px, calc(100vw - 36px)) !important;
+}
+
+.permission-draw-stage {
+  height: 220px !important;
+}
+
+.port-draw-modal {
+  width: min(1320px, calc(100vw - 4px)) !important;
+}
+
+.port-draw-stage {
+  height: 434px !important;
+}
+
+.port-draw-footer.is-hidden {
+  display: none !important;
+}
+
+.port-draw-result:empty {
+  display: none;
+}
+
+.chance-draw-modal {
+  width: min(920px, calc(100vw - 28px)) !important;
+}
+
+.chance-draw-stage {
+  height: 318px !important;
+}
+
+.chance-draw-copy {
+  max-width: 520px;
+}
+
+.permission-draw-button,
+.port-draw-button,
+.chance-draw-button,
+.movement-dice-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.chance-draw-button {
+  min-width: 132px;
+}
+
+.port-draw-extra.is-inline {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.port-draw-extra.is-inline .port-draw-extra-copy {
+  margin: 0;
+}
+
+.port-draw-contract-preview {
+  display: grid;
+  gap: 6px;
+}
+
+.port-draw-contract-formula {
+  color: #edf6ff;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.port-draw-contract-legend {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.decision-modal {
+  width: min(560px, calc(100vw - 36px)) !important;
+}
+
+.decision-card-stage {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.decision-card-stage.is-hidden {
+  display: none;
+}
+
+.decision-card-stage .property-inspector-card {
+  transform: scale(0.82) !important;
+  transform-origin: top center;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3);
+}
+
+.movement-dice-modal {
+  width: min(520px, calc(100vw - 36px)) !important;
+}
+
+.movement-die-face,
+.movement-die-pip {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .port-draw-extra.is-inline {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+
+.port-draw-button {
+  min-width: 126px;
+}
+
+.port-draw-extra.is-inline {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.port-draw-extra.is-inline .port-draw-extra-copy,
+.port-draw-extra.is-inline .port-draw-contract-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.port-draw-extra.is-inline .port-draw-extra-copy {
+  color: #edf6ff;
+  font-weight: 500;
+}
+
+.port-draw-contract-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #edf6ff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.port-draw-contract-cargo-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+
+/* Final modal sizing overrides */
+.port-draw-modal.is-origin,
+.port-draw-modal.is-destination {
+  width: min(1220px, calc(100vw - 12px)) !important;
+}
+
+.port-draw-modal.is-origin .port-draw-stage,
+.port-draw-modal.is-destination .port-draw-stage {
+  height: 412px !important;
+}
+
+.port-draw-modal.is-toll {
+  width: min(980px, calc(100vw - 28px)) !important;
+}
+
+.port-draw-modal.is-toll .port-draw-stage {
+  height: 340px !important;
+}
+
+.chance-draw-stage {
+  height: 342px !important;
+}
+
+.port-draw-button,
+.permission-draw-button,
+.chance-draw-button {
+  min-width: 132px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  text-align: center !important;
+}
+
+.port-draw-extra.is-inline {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+.port-draw-extra.is-inline .port-draw-extra-copy,
+.port-draw-extra.is-inline .port-draw-contract-preview {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  min-height: 40px;
+}
+
+.port-draw-contract-preview {
+  width: 100%;
+}
+
+.port-draw-contract-legend {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  color: #edf6ff !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+}
+
+.port-draw-contract-cargo-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.decision-card-stage {
+  margin-top: 12px !important;
+  margin-bottom: 6px !important;
+}
+
+.decision-card-stage .property-inspector-card {
+  transform: scale(0.88) !important;
+}
+
+
+/* Rival cards: last dice roll */
+.preview-rival-bottomline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.preview-rival-last-roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
+}
+
+.preview-rival-die {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid rgba(215, 230, 245, 0.18);
+  background: linear-gradient(180deg, #f7fbff, #dce8f5);
+  color: #071119;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.preview-rival-route {
+  min-width: 0;
+}
+
+/* Hide buttons after resolved actions */
+.permission-draw-button[style*='display: none'],
+.movement-dice-button[style*='display: none'] {
+  display: none !important;
+}
+
+/* Chance modal compact mode for system players */
+.chance-draw-copy:empty {
+  display: none !important;
+}
+
+.chance-draw-modal.is-reveal-only {
+  width: min(720px, calc(100vw - 36px)) !important;
+  padding-top: 16px !important;
+}
+
+.chance-draw-modal.is-reveal-only .chance-draw-head {
+  align-items: center;
+}
+
+.chance-draw-modal.is-reveal-only .chance-draw-head h2 {
+  font-size: 1rem !important;
+}
+
+.chance-draw-modal.is-reveal-only .chance-draw-stage {
+  height: 276px !important;
+}
+
+.chance-draw-modal.is-reveal-only .chance-draw-footer {
+  margin-top: 10px !important;
+}
+
+.chance-draw-modal.is-reveal-only .chance-draw-result {
+  font-size: 0.78rem !important;
 }
