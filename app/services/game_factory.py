@@ -165,6 +165,14 @@ def _empty_player_record(
     }
 
 
+def _build_initial_chance_deck(chance_cards: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        'draw_pile': [card['id'] for card in chance_cards],
+        'discard_pile': [],
+        'held_card_ids': [],
+    }
+
+
 def build_ui_bootstrap(
     company_name: str | None = None,
     human_color_id: str | None = None,
@@ -210,6 +218,8 @@ def build_ui_bootstrap(
     snapshot = workspace.load_snapshot()
     projected_nodes = project_node_records(snapshot.nodes, snapshot.calibration)
     properties = [_serialize_property(card, data.continent_styles) for card in data.properties.values()]
+    chance_cards = build_chance_cards()
+    chance_deck = _build_initial_chance_deck(chance_cards)
 
     human = players[0]
     rivals = players[1:]
@@ -218,7 +228,8 @@ def build_ui_bootstrap(
         'title': 'Rei dos Mares',
         'player_colors': player_colors,
         'freight_permission_cards': build_freight_permission_cards(),
-        'chance_cards': build_chance_cards(),
+        'chance_cards': chance_cards,
+        'chance_deck': chance_deck,
         'port_cards': build_port_title_cards(),
         'toll_cards': build_toll_title_cards(),
         'properties': properties,

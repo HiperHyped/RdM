@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -23,6 +23,16 @@ class ContractStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+
+
+class CouponKind(str, Enum):
+    SHORTCUT_IGNORE_TOLL = "shortcut_ignore_toll"
+    FREE_TOLL = "free_toll"
+    FREE_FUEL = "free_fuel"
+    DOUBLE_FREIGHT = "double_freight"
+    FREE_PORT_STAY = "free_port_stay"
+    SKIP_OWNER_SHARE = "skip_owner_share"
+    REROUTE_SAME_VALUE = "reroute_same_value"
 
 
 @dataclass(frozen=True)
@@ -57,6 +67,23 @@ class ChanceCard:
     category: str = "sorte"
     accent: str = "#18C43A"
     text: str = "#FFFFFF"
+
+
+@dataclass
+class StoredCoupon:
+    id: str
+    kind: CouponKind
+    owner_id: str
+    source_card_id: str
+    label: str
+    status: str = "held"
+
+
+@dataclass
+class ChanceDeckState:
+    draw_pile: list[str] = field(default_factory=list)
+    discard_pile: list[str] = field(default_factory=list)
+    held_card_ids: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -180,5 +207,7 @@ class GameState:
     permissions: dict[str, ShipPermission] = field(default_factory=dict)
     ships: dict[str, Ship] = field(default_factory=dict)
     contracts: dict[str, Contract] = field(default_factory=dict)
+    coupons: dict[str, StoredCoupon] = field(default_factory=dict)
+    chance_deck: ChanceDeckState = field(default_factory=ChanceDeckState)
     turn_order: list[str] = field(default_factory=list)
     active_turn_index: int = 0

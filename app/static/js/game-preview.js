@@ -11,6 +11,8 @@ const PREP_STEP_DELAY_MS = 1050;
 const PREP_STEP_DELAY_LONG_MS = 1300;
 const CPU_STEP_DELAY_MS = 520;
 const CPU_MOVE_DELAY_MS = 240;
+const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
+const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
 
 const state = {
   nodes: [],
@@ -23,6 +25,7 @@ const state = {
   portCards: [],
   tollCards: [],
   chanceCards: [],
+  chanceDeck: { draw_pile: [], discard_pile: [], held_card_ids: [] },
   freightPermissionCards: [],
   propertyCardsByCode: {},
   playerColors: [],
@@ -90,6 +93,11 @@ const state = {
     revealOnly: false,
   },
   actionFeed: [],
+  settings: {
+    cpuSpeed: 0.5,
+    logLifetimeMs: 12000,
+    logMode: 'player',
+  },
   pause: {
     waiters: [],
   },
@@ -99,6 +107,7 @@ const state = {
     openSystemDrawerId: null,
     humanDrawerOpen: true,
     selectedMiniCardsByPlayer: {},
+    expandedActionFeedsByPlayer: {},
     paused: false,
     actionFeedExpanded: false,
     propertyInspectorCode: '',
@@ -138,6 +147,7 @@ function hasCentralOverlayOpen() {
     'chance-draw-overlay',
     'decision-overlay',
     'property-inspector-overlay',
+    'game-settings-overlay',
   ];
   return ids.some((id) => {
     const node = byId(id);
@@ -278,6 +288,109 @@ function formatCurrency(value) {
   return `$ ${Number(value || 0).toLocaleString('pt-BR')}`;
 }
 
+function formatSignedCurrency(value) {
+  const amount = Number(value || 0);
+  const sign = amount >= 0 ? '+' : '-';
+  return `${sign}${formatCurrency(Math.abs(amount))}`;
+}
+
+function cpuSpeedFactor() {
+  return Math.max(0.1, Number(state.settings?.cpuSpeed || 1));
+}
+
+function scaledCpuDelay(baseMs, minMs = 80) {
+  return Math.max(minMs, Math.round((Number(baseMs) || 0) / cpuSpeedFactor()));
+}
+
+function currentCpuMoveDelay() {
+  return scaledCpuDelay(CPU_MOVE_DELAY_MS, 60);
+}
+
+function currentCpuStepDelay() {
+  return scaledCpuDelay(CPU_STEP_DELAY_MS, 90);
+}
+
+function currentCpuRevealDelay(baseMs = 650) {
+  return scaledCpuDelay(baseMs, 120);
+}
+
+function currentLogLifetimeMs() {
+  return Math.max(4000, Number(state.settings?.logLifetimeMs || 12000));
+}
+
+function currentLogMode() {
+  return state.settings?.logMode === 'global' ? 'global' : 'player';
+}
+
+function settingsLogModeLabel(mode = currentLogMode()) {
+  return mode === 'global' ? 'Geral' : 'Por jogador';
+}
+
+function settingsCpuSpeedLabel(value = cpuSpeedFactor()) {
+  return `${Number(value || 1).toFixed(2).replace('.', ',')}x`;
+}
+
+function settingsLogLifetimeLabel(ms = currentLogLifetimeMs()) {
+  return `${Math.round((Number(ms) || 0) / 1000)} s`;
+}
+
+function pruneActionFeed() {
+  const now = Date.now();
+  state.actionFeed = (state.actionFeed || []).filter((entry) => (entry.expiresAt || 0) > now).slice(0, 18);
+  return state.actionFeed;
+}
+
+function applyActionFeedLifetime() {
+  const lifetimeMs = currentLogLifetimeMs();
+  const now = Date.now();
+  state.actionFeed = (state.actionFeed || []).map((entry) => ({
+    ...entry,
+    expiresAt: (entry.createdAt || now) + lifetimeMs,
+  })).filter((entry) => entry.expiresAt > now);
+}
+
+function setSettingsVisible(visible) {
+  const overlay = getSettingsOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function renderSettingsOverlay() {
+  const cpuInput = getSettingsCpuSpeedInput();
+  const cpuValue = getSettingsCpuSpeedValue();
+  const logInput = getSettingsLogLifetimeInput();
+  const logValue = getSettingsLogLifetimeValue();
+  const logModeValue = getSettingsLogModeValue();
+  const logModeGlobalInput = getSettingsLogModeGlobalInput();
+  const logModePlayerInput = getSettingsLogModePlayerInput();
+  const logMode = currentLogMode();
+  if (cpuInput) cpuInput.value = String(cpuSpeedFactor());
+  if (cpuValue) cpuValue.textContent = settingsCpuSpeedLabel();
+  if (logInput) logInput.value = String(Math.round(currentLogLifetimeMs() / 1000));
+  if (logValue) logValue.textContent = settingsLogLifetimeLabel();
+  if (logModeValue) logModeValue.textContent = settingsLogModeLabel(logMode);
+  if (logModeGlobalInput) logModeGlobalInput.checked = logMode === 'global';
+  if (logModePlayerInput) logModePlayerInput.checked = logMode !== 'global';
+}
+
+function openSettingsOverlay() {
+  renderSettingsOverlay();
+  setSettingsVisible(true);
+}
+
+function closeSettingsOverlay() {
+  setSettingsVisible(false);
+}
+
+function playerActionLogEntries(playerId) {
+  pruneActionFeed();
+  return (state.actionFeed || []).filter((entry) => entry.playerId === playerId).slice(0, 5);
+}
+
+function togglePlayerActionFeedExpanded(playerId) {
+  state.view.expandedActionFeedsByPlayer[playerId] = !state.view.expandedActionFeedsByPlayer[playerId];
+}
 
 function normalizeLon(value) {
   let lon = value;
@@ -326,6 +439,14 @@ function getNodeOverlay() { return byId('game-preview-nodes'); }
 function getShipOverlay() { return byId('game-preview-ships'); }
 function getHitLayer() { return byId('game-preview-hitlayer'); }
 function getSetupOverlay() { return byId('game-setup-overlay'); }
+function getSettingsOverlay() { return byId('game-settings-overlay'); }
+function getSettingsLogModeValue() { return byId('settings-log-mode-value'); }
+function getSettingsLogModeGlobalInput() { return byId('settings-log-mode-global'); }
+function getSettingsLogModePlayerInput() { return byId('settings-log-mode-player'); }
+function getSettingsCpuSpeedInput() { return byId('settings-cpu-speed'); }
+function getSettingsCpuSpeedValue() { return byId('settings-cpu-speed-value'); }
+function getSettingsLogLifetimeInput() { return byId('settings-log-lifetime'); }
+function getSettingsLogLifetimeValue() { return byId('settings-log-lifetime-value'); }
 
 function humanPlayer() {
   return state.players.find((player) => player.id === 'human') || null;
@@ -407,33 +528,67 @@ function playerActionName(player) {
   return player.is_human ? (player.name || 'Voce') : (player.name || 'Jogador');
 }
 
+function globalActionFeedMarkup(entries) {
+  const visibleEntries = (entries || []).slice(0, 8);
+  if (!visibleEntries.length) {
+    return `
+      <article class="game-action-entry is-empty">
+        <span class="game-action-entry-accent" style="background:rgba(143, 215, 255, 0.45);"></span>
+        <div class="game-action-entry-body">
+          <strong class="game-action-entry-title">Nenhuma acao recente</strong>
+          <span class="game-action-entry-detail">Os eventos do turno vao aparecer aqui.</span>
+        </div>
+      </article>
+    `;
+  }
+  return visibleEntries.map((entry, index) => {
+    const detail = entry.detail ? `${entry.turnLabel} - ${entry.detail}` : entry.turnLabel;
+    return `
+      <article class="game-action-entry${index === 0 ? ' is-newest' : ''}">
+        <span class="game-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
+        <div class="game-action-entry-body">
+          <strong class="game-action-entry-title">${entry.playerName} - ${entry.action}</strong>
+          <span class="game-action-entry-detail">${detail}</span>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
 function renderActionFeed() {
+  const entries = pruneActionFeed();
   const panel = byId('game-action-log');
   const target = byId('game-action-feed');
-  if (!target || !panel) return;
-  const now = Date.now();
-  state.actionFeed = (state.actionFeed || []).filter((entry) => (entry.expiresAt || 0) > now).slice(0, 8);
-  panel.classList.toggle('is-hidden', state.actionFeed.length === 0);
-  panel.classList.toggle('is-collapsed', !state.view.actionFeedExpanded);
-  if (!state.actionFeed.length) {
-    target.innerHTML = '';
-    return;
+  const globalMode = currentLogMode() === 'global';
+  if (panel) {
+    panel.classList.toggle('is-hidden', !globalMode);
+    panel.classList.toggle('is-collapsed', globalMode && !state.view.actionFeedExpanded);
   }
-  target.innerHTML = state.actionFeed.map((entry, index) => `
-    <article class="game-action-entry${index === 0 ? ' is-newest' : ''}">
-      <span class="game-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
-      <div class="game-action-entry-body">
-        <strong class="game-action-entry-title">${entry.playerName}: ${entry.action}</strong>
-        <span class="game-action-entry-detail">${entry.detail}</span>
-      </div>
-    </article>
-  `).join('');
+  if (target) target.innerHTML = globalMode ? globalActionFeedMarkup(entries) : '';
+  renderRivals();
+}
+
+function scheduleActionLogExpiry(entryId) {
+  const entry = (state.actionFeed || []).find((item) => item.id === entryId);
+  if (!entry) return;
+  const waitMs = Math.max(140, Math.round((entry.expiresAt || 0) - Date.now()) + 40);
+  window.setTimeout(() => {
+    const currentEntry = (state.actionFeed || []).find((item) => item.id === entryId);
+    if (!currentEntry) return;
+    if ((currentEntry.expiresAt || 0) > Date.now()) {
+      scheduleActionLogExpiry(entryId);
+      return;
+    }
+    state.actionFeed = (state.actionFeed || []).filter((item) => item.id !== entryId);
+    renderActionFeed();
+  }, waitMs);
 }
 
 function pushActionLog(player, action, detail) {
   const color = player?.color_hex || '#8fd7ff';
+  const createdAt = Date.now();
   const entry = {
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id: `${createdAt}-${Math.random().toString(16).slice(2)}`,
     playerId: player?.id || '',
     playerName: playerActionName(player),
     action,
@@ -441,14 +596,12 @@ function pushActionLog(player, action, detail) {
     color,
     glow: brightenHex(color, 0.42),
     turnLabel: state.session?.turn_label || 'Turno --',
-    expiresAt: Date.now() + 12000,
+    createdAt,
+    expiresAt: createdAt + currentLogLifetimeMs(),
   };
-  state.actionFeed = [entry, ...(state.actionFeed || [])].slice(0, 8);
+  state.actionFeed = [entry, ...(state.actionFeed || [])].slice(0, 18);
   renderActionFeed();
-  window.setTimeout(() => {
-    state.actionFeed = (state.actionFeed || []).filter((item) => item.id !== entry.id);
-    renderActionFeed();
-  }, 12100);
+  scheduleActionLogExpiry(entry.id);
 }
 
 function chanceCategoryLabel(card) {
@@ -470,9 +623,156 @@ function couponLabelFromCode(code) {
   return labels[code] || code || 'Cupom';
 }
 
+function couponKind(coupon) {
+  return typeof coupon === 'string' ? coupon : String(coupon?.kind || '');
+}
+
+function couponDisplayLabel(coupon) {
+  if (typeof coupon === 'string') return couponLabelFromCode(coupon);
+  return coupon?.label || couponSourceCard(coupon)?.title || couponLabelFromCode(coupon?.kind);
+}
+
+function playerCoupons(player) {
+  return Array.isArray(player?.coupons) ? player.coupons : [];
+}
+
+function firstCouponOfKind(player, kind) {
+  return playerCoupons(player).find((coupon) => couponKind(coupon) === kind) || null;
+}
+
+function removeCouponFromPlayer(player, coupon) {
+  if (!player || !coupon) return;
+  const key = couponCardKey(coupon);
+  player.coupons = playerCoupons(player).filter((entry) => String(couponCardKey(entry)) !== String(key));
+}
+
+function consumeCouponForPlayer(player, coupon, { detail = '', statusLabel = null, action = 'Cupom usado' } = {}) {
+  if (!player || !coupon) return null;
+  const label = couponDisplayLabel(coupon);
+  removeCouponFromPlayer(player, coupon);
+  if (typeof coupon !== 'string' && coupon?.source_card_id) {
+    releaseHeldChanceCardToDiscard(coupon.source_card_id);
+  }
+  player.status_label = statusLabel || `usou ${label}`;
+  pushActionLog(player, action, detail ? `${label}: ${detail}` : label);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return { coupon, label };
+}
+
+async function maybeSpendCoupon(player, kind, {
+  title = '',
+  copy = '',
+  detail = '',
+  statusLabel = null,
+  cardCode = '',
+  action = 'Cupom usado',
+  primaryLabel = '',
+  secondaryLabel = 'Nao usar',
+  hideSecondary = false,
+  autoUse = true,
+} = {}) {
+  const coupon = firstCouponOfKind(player, kind);
+  if (!coupon) return null;
+
+  if (player?.is_human) {
+    const choice = await openDecisionModal({
+      title: title || couponDisplayLabel(coupon),
+      copy: copy || `Deseja usar o cupom ${couponDisplayLabel(coupon)} agora?`,
+      primaryLabel: primaryLabel || `Usar ${couponDisplayLabel(coupon)}`,
+      secondaryLabel,
+      hideSecondary,
+      cardCode,
+    });
+    if (choice !== 'primary') return null;
+  } else if (!autoUse) {
+    return null;
+  }
+
+  const detailText = typeof detail === 'function' ? detail(coupon) : detail;
+  return consumeCouponForPlayer(player, coupon, {
+    detail: detailText,
+    statusLabel,
+    action,
+  });
+}
+
+function contractNeedsMandatoryToll(contract) {
+  return Boolean(contract && !contract.toll_requirement_waived && contract.mandatory_toll && contract.mandatory_toll !== '--');
+}
+
+function contractArrivalText(contract) {
+  return contract?.toll_requirement_waived
+    ? 'com atalho ativado'
+    : `depois de passar por ${contract?.mandatory_toll || '--'}`;
+}
+
+function destinationBeforeTollSuffix(contract, reachedDestination, passedToll) {
+  if (!reachedDestination || passedToll || !contractNeedsMandatoryToll(contract)) return '';
+  return ` A entrega ainda nao vale porque falta passar em ${contract?.mandatory_toll || '--'}.`;
+}
+
+async function maybeUseFreePortStayCoupon(player, card, charge, owner = null) {
+  if (!player || !(charge > 0)) return null;
+  return maybeSpendCoupon(player, 'free_port_stay', {
+    title: 'Porto Livre',
+    copy: owner
+      ? `Usar Porto Livre para zerar a estadia de ${formatCurrency(charge)} em ${card.code}, cobrada por ${owner.name}?`
+      : `Usar Porto Livre para zerar a estadia de ${formatCurrency(charge)} em ${card.code}?`,
+    primaryLabel: 'Usar Porto Livre',
+    secondaryLabel: 'Pagar normalmente',
+    cardCode: card.code,
+    detail: owner
+      ? `Zerou a estadia de ${card.code} que seria paga a ${owner.name}.`
+      : `Zerou a estadia de ${card.code} que seria paga ao banco.`,
+    statusLabel: `porto livre ${card.code}`,
+  });
+}
+
+async function maybeUseFreeTollCoupon(player, card, charge, owner = null) {
+  if (!player || !(charge > 0)) return null;
+  const spent = await maybeSpendCoupon(player, 'free_toll', {
+    title: 'Pedagio Livre',
+    copy: owner
+      ? `Usar Pedagio Livre para zerar a cobranca de ${formatCurrency(charge)} em ${card.code}, pertencente a ${owner.name}?`
+      : `Usar Pedagio Livre para zerar a cobranca de ${formatCurrency(charge)} em ${card.code}?`,
+    primaryLabel: 'Usar Pedagio Livre',
+    secondaryLabel: 'Pagar normalmente',
+    cardCode: card.code,
+    detail: owner
+      ? `Zerou o pedagio de ${card.code} que seria pago a ${owner.name}.`
+      : `Zerou o pedagio de ${card.code} que seria pago ao banco.`,
+    statusLabel: `pedagio livre ${card.code}`,
+  });
+  if (spent && player?.active_contract?.mandatory_toll === card.code) {
+    player.active_contract.toll_passed = true;
+    player.active_contract.route_stage = 'to_destination';
+  }
+  return spent;
+}
+
+function scheduleCashFlashClear(player, token) {
+  window.setTimeout(() => {
+    if (!player || player.cashFlashToken !== token) return;
+    player.cashFlashValue = 0;
+    player.cashFlashExpiresAt = 0;
+    player.cashFlashToken = '';
+    renderRivals();
+  }, PLAYER_CASH_FLASH_CLEAR_MS);
+}
+
 function updatePlayerCash(player, delta) {
-  player.cash += delta;
+  const amount = Number(delta || 0);
+  player.cash += amount;
   player.cash_display = formatCurrency(player.cash);
+  if (amount === 0) return;
+  const token = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  player.cashFlashValue = amount;
+  player.cashFlashExpiresAt = Date.now() + PLAYER_CASH_FLASH_ANIMATION_MS;
+  player.cashFlashToken = token;
+  renderRivals();
+  scheduleCashFlashClear(player, token);
 }
 
 function fuelStopCost(node) {
@@ -480,14 +780,47 @@ function fuelStopCost(node) {
   return level ? (level * 5) : 0;
 }
 
-function resolveFuelStopForPlayer(player, node) {
-  if (!player || node?.kind !== 'fuel') return 0;
-  const amount = fuelStopCost(node);
-  if (amount > 0) {
-    updatePlayerCash(player, -amount);
-    pushActionLog(player, 'Abastecimento', `Pagou ${formatCurrency(amount)} ao banco.`);
+async function resolveFuelStopForPlayer(player, node) {
+  if (!player || node?.kind !== 'fuel') {
+    return { paid: 0, usedCoupon: false, note: '', statusLabel: player?.status_label || '--' };
   }
-  return amount;
+
+  const amount = fuelStopCost(node);
+  if (amount <= 0) {
+    return {
+      paid: 0,
+      usedCoupon: false,
+      note: `${playerActionName(player)} parou em ${player.location_label} sem custo de abastecimento.`,
+      statusLabel: player.status_label || player.location_label,
+    };
+  }
+
+  const couponUse = await maybeSpendCoupon(player, 'free_fuel', {
+    title: 'Gasolina Livre',
+    copy: `Usar Gasolina Livre para zerar este abastecimento de ${formatCurrency(amount)}?`,
+    primaryLabel: 'Usar Gasolina Livre',
+    secondaryLabel: 'Pagar normalmente',
+    detail: `Abastecimento em ${player.location_label} sem custo.`,
+    statusLabel: 'abastecimento gratis',
+  });
+  if (couponUse) {
+    return {
+      paid: 0,
+      usedCoupon: true,
+      note: `${playerActionName(player)} usou Gasolina Livre em ${player.location_label} e nao pagou abastecimento.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  updatePlayerCash(player, -amount);
+  player.status_label = `abasteceu ${formatCurrency(amount)}`;
+  pushActionLog(player, 'Abastecimento', `Pagou ${formatCurrency(amount)} ao banco.`);
+  return {
+    paid: amount,
+    usedCoupon: false,
+    note: `${playerActionName(player)} parou em ${player.location_label} e pagou ${formatCurrency(amount)} ao banco.`,
+    statusLabel: player.status_label,
+  };
 }
 
 function refreshOwnedCounts(player) {
@@ -703,11 +1036,33 @@ function renderCompanyList(company) {
   }
 }
 
+function couponCardKey(coupon) {
+  if (typeof coupon === 'string') return coupon;
+  return String(coupon?.source_card_id || coupon?.id || coupon?.kind || coupon?.label || 'coupon');
+}
+
+function couponSourceCard(coupon) {
+  if (typeof coupon === 'string') return null;
+  return chanceCardById(coupon?.source_card_id || '') || null;
+}
+
 function couponMiniMarkup(coupon) {
-  const label = typeof coupon === 'string'
+  const sourceCard = couponSourceCard(coupon);
+  const fallbackLabel = typeof coupon === 'string'
     ? coupon
     : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom');
-  return `<span class="preview-inline-chip preview-rival-coupon">${label}</span>`;
+  const title = sourceCard?.title || fallbackLabel;
+  const body = sourceCard?.description || couponLabelFromCode(typeof coupon === 'string' ? coupon : coupon?.kind);
+  const foot = sourceCard?.effect_text || couponLabelFromCode(typeof coupon === 'string' ? coupon : coupon?.kind);
+  const accent = sourceCard?.accent || '#18C43A';
+  const textColor = sourceCard?.text || '#FFFFFF';
+  return `
+    <article class="preview-chance-mini" style="--chance-accent:${accent}; --chance-text:${textColor};">
+      <header class="preview-chance-mini-head">${title}</header>
+      <div class="preview-chance-mini-body">${body}</div>
+      <footer class="preview-chance-mini-foot">${foot}</footer>
+    </article>
+  `;
 }
 
 function contractDeadlineTone(contract) {
@@ -725,9 +1080,43 @@ function miniHandStyle(type, count) {
   const config = {
     permission: { overlap: 46, scale: 1 },
     property: { overlap: 44, scale: 0.82 },
-    coupon: { overlap: 14, scale: 1 },
+    coupon: { overlap: 48, scale: 0.84 },
   }[type] || { overlap: 40, scale: 1 };
   return ` style="--stack-overlap:${config.overlap}px; --stack-scale:${config.scale};"`;
+}
+
+function playerCashFlashMarkup(player) {
+  const expiresAt = Number(player?.cashFlashExpiresAt || 0);
+  const value = Number(player?.cashFlashValue || 0);
+  const now = Date.now();
+  if (!(value) || expiresAt <= now) return '';
+  const remainingMs = Math.max(0, expiresAt - now);
+  const elapsedMs = Math.max(0, Math.min(PLAYER_CASH_FLASH_ANIMATION_MS, PLAYER_CASH_FLASH_ANIMATION_MS - remainingMs));
+  const style = `animation-delay:-${elapsedMs}ms; animation-duration:${PLAYER_CASH_FLASH_ANIMATION_MS}ms;`;
+  return `<span class="preview-rival-cash-flash ${value > 0 ? 'is-positive' : 'is-negative'}" style="${style}">${formatSignedCurrency(value)}</span>`;
+}
+
+function playerActionLogMarkup(player) {
+  if (currentLogMode() !== 'player') return '';
+  const entries = playerActionLogEntries(player?.id || '');
+  if (!entries.length) return '';
+  const expanded = Boolean(state.view.expandedActionFeedsByPlayer?.[player.id]);
+  return `
+    <div class="preview-rival-action-log${expanded ? ' is-expanded' : ' is-collapsed'}" data-player-log-player-id="${player.id}">
+      <div class="preview-rival-action-log-chip">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
+      <div class="preview-rival-action-feed">
+        ${entries.map((entry, index) => `
+          <article class="preview-rival-action-entry${index === 0 ? ' is-newest' : ''}">
+            <span class="preview-rival-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
+            <div class="preview-rival-action-entry-body">
+              <strong class="preview-rival-action-entry-title">${entry.action}</strong>
+              <span class="preview-rival-action-entry-detail">${entry.detail}</span>
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function contractSummaryMarkup(player, contract) {
@@ -799,6 +1188,15 @@ function layoutMiniHands() {
   document.querySelectorAll('.preview-rival-mini-strip').forEach((strip) => layoutMiniHand(strip));
 }
 
+function syncPlayerActionLogOffsets() {
+  document.querySelectorAll('.preview-rival-card').forEach((card) => {
+    const drawer = card.querySelector('.preview-rival-drawer');
+    const drawerHeight = drawer ? Math.ceil(drawer.getBoundingClientRect().height || drawer.offsetHeight || 0) : 0;
+    const offset = drawerHeight > 0 ? drawerHeight + 16 : 8;
+    card.style.setProperty('--player-log-offset', `${offset}px`);
+  });
+}
+
 function scheduleMiniHandLayout() {
   if (miniHandLayoutFrame) {
     window.cancelAnimationFrame(miniHandLayoutFrame);
@@ -806,6 +1204,7 @@ function scheduleMiniHandLayout() {
   miniHandLayoutFrame = window.requestAnimationFrame(() => {
     miniHandLayoutFrame = 0;
     layoutMiniHands();
+    syncPlayerActionLogOffsets();
   });
 }
 
@@ -848,16 +1247,13 @@ function miniCardWrapper({ playerId, type, key, selected = false, innerMarkup = 
 }
 
 function miniCouponMarkup(playerId, coupon, selected = false) {
-  const label = typeof coupon === 'string'
-    ? coupon
-    : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom');
   return miniCardWrapper({
     playerId,
     type: 'coupon',
-    key: label,
+    key: couponCardKey(coupon),
     selected,
     extraClass: 'preview-mini-selectable-coupon',
-    innerMarkup: `<span class="preview-inline-chip preview-rival-coupon">${label}</span>`,
+    innerMarkup: couponMiniMarkup(coupon),
   });
 }
 
@@ -918,7 +1314,7 @@ function playerDrawerMarkup(player) {
   const couponItems = moveSelectedToEnd(
     [...(player.coupons || [])].sort((a, b) => couponLabelFromCode(typeof a === 'string' ? a : a?.kind).localeCompare(couponLabelFromCode(typeof b === 'string' ? b : b?.kind))),
     selectedCouponKey,
-    (coupon) => (typeof coupon === 'string' ? coupon : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom')),
+    (coupon) => couponCardKey(coupon),
   );
 
   const permissionsMarkup = permissionItems.map((permission) => miniCardWrapper({
@@ -942,7 +1338,7 @@ function playerDrawerMarkup(player) {
   const couponsMarkup = couponItems.map((coupon) => miniCouponMarkup(
     player.id,
     coupon,
-    String(typeof coupon === 'string' ? coupon : (coupon?.label || coupon?.title || coupon?.kind || 'Cupom')) === String(selectedCouponKey),
+    String(couponCardKey(coupon)) === String(selectedCouponKey),
   )).join('');
 
   return `
@@ -966,6 +1362,7 @@ function playerDrawerMarkup(player) {
 }
 
 function renderRivals() {
+  pruneActionFeed();
 
   const target = byId('preview-rival-list');
   if (!target) return;
@@ -988,16 +1385,18 @@ function renderRivals() {
     card.style.setProperty('--rival-accent', player.color_hex || '#8fd7ff');
     card.style.setProperty('--card-grow', '1');
     card.innerHTML = `
+      ${playerActionLogMarkup(player)}
       <div class="preview-rival-top">
         <span class="preview-rival-dot" style="background:${player.color_hex}"></span>
         <strong>${isHuman ? player.name : `&#129302; ${player.name}`}</strong>
-        <span class="preview-rival-cash">${player.cash_display}</span>
+        <span class="preview-rival-cash-wrap">${playerCashFlashMarkup(player)}<span class="preview-rival-cash">${player.cash_display}</span></span>
       </div>
       ${contractSummaryMarkup(player, contract)}
       ${isOpen ? playerDrawerMarkup(player) : ''}
     `;
     target.appendChild(card);
   });
+  syncPlayerActionLogOffsets();
   scheduleMiniHandLayout();
 }
 
@@ -1035,6 +1434,7 @@ function ensurePlayerContractDraft(player) {
       rounds_elapsed: 1,
       target_rounds: state.rules.target_rounds || 4,
       toll_passed: false,
+      toll_requirement_waived: false,
       route_stage: 'to_toll',
       completed: false,
       note: 'Contrato em montagem.',
@@ -1643,6 +2043,7 @@ function applyDestinationSelectionForPlayer(player, card, { updateSession = fals
     contract.target_rounds = state.rules.target_rounds || 4;
     contract.rounds_elapsed = 1;
     contract.toll_passed = false;
+    contract.toll_requirement_waived = false;
     contract.route_stage = 'to_toll';
     contract.completed = false;
     contract.deadline_label = `1 / ${contract.target_rounds}`;
@@ -1677,6 +2078,141 @@ function applyDestinationSelectionForPlayer(player, card, { updateSession = fals
   return preview;
 }
 
+function sameValueDestinationCandidatesForPlayer(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed || !contract.origin || !contract.destination || contract.destination === '--') {
+    return [];
+  }
+
+  const currentValue = Number(contract.base_freight_value || contract.freight_value || 0);
+  return destinationCandidatesForOrigin(contract.origin)
+    .filter((card) => card.code !== contract.destination)
+    .map((card) => ({
+      card,
+      preview: calculateContractPreviewForPlayer(player, card, contract.origin),
+    }))
+    .filter((entry) => Number(entry.preview?.total || 0) === currentValue)
+    .sort((left, right) => String(left.card.code || '').localeCompare(String(right.card.code || '')));
+}
+
+function applyReroutedDestinationForPlayer(player, card, preview = null) {
+  const contract = ensurePlayerContractDraft(player);
+  if (!player || !contract || !card) return null;
+
+  const resolvedPreview = preview || calculateContractPreviewForPlayer(player, card, contract.origin);
+  const destinationNodeId = getPropertyNode(card.code)?.id || '';
+  contract.destination = card.code;
+  contract.distance_label = `Distancia ${resolvedPreview.distance}`;
+  contract.cargo_label = player.active_permission_label || 'Sem carga';
+  contract.freight_label = `Frete $ ${resolvedPreview.total}`;
+  contract.freight_value = resolvedPreview.total;
+  contract.base_freight_value = resolvedPreview.total;
+  contract.settlement_value = resolvedPreview.total;
+  contract.distance_value = resolvedPreview.distance;
+  contract.origin_owned = resolvedPreview.ownsOrigin;
+  contract.route_stage = destinationNodeId && player.board_node_id === destinationNodeId && contract.toll_passed
+    ? 'arrived'
+    : (contract.toll_passed ? 'to_destination' : 'to_toll');
+  contract.note = `Rota alterada para ${card.code}, mantendo frete de ${formatCurrency(resolvedPreview.total)}.`;
+  syncDerivedState();
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return resolvedPreview;
+}
+
+function canUseShortcutIgnoreTollCoupon(player) {
+  const contract = player?.active_contract;
+  return Boolean(
+    player
+    && contract
+    && !contract.completed
+    && contractNeedsMandatoryToll(contract)
+    && !contract.toll_passed
+    && contract.destination
+    && contract.destination !== '--'
+  );
+}
+
+async function maybeUseShortcutIgnoreTollCoupon(player) {
+  if (!canUseShortcutIgnoreTollCoupon(player)) return null;
+  const contract = ensurePlayerContractDraft(player);
+  const spent = await maybeSpendCoupon(player, 'shortcut_ignore_toll', {
+    title: 'Atalho',
+    copy: `Usar Atalho para dispensar a passagem obrigatoria por ${contract.mandatory_toll} neste contrato?`,
+    primaryLabel: 'Usar Atalho',
+    secondaryLabel: 'Manter rota',
+    detail: `Dispensou a passagem obrigatoria por ${contract.mandatory_toll}.`,
+    statusLabel: 'atalho ativado',
+  });
+  if (!spent) return null;
+
+  contract.toll_requirement_waived = true;
+  contract.toll_passed = true;
+  contract.route_stage = playerReachedDestination(player) ? 'arrived' : 'to_destination';
+  contract.note = `Atalho ativado: ${contract.mandatory_toll} deixou de ser obrigatorio neste contrato.`;
+  syncDerivedState();
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return {
+    coupon: spent.coupon,
+    note: `${playerActionName(player)} ativou Atalho e segue direto para ${contract.destination}.`,
+  };
+}
+
+async function maybeUseRerouteCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'reroute_same_value');
+  const candidates = sameValueDestinationCandidatesForPlayer(player);
+  if (!player || !contract || contract.completed || !coupon || !candidates.length) return null;
+
+  let selected = null;
+  if (player.is_human) {
+    for (const entry of candidates) {
+      const choice = await openDecisionModal({
+        title: 'Mudanca de Rota',
+        copy: `Trocar o destino ${contract.destination} por ${entry.card.code}, mantendo o frete em ${formatCurrency(entry.preview.total)}?`,
+        primaryLabel: `Trocar para ${entry.card.code}`,
+        secondaryLabel: 'Proxima opcao',
+        cardCode: entry.card.code,
+      });
+      if (choice === 'primary') {
+        selected = entry;
+        break;
+      }
+    }
+  } else {
+    [selected] = candidates;
+  }
+
+  if (!selected) return null;
+
+  const previousDestination = contract.destination;
+  applyReroutedDestinationForPlayer(player, selected.card, selected.preview);
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Destino alterado de ${previousDestination} para ${selected.card.code}, mantendo frete de ${formatCurrency(selected.preview.total)}.`,
+    statusLabel: `rota para ${selected.card.code}`,
+  });
+  return {
+    coupon,
+    destination: selected.card.code,
+    note: `${playerActionName(player)} mudou a rota do contrato para ${selected.card.code}.`,
+  };
+}
+
+async function maybeUseTurnStartCoupons(player) {
+  if (!player?.active_contract || player.active_contract.completed) return false;
+  let usedAny = false;
+  if (await maybeUseShortcutIgnoreTollCoupon(player)) {
+    usedAny = true;
+  }
+  if (await maybeUseRerouteCoupon(player)) {
+    usedAny = true;
+  }
+  return usedAny;
+}
+
 function applyHumanDestinationSelection(card) {
   const player = humanPlayer();
   if (!player || !card) return;
@@ -1708,6 +2244,7 @@ function resetContractFromCurrentPort(player, { updateSession = false, actionLab
   contract.rounds_elapsed = 1;
   contract.target_rounds = state.rules.target_rounds || 4;
   contract.toll_passed = false;
+  contract.toll_requirement_waived = false;
   contract.route_stage = 'to_toll';
   contract.completed = false;
   contract.origin_owned = Boolean(player.property_codes?.includes(originCode));
@@ -2169,6 +2706,10 @@ function setMovementDiceActive(message) {
 
 function triggerEnterOnOverlay() {
   if (!hasCentralOverlayOpen()) return false;
+  if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
+    const button = byId('settings-close-button');
+    if (button && !button.disabled) { button.click(); return true; }
+  }
   if (!getPermissionDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getPermissionDrawButton();
     if (button && !button.disabled) { button.click(); return true; }
@@ -2272,13 +2813,17 @@ function syncContractRouteProgress(player, traveledNodeIds = []) {
   const contract = player?.active_contract;
   if (!player || !contract || contract.completed) return contract;
 
-  const tollNodeId = getPropertyNode(contract.mandatory_toll)?.id;
+  const tollNodeId = contractNeedsMandatoryToll(contract)
+    ? getPropertyNode(contract.mandatory_toll)?.id
+    : '';
   const destinationNodeId = getPropertyNode(contract.destination)?.id;
   const currentNodeId = player.board_node_id || null;
 
-  if (tollNodeId && (contract.toll_passed || currentNodeId === tollNodeId || traveledNodeIds.includes(tollNodeId))) {
+  if (!tollNodeId) {
     contract.toll_passed = true;
-  } else if (!contract.toll_passed) {
+  } else if (contract.toll_passed || currentNodeId === tollNodeId || traveledNodeIds.includes(tollNodeId)) {
+    contract.toll_passed = true;
+  } else {
     contract.toll_passed = false;
   }
 
@@ -2290,24 +2835,106 @@ function syncContractRouteProgress(player, traveledNodeIds = []) {
   return contract;
 }
 
-function buildMovementPathForPlayer(player) {
+function mergeRoutePaths(...segments) {
+  return segments.reduce((route, segment) => {
+    if (!Array.isArray(segment) || !segment.length) return route;
+    if (!route.length) return segment.slice();
+    const startIndex = route[route.length - 1] === segment[0] ? 1 : 0;
+    return [...route, ...segment.slice(startIndex)];
+  }, []);
+}
+
+function buildContractRouteContext(player) {
   const contract = player?.active_contract;
-  if (!player || !contract) return [];
-
-  const startNodeId = player.board_node_id || getPropertyNode(contract.origin)?.id;
-  const tollNodeId = getPropertyNode(contract.mandatory_toll)?.id;
-  const destinationNodeId = getPropertyNode(contract.destination)?.id;
-  if (!startNodeId || !destinationNodeId) return [];
-
-  if (contract.toll_passed) {
-    return shortestPath(startNodeId, destinationNodeId);
+  if (!player || !contract) {
+    return {
+      originNodeId: '',
+      tollNodeId: '',
+      destinationNodeId: '',
+      fullPath: [],
+      forwardPath: [],
+      currentIndex: -1,
+      tollIndex: -1,
+      segment: 'direct',
+    };
   }
 
-  if (!tollNodeId) return [];
-  const firstLeg = shortestPath(startNodeId, tollNodeId);
-  const secondLeg = shortestPath(tollNodeId, destinationNodeId);
-  if (!firstLeg.length || !secondLeg.length) return [];
-  return [...firstLeg, ...secondLeg.slice(1)];
+  const originNodeId = getPropertyNode(contract.origin)?.id || '';
+  const tollNodeId = contractNeedsMandatoryToll(contract)
+    ? (getPropertyNode(contract.mandatory_toll)?.id || '')
+    : '';
+  const destinationNodeId = getPropertyNode(contract.destination)?.id || '';
+  const currentNodeId = player.board_node_id || originNodeId;
+  if (!originNodeId || !destinationNodeId || !currentNodeId) {
+    return {
+      originNodeId,
+      tollNodeId,
+      destinationNodeId,
+      fullPath: [],
+      forwardPath: [],
+      currentIndex: -1,
+      tollIndex: -1,
+      segment: 'direct',
+    };
+  }
+
+  let fullPath = [];
+  let forwardPath = [];
+  let currentIndex = -1;
+  let tollIndex = -1;
+
+  if (tollNodeId) {
+    const originToToll = shortestPath(originNodeId, tollNodeId);
+    if (contract.toll_passed) {
+      const tollToCurrent = shortestPath(tollNodeId, currentNodeId);
+      const currentToDestination = shortestPath(currentNodeId, destinationNodeId);
+      const prefixToCurrent = mergeRoutePaths(originToToll, tollToCurrent);
+      fullPath = mergeRoutePaths(prefixToCurrent, currentToDestination);
+      forwardPath = currentToDestination;
+      currentIndex = prefixToCurrent.length ? prefixToCurrent.length - 1 : -1;
+      tollIndex = originToToll.length ? originToToll.length - 1 : -1;
+    } else {
+      const originToCurrent = shortestPath(originNodeId, currentNodeId);
+      const currentToToll = shortestPath(currentNodeId, tollNodeId);
+      const tollToDestination = shortestPath(tollNodeId, destinationNodeId);
+      const prefixToToll = mergeRoutePaths(originToCurrent, currentToToll);
+      fullPath = mergeRoutePaths(prefixToToll, tollToDestination);
+      forwardPath = mergeRoutePaths(currentToToll, tollToDestination);
+      currentIndex = originToCurrent.length ? originToCurrent.length - 1 : -1;
+      tollIndex = prefixToToll.length ? prefixToToll.length - 1 : -1;
+    }
+  } else {
+    const originToCurrent = shortestPath(originNodeId, currentNodeId);
+    const currentToDestination = shortestPath(currentNodeId, destinationNodeId);
+    fullPath = mergeRoutePaths(originToCurrent, currentToDestination);
+    forwardPath = currentToDestination;
+    currentIndex = originToCurrent.length ? originToCurrent.length - 1 : -1;
+  }
+
+  if (!fullPath.length && forwardPath.length) {
+    fullPath = forwardPath.slice();
+  }
+  if (!forwardPath.length && currentNodeId) {
+    forwardPath = [currentNodeId];
+  }
+  if (currentIndex < 0 && currentNodeId && fullPath.length) {
+    currentIndex = fullPath.indexOf(currentNodeId);
+  }
+
+  return {
+    originNodeId,
+    tollNodeId,
+    destinationNodeId,
+    fullPath,
+    forwardPath,
+    currentIndex,
+    tollIndex,
+    segment: tollNodeId && !contract.toll_passed ? 'pp_to_pe' : (tollNodeId ? 'pe_to_pd' : 'direct'),
+  };
+}
+
+function buildMovementPathForPlayer(player) {
+  return buildContractRouteContext(player).forwardPath;
 }
 
 function advanceContractRoundForPlayer(player) {
@@ -2322,7 +2949,7 @@ function advanceContractRoundForPlayer(player) {
   return contract;
 }
 
-function resolveContractSettlement(contract) {
+function resolveContractSettlement(player, contract, { freightMultiplier = 1, waiveOriginShare = false } = {}) {
   const base = Number(contract?.base_freight_value || contract?.freight_value || 0);
   const targetRounds = Number(contract?.target_rounds || state.rules.target_rounds || 4);
   const roundsElapsed = Math.max(1, Number(contract?.rounds_elapsed || 1));
@@ -2331,24 +2958,82 @@ function resolveContractSettlement(contract) {
   const earlyRounds = Math.max(0, targetRounds - roundsElapsed);
   const lateRounds = Math.max(0, roundsElapsed - targetRounds);
   const adjustment = (earlyRounds * bonusPerRound) - (lateRounds * penaltyPerRound);
+  const adjustedBase = Math.max(0, Math.round(base * freightMultiplier));
+  const gross = Math.max(0, adjustedBase + adjustment);
+  const originOwner = ownerPlayerOf(contract?.origin || '');
+  const originCommission = originOwner && originOwner.id !== player?.id && !waiveOriginShare
+    ? Math.max(0, Math.floor(gross * Number(state.rules.origin_owner_commission_share || 0)))
+    : 0;
   return {
     base,
+    adjustedBase,
+    gross,
     targetRounds,
     roundsElapsed,
     earlyRounds,
     lateRounds,
     adjustment,
-    total: base + adjustment,
+    freightMultiplier,
+    waiveOriginShare,
+    originOwner,
+    originCommission,
+    total: Math.max(0, gross - originCommission),
   };
 }
 
-function completeContractForPlayer(player) {
+async function resolveSettlementCouponModifiersForPlayer(player, contract) {
+  const modifiers = { freightMultiplier: 1, waiveOriginShare: false };
+  if (!player || !contract) return modifiers;
+
+  const usedDoubleFreight = await maybeSpendCoupon(player, 'double_freight', {
+    title: 'Lucro Extra',
+    copy: `Usar Lucro Extra para dobrar o frete deste contrato na chegada a ${contract.destination}?`,
+    primaryLabel: 'Usar Lucro Extra',
+    secondaryLabel: 'Receber normal',
+    detail: `Dobrou o frete na liquidacao do contrato para ${contract.destination}.`,
+    statusLabel: 'lucro extra ativado',
+  });
+  if (usedDoubleFreight) {
+    modifiers.freightMultiplier = 2;
+  }
+
+  const originOwner = ownerPlayerOf(contract.origin || '');
+  if (originOwner && originOwner.id !== player.id) {
+    const usedSkipOwnerShare = await maybeSpendCoupon(player, 'skip_owner_share', {
+      title: 'Quebra de Contrato',
+      copy: `Usar Quebra de Contrato para impedir a comissao de ${originOwner.name} sobre o frete deste contrato?`,
+      primaryLabel: 'Usar Quebra de Contrato',
+      secondaryLabel: 'Pagar comissao',
+      cardCode: contract.origin,
+      detail: `Bloqueou a comissao de ${originOwner.name} sobre o frete deste contrato.`,
+      statusLabel: 'comissao bloqueada',
+    });
+    if (usedSkipOwnerShare) {
+      modifiers.waiveOriginShare = true;
+    }
+  }
+
+  return modifiers;
+}
+
+async function completeContractForPlayer(player) {
   const contract = player?.active_contract;
   if (!player || !contract || contract.completed) {
     return null;
   }
-  const settlement = resolveContractSettlement(contract);
+
+  const modifiers = await resolveSettlementCouponModifiersForPlayer(player, contract);
+  const settlement = resolveContractSettlement(player, contract, modifiers);
   updatePlayerCash(player, settlement.total);
+  if (settlement.originCommission > 0 && settlement.originOwner) {
+    updatePlayerCash(settlement.originOwner, settlement.originCommission);
+    pushActionLog(
+      settlement.originOwner,
+      'Recebeu comissao',
+      `${contract.origin}: ${formatCurrency(settlement.originCommission)} de ${player.name}.`,
+    );
+  }
+
   contract.completed = true;
   contract.toll_passed = true;
   contract.route_stage = 'arrived';
@@ -2358,19 +3043,28 @@ function completeContractForPlayer(player) {
   contract.freight_value = settlement.total;
   contract.deadline_label = `${settlement.roundsElapsed} / ${settlement.targetRounds}`;
   contract.deadline_progress = `${settlement.roundsElapsed}/${settlement.targetRounds}`;
-  if (settlement.adjustment > 0) {
-    contract.note = `${playerActionName(player)} recebeu ${formatCurrency(settlement.base)} do contrato e bonus de ${formatCurrency(settlement.adjustment)}.`;
-    player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
-    pushActionLog(player, 'Contrato concluido', `${formatCurrency(settlement.base)} + bonus ${formatCurrency(settlement.adjustment)} = ${formatCurrency(settlement.total)}.`);
-  } else if (settlement.adjustment < 0) {
-    contract.note = `${playerActionName(player)} recebeu ${formatCurrency(settlement.base)} do contrato com onus de ${formatCurrency(Math.abs(settlement.adjustment))}.`;
-    player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
-    pushActionLog(player, 'Contrato concluido', `${formatCurrency(settlement.base)} - onus ${formatCurrency(Math.abs(settlement.adjustment))} = ${formatCurrency(settlement.total)}.`);
-  } else {
-    contract.note = `${playerActionName(player)} recebeu ${formatCurrency(settlement.total)} e concluiu o contrato.`;
-    player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
-    pushActionLog(player, 'Contrato concluido', `${formatCurrency(settlement.total)} sem ajuste.`);
+
+  const detailParts = [];
+  if (settlement.freightMultiplier > 1) {
+    detailParts.push(`frete dobrado para ${formatCurrency(settlement.adjustedBase)}`);
   }
+  if (settlement.adjustment > 0) {
+    detailParts.push(`bonus ${formatCurrency(settlement.adjustment)}`);
+  } else if (settlement.adjustment < 0) {
+    detailParts.push(`onus ${formatCurrency(Math.abs(settlement.adjustment))}`);
+  }
+  if (settlement.originCommission > 0 && settlement.originOwner) {
+    detailParts.push(`comissao ${formatCurrency(settlement.originCommission)} para ${settlement.originOwner.name}`);
+  } else if (settlement.waiveOriginShare && settlement.originOwner) {
+    detailParts.push(`comissao de ${settlement.originOwner.name} bloqueada`);
+  }
+  const detailLine = detailParts.length
+    ? `${formatCurrency(settlement.total)} liquidos (${detailParts.join(' | ')}).`
+    : `${formatCurrency(settlement.total)} sem ajuste adicional.`;
+
+  contract.note = `${playerActionName(player)} concluiu o contrato e recebeu ${formatCurrency(settlement.total)}.`;
+  player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
+  pushActionLog(player, 'Contrato concluido', detailLine);
   renderHud();
   return settlement;
 }
@@ -2461,14 +3155,15 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
   syncContractRouteProgress(player, traveled);
   const passedToll = Boolean(contract.toll_passed);
   const reachedDestination = Boolean(destinationNodeId && player.board_node_id === destinationNodeId);
+  const destinationBeforeToll = reachedDestination && !passedToll;
   const contractCompletion = reachedDestination && passedToll
-    ? completeContractForPlayer(player)
+    ? await completeContractForPlayer(player)
     : null;
-  const fuelCost = finalNode?.kind === 'fuel' ? resolveFuelStopForPlayer(player, finalNode) : 0;
+  const fuelOutcome = finalNode?.kind === 'fuel' ? await resolveFuelStopForPlayer(player, finalNode) : null;
   const chanceOutcome = finalNode?.kind === 'chance'
     ? await resolveChanceStopForPlayer(player, { stepDelay })
     : null;
-  const portOutcome = finalNode?.kind === 'port' && !reachedDestination
+  const portOutcome = finalNode?.kind === 'port' && (!reachedDestination || destinationBeforeToll)
     ? await resolvePortStopForPlayer(player, finalNode, { stepDelay })
     : null;
   const tollOutcome = finalNode?.kind === 'toll'
@@ -2479,18 +3174,18 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
   let note = `O navio terminou a jogada em ${player.location_label}.`;
   if (reachedDestination && passedToll) {
     if (contractCompletion?.adjustment > 0) {
-      note = `O navio chegou em ${contract.destination} depois de passar por ${contract.mandatory_toll} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.base)} + bonus ${formatCurrency(contractCompletion.adjustment)}).`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} + bonus ${formatCurrency(contractCompletion.adjustment)}).`;
     } else if (contractCompletion?.adjustment < 0) {
-      note = `O navio chegou em ${contract.destination} depois de passar por ${contract.mandatory_toll} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.base)} - onus ${formatCurrency(Math.abs(contractCompletion.adjustment))}).`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} - onus ${formatCurrency(Math.abs(contractCompletion.adjustment))}).`;
     } else {
-      note = `O navio chegou em ${contract.destination} depois de passar por ${contract.mandatory_toll} e recebeu ${formatCurrency(contractCompletion?.total || 0)}.`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion?.total || 0)}.`;
     }
   } else if (propertyOutcome) {
-    note = propertyOutcome.note;
+    note = `${propertyOutcome.note}${destinationBeforeTollSuffix(contract, reachedDestination, passedToll)}`.trim();
   } else if (chanceOutcome) {
     note = chanceOutcome.note;
-  } else if (finalNode?.kind === 'fuel') {
-    note = `O navio parou em ${player.location_label} e pagou ${formatCurrency(fuelCost)} ao banco.`;
+  } else if (fuelOutcome) {
+    note = fuelOutcome.note;
   } else if (!passedToll) {
     note = `O navio avancou ${maxMoves} casas e segue rumo ao pedagio ${contract.mandatory_toll}.`;
   } else if (passedTollThisMove && !reachedDestination) {
@@ -2502,7 +3197,7 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
   contract.note = note;
   player.status_label = reachedDestination && passedToll
     ? `recebeu ${formatCurrency(contractCompletion?.total || 0)}`
-    : (propertyOutcome?.statusLabel || chanceOutcome?.statusLabel || (finalNode?.kind === 'fuel' ? `abasteceu ${formatCurrency(fuelCost)}` : player.location_label));
+    : (propertyOutcome?.statusLabel || chanceOutcome?.statusLabel || fuelOutcome?.statusLabel || player.location_label);
   player.last_roll = resolvedDice;
   if (updateSession) {
     setSession({
@@ -2540,9 +3235,11 @@ async function runTurnExecutionForPlayer(player, {
   cpuActionLabel = null,
   cpuNote = null,
   humanStepDelay = 360,
-  cpuStepDelay = CPU_MOVE_DELAY_MS,
+  cpuStepDelay = currentCpuMoveDelay(),
 } = {}) {
   if (!player?.active_contract) return null;
+
+  await maybeUseTurnStartCoupons(player);
 
   if (player.is_human) {
     let diceResult = null;
@@ -2611,7 +3308,7 @@ async function runTurnExecutionForPlayer(player, {
       note: prompt.note,
     });
     renderHud();
-    await delay(650);
+    await delay(currentCpuRevealDelay());
     await animatePlayerMovement(player, diceResult.total, {
       stepDelay: cpuStepDelay,
       diceValues: [...dice],
@@ -2619,14 +3316,14 @@ async function runTurnExecutionForPlayer(player, {
     });
 
     if (!canTakeExtraRollFromDouble(player, diceResult)) {
-      await delay(CPU_STEP_DELAY_MS);
+      await delay(currentCpuStepDelay());
       return diceResult;
     }
 
     pushActionLog(player, 'Dados duplos', `${player.name} rolou ${dice[0]} + ${dice[1]} e vai jogar novamente.`);
     renderHud();
     rerollIndex += 1;
-    await delay(CPU_STEP_DELAY_MS);
+    await delay(currentCpuStepDelay());
   }
 
   return diceResult;
@@ -2814,25 +3511,96 @@ function clearChanceDrawTimers() {
   }
 }
 
+function chanceCardById(cardId) {
+  return state.chanceCards.find((card) => card.id === cardId) || null;
+}
+
+function ensureChanceDeck() {
+  state.chanceDeck = state.chanceDeck || { draw_pile: [], discard_pile: [], held_card_ids: [] };
+  state.chanceDeck.draw_pile = Array.isArray(state.chanceDeck.draw_pile) ? state.chanceDeck.draw_pile : [];
+  state.chanceDeck.discard_pile = Array.isArray(state.chanceDeck.discard_pile) ? state.chanceDeck.discard_pile : [];
+  state.chanceDeck.held_card_ids = Array.isArray(state.chanceDeck.held_card_ids) ? state.chanceDeck.held_card_ids : [];
+  return state.chanceDeck;
+}
+
+function heldChanceCardIds() {
+  return new Set(ensureChanceDeck().held_card_ids || []);
+}
+
+function chanceDrawPoolIds() {
+  const deck = ensureChanceDeck();
+  if (deck.draw_pile.length) return deck.draw_pile.slice();
+  const held = heldChanceCardIds();
+  return state.chanceCards
+    .map((card) => card.id)
+    .filter((cardId) => !held.has(cardId));
+}
+
+function reshuffleChanceDiscardIntoDraw() {
+  const deck = ensureChanceDeck();
+  if (deck.draw_pile.length) return deck.draw_pile.slice();
+  const held = heldChanceCardIds();
+  const freshDraw = (deck.discard_pile || []).filter((cardId) => !held.has(cardId));
+  deck.discard_pile = [];
+  deck.draw_pile = shuffleArray(freshDraw);
+  return deck.draw_pile.slice();
+}
+
+function drawChanceCardFromDeck() {
+  const deck = ensureChanceDeck();
+  if (!deck.draw_pile.length) {
+    reshuffleChanceDiscardIntoDraw();
+  }
+  if (!deck.draw_pile.length) return null;
+  const cardId = deck.draw_pile.shift();
+  return chanceCardById(cardId);
+}
+
+function discardChanceCardToDeck(cardId) {
+  const deck = ensureChanceDeck();
+  if (!cardId) return;
+  if (deck.held_card_ids.includes(cardId)) return;
+  if (!deck.discard_pile.includes(cardId)) {
+    deck.discard_pile.push(cardId);
+  }
+}
+
+function holdChanceCardInDeck(cardId) {
+  const deck = ensureChanceDeck();
+  if (!cardId) return;
+  if (!deck.held_card_ids.includes(cardId)) {
+    deck.held_card_ids.push(cardId);
+  }
+  deck.discard_pile = deck.discard_pile.filter((item) => item !== cardId);
+  deck.draw_pile = deck.draw_pile.filter((item) => item !== cardId);
+}
+
+function releaseHeldChanceCardToDiscard(cardId) {
+  const deck = ensureChanceDeck();
+  if (!cardId) return;
+  deck.held_card_ids = deck.held_card_ids.filter((item) => item !== cardId);
+  discardChanceCardToDeck(cardId);
+}
+
 function chanceVisibleCards() {
   if (state.chanceDraw.revealOnly && state.chanceDraw.selectedCardId) {
-    const selected = state.chanceCards.find((card) => card.id === state.chanceDraw.selectedCardId);
+    const selected = chanceCardById(state.chanceDraw.selectedCardId);
     return selected ? [selected] : [];
   }
 
   if (state.chanceDraw.selectedCardId) {
-    const selected = state.chanceCards.find((card) => card.id === state.chanceDraw.selectedCardId);
+    const selected = chanceCardById(state.chanceDraw.selectedCardId);
     const rest = state.chanceDraw.order
       .filter((id) => id !== state.chanceDraw.selectedCardId)
       .slice(0, 10)
-      .map((id) => state.chanceCards.find((card) => card.id === id))
+      .map((id) => chanceCardById(id))
       .filter(Boolean);
     return selected ? [selected, ...rest] : rest;
   }
 
   return state.chanceDraw.order
     .slice(0, 12)
-    .map((id) => state.chanceCards.find((card) => card.id === id))
+    .map((id) => chanceCardById(id))
     .filter(Boolean);
 }
 
@@ -2908,7 +3676,7 @@ function closeChanceDraw(card = null) {
 
 function startChanceDraw() {
   if (state.chanceDraw.revealOnly || state.chanceDraw.selectedCardId) return;
-  if (state.chanceDraw.drawing || !state.chanceCards.length) return;
+  if (state.chanceDraw.drawing || !chanceDrawPoolIds().length) return;
   clearChanceDrawTimers();
   state.chanceDraw.drawing = true;
   state.chanceDraw.selectedCardId = '';
@@ -2927,7 +3695,7 @@ function startChanceDraw() {
     state.chanceDraw.frame += 1;
 
     if ((now - lastShuffleAt) >= shuffleEveryMs) {
-      state.chanceDraw.order = shuffleArray(state.chanceCards.map((card) => card.id));
+      state.chanceDraw.order = shuffleArray(chanceDrawPoolIds());
       lastShuffleAt = now;
     }
 
@@ -2939,10 +3707,10 @@ function startChanceDraw() {
     }
 
     state.chanceDraw.drawing = false;
-    state.chanceDraw.order = shuffleArray(state.chanceCards.map((card) => card.id));
-    const selected = randomChoice(state.chanceDraw.order);
+    const card = drawChanceCardFromDeck();
+    const selected = card?.id || '';
     state.chanceDraw.selectedCardId = selected;
-    const card = state.chanceCards.find((item) => item.id === selected) || null;
+    state.chanceDraw.order = selected ? [selected, ...chanceDrawPoolIds().filter((id) => id !== selected)] : chanceDrawPoolIds();
     setChanceDrawActive(card ? `${chanceCategoryLabel(card)}: ${card.title}` : 'Carta sorteada');
     setChanceDrawResult(`Carta sorteada: ${card?.title || '--'}.`);
     renderChanceDraw();
@@ -2961,14 +3729,14 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
   state.chanceDraw.drawing = false;
   state.chanceDraw.selectedCardId = '';
   state.chanceDraw.frame = 0;
-  state.chanceDraw.order = state.chanceCards.map((card) => card.id);
+  state.chanceDraw.order = chanceDrawPoolIds();
   state.chanceDraw.playerId = player?.id || '';
   state.chanceDraw.autoStart = autoStart;
   state.chanceDraw.revealOnly = false;
   const copy = byId('chance-draw-copy');
 
   if (autoStart) {
-    const card = randomChoice(state.chanceCards);
+    const card = drawChanceCardFromDeck();
     const selectedId = card?.id || '';
     state.chanceDraw.selectedCardId = selectedId;
     state.chanceDraw.order = selectedId ? [selectedId] : [];
@@ -2982,11 +3750,11 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
     setChanceDrawVisible(true);
     return new Promise((resolve) => {
       state.chanceDraw.resolver = resolve;
-      state.chanceDraw.closeTimerId = window.setTimeout(() => closeChanceDraw(card), 1800);
+      state.chanceDraw.closeTimerId = window.setTimeout(() => closeChanceDraw(card), currentCpuRevealDelay(1800));
     });
   }
 
-  state.chanceDraw.order = shuffleArray(state.chanceCards.map((card) => card.id));
+  state.chanceDraw.order = chanceDrawPoolIds();
   setChanceDrawActive('Aguardando sorteio');
   setChanceDrawResult('Pressione Enter ou clique para sortear.');
   if (copy) {
@@ -3017,15 +3785,23 @@ async function animatePathSegment(player, path, { stepDelay = 260 } = {}) {
 }
 
 async function movePlayerByRouteSteps(player, steps, { stepDelay = 260 } = {}) {
-  const fullPath = buildMovementPathForPlayer(player);
-  const currentIndex = fullPath.lastIndexOf(player.board_node_id);
+  const route = buildContractRouteContext(player);
+  const fullPath = route.fullPath;
+  const currentIndex = route.currentIndex;
   if (!fullPath.length || currentIndex < 0) {
     return { moved: false, label: player.location_label };
   }
   const targetIndex = Math.max(0, Math.min(fullPath.length - 1, currentIndex + steps));
   const segment = buildRouteSegment(fullPath, currentIndex, targetIndex);
   await animatePathSegment(player, segment, { stepDelay });
-  return { moved: targetIndex !== currentIndex, label: player.location_label, targetNodeId: fullPath[targetIndex] };
+  return {
+    moved: targetIndex !== currentIndex,
+    label: player.location_label,
+    targetNodeId: fullPath[targetIndex],
+    stepsMoved: Math.abs(targetIndex - currentIndex),
+    segment: route.segment,
+    reachedOrigin: Boolean(route.originNodeId && fullPath[targetIndex] === route.originNodeId),
+  };
 }
 
 async function movePlayerToNode(player, targetNodeId, { stepDelay = 260 } = {}) {
@@ -3051,8 +3827,9 @@ async function movePlayerToOriginPort(player, { stepDelay = 260 } = {}) {
 }
 
 async function movePlayerByPortOffset(player, offset, { stepDelay = 260 } = {}) {
-  const fullPath = buildMovementPathForPlayer(player);
-  const currentIndex = fullPath.lastIndexOf(player.board_node_id);
+  const route = buildContractRouteContext(player);
+  const fullPath = route.fullPath;
+  const currentIndex = route.currentIndex;
   if (!fullPath.length || currentIndex < 0) {
     return { moved: false, label: player.location_label };
   }
@@ -3073,12 +3850,64 @@ function otherPlayers(player) {
   return state.players.filter((entry) => entry.id !== player?.id);
 }
 
+async function resolveLandingAfterForcedMovement(player, { stepDelay = 260 } = {}) {
+  const contract = player?.active_contract;
+  const finalNode = state.nodesById[player?.board_node_id] || null;
+  if (!player || !contract || !finalNode) {
+    return { note: `${playerActionName(player)} terminou em ${player?.location_label || '--'}.`, statusLabel: player?.status_label || player?.location_label || '--' };
+  }
+
+  syncContractRouteProgress(player, player.board_node_id ? [player.board_node_id] : []);
+  const destinationNodeId = getPropertyNode(contract.destination)?.id;
+  const passedToll = Boolean(contract.toll_passed);
+  const reachedDestination = Boolean(destinationNodeId && player.board_node_id === destinationNodeId);
+  const destinationBeforeToll = reachedDestination && !passedToll;
+
+  if (reachedDestination && passedToll && !contract.completed) {
+    const settlement = await completeContractForPlayer(player);
+    return {
+      note: `${playerActionName(player)} chegou em ${contract.destination} ${contractArrivalText(contract)} e concluiu o contrato, recebendo ${formatCurrency(settlement?.total || 0)}.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  if (finalNode.kind === 'fuel') {
+    const fuelOutcome = await resolveFuelStopForPlayer(player, finalNode);
+    return {
+      note: fuelOutcome?.note || `${playerActionName(player)} parou em ${player.location_label}.`,
+      statusLabel: fuelOutcome?.statusLabel || player.status_label,
+    };
+  }
+
+  if (finalNode.kind === 'chance') {
+    return resolveChanceStopForPlayer(player, { stepDelay });
+  }
+
+  if (finalNode.kind === 'port' && (!reachedDestination || destinationBeforeToll)) {
+    const portOutcome = await resolvePortStopForPlayer(player, finalNode, { stepDelay });
+    return {
+      note: `${portOutcome.note}${destinationBeforeTollSuffix(contract, reachedDestination, passedToll)}`.trim(),
+      statusLabel: portOutcome.statusLabel,
+    };
+  }
+
+  if (finalNode.kind === 'toll') {
+    return resolveTollStopForPlayer(player, finalNode, { stepDelay });
+  }
+
+  return {
+    note: `${playerActionName(player)} terminou o movimento em ${player.location_label}.`,
+    statusLabel: player.location_label,
+  };
+}
+
 async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
   const effect = card?.effect || {};
   const contract = ensurePlayerContractDraft(player);
   let note = card?.effect_text || 'Carta aplicada.';
   let detail = note;
   let statusLabel = `${chanceCategoryLabel(card).toLowerCase()}: ${card?.title || 'carta'}`;
+  let keepHeld = false;
 
   if (!player || !card) {
     return { note, detail, statusLabel };
@@ -3120,11 +3949,17 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       break;
     }
     case 'receive_half_current_freight': {
-      const amount = Math.round((contract?.freight_value || 0) / 2);
-      updatePlayerCash(player, amount);
-      note = `${playerActionName(player)} recebeu metade do frete atual: ${formatCurrency(amount)}.`;
-      detail = `Recebeu ${formatCurrency(amount)}.`;
-      statusLabel = `recebeu ${formatCurrency(amount)}`;
+      const previousValue = Number(contract?.base_freight_value || contract?.freight_value || 0);
+      const reducedValue = Math.round(previousValue / 2);
+      if (contract) {
+        contract.base_freight_value = reducedValue;
+        contract.freight_value = reducedValue;
+        contract.settlement_value = reducedValue;
+        contract.freight_label = `Frete $ ${reducedValue}`;
+      }
+      note = `${playerActionName(player)} teve o frete atual reduzido para metade: ${formatCurrency(reducedValue)}.`;
+      detail = `Frete reduzido para ${formatCurrency(reducedValue)}.`;
+      statusLabel = `frete ${formatCurrency(reducedValue)}`;
       break;
     }
     case 'skip_turns': {
@@ -3135,48 +3970,65 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       break;
     }
     case 'coupon': {
-      const coupon = { kind: effect.coupon, label: card.title };
+      const coupon = { kind: effect.coupon, label: card.title, source_card_id: card.id };
       player.coupons = [...(player.coupons || []), coupon];
+      keepHeld = true;
       note = `${playerActionName(player)} guardou o cupom ${card.title}.`;
       detail = `Guardou o cupom ${card.title}.`;
       statusLabel = `cupom ${card.title}`;
       break;
     }
     case 'double_dice_once': {
-      const coupon = { kind: 'double_dice_once', label: card.title || couponLabelFromCode('double_dice_once') };
-      player.coupons = [...(player.coupons || []), coupon];
-      note = `${playerActionName(player)} guardou um bonus de dados x2.`;
-      detail = 'Guardou o bonus de dados x2.';
-      statusLabel = 'dados x2 guardado';
+      const lastRollTotal = Array.isArray(player.last_roll) && player.last_roll.length === 2
+        ? ((Number(player.last_roll[0]) || 0) + (Number(player.last_roll[1]) || 0))
+        : 0;
+      if (lastRollTotal > 0) {
+        const moved = await movePlayerByRouteSteps(player, lastRollTotal, { stepDelay });
+        const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
+        note = `${playerActionName(player)} ativou ${card.title} e repetiu o valor da ultima rolagem (${lastRollTotal}). ${landing?.note || ''}`.trim();
+        detail = `Moveu novamente ${lastRollTotal} casa(s). ${landing?.note || ''}`.trim();
+        statusLabel = landing?.statusLabel || moved.label || player.location_label;
+      } else {
+        note = `${playerActionName(player)} revelou ${card.title}, mas nao havia uma rolagem anterior valida para duplicar.`;
+        detail = 'Sem rolagem anterior valida para aplicar Dados x2.';
+        statusLabel = player.status_label || player.location_label;
+      }
       break;
     }
     case 'move_steps': {
       const moved = await movePlayerByRouteSteps(player, effect.steps || 0, { stepDelay });
+      const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
       const verb = (effect.steps || 0) >= 0 ? 'avancou' : 'voltou';
-      note = `${playerActionName(player)} ${verb} ${Math.abs(effect.steps || 0)} casa(s) e foi para ${moved.label}.`;
-      detail = `${verb[0].toUpperCase() + verb.slice(1)} ${Math.abs(effect.steps || 0)} casa(s) ate ${moved.label}.`;
-      statusLabel = moved.label;
+      const shownSteps = moved.moved ? moved.stepsMoved : Math.abs(effect.steps || 0);
+      const segmentLabel = moved.segment === 'pe_to_pd' ? 'PE -> PD' : (moved.segment === 'pp_to_pe' ? 'PP -> PE' : 'rota atual');
+      const originSuffix = moved.reachedOrigin ? ' O recuo parou no porto de origem.' : '';
+      note = `${playerActionName(player)} ${verb} ${shownSteps} casa(s) pela rota ${segmentLabel} e foi para ${moved.label}.${originSuffix} ${landing?.note || ''}`.trim();
+      detail = `${verb[0].toUpperCase() + verb.slice(1)} ${shownSteps} casa(s) ate ${moved.label}.${originSuffix} ${landing?.note || ''}`.trim();
+      statusLabel = landing?.statusLabel || moved.label;
       break;
     }
     case 'move_to_toll': {
       const moved = await movePlayerToContractToll(player, { stepDelay });
-      note = `${playerActionName(player)} foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}.`;
-      detail = `Foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}.`;
-      statusLabel = moved.label;
+      const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
+      note = `${playerActionName(player)} foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}. ${landing?.note || ''}`.trim();
+      statusLabel = landing?.statusLabel || moved.label;
       break;
     }
     case 'move_ports': {
       const moved = await movePlayerByPortOffset(player, effect.offset || 0, { stepDelay });
-      note = `${playerActionName(player)} foi para ${moved.label}.`;
-      detail = `Reposicionado para ${moved.label}.`;
-      statusLabel = moved.label;
+      const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
+      note = `${playerActionName(player)} foi para ${moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Reposicionado para ${moved.label}. ${landing?.note || ''}`.trim();
+      statusLabel = landing?.statusLabel || moved.label;
       break;
     }
     case 'move_to_origin_port': {
       const moved = await movePlayerToOriginPort(player, { stepDelay });
-      note = `${playerActionName(player)} voltou ao porto de origem ${player.active_contract?.origin || moved.label}.`;
-      detail = `Voltou ao porto de origem ${player.active_contract?.origin || moved.label}.`;
-      statusLabel = moved.label;
+      const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
+      note = `${playerActionName(player)} voltou ao porto de origem ${player.active_contract?.origin || moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Voltou ao porto de origem ${player.active_contract?.origin || moved.label}. ${landing?.note || ''}`.trim();
+      statusLabel = landing?.statusLabel || moved.label;
       break;
     }
     default: {
@@ -3185,6 +4037,9 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       break;
     }
   }
+
+  if (keepHeld) holdChanceCardInDeck(card.id);
+  else discardChanceCardToDeck(card.id);
 
   renderHud();
   renderNodeOverlay();
@@ -3241,6 +4096,14 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
+      const freeStay = await maybeUseFreePortStayCoupon(player, card, fee);
+      if (freeStay) {
+        return {
+          note: `${playerActionName(player)} usou Porto Livre em ${card.code} e nao pagou estadia ao banco.`,
+          statusLabel: player.status_label,
+        };
+      }
+
       updatePlayerCash(player, -fee);
       player.status_label = `pagou ${formatCurrency(fee)}`;
       pushActionLog(player, 'Estadia ao banco', `${card.code}: ${formatCurrency(fee)}.`);
@@ -3269,6 +4132,14 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       renderHud();
       return {
         note: `Voce comprou o porto ${card.code} por ${formatCurrency(card.price)}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
+    const freeStay = await maybeUseFreePortStayCoupon(player, card, fee);
+    if (freeStay) {
+      return {
+        note: `Voce usou Porto Livre em ${card.code} e nao pagou estadia ao banco.`,
         statusLabel: player.status_label,
       };
     }
@@ -3303,6 +4174,14 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
+    const freeStay = await maybeUseFreePortStayCoupon(player, card, ownerCharge, owner);
+    if (freeStay) {
+      return {
+        note: `${playerActionName(player)} usou Porto Livre em ${card.code} e nao pagou estadia a ${owner.name}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
     updatePlayerCash(player, -ownerCharge);
     updatePlayerCash(owner, ownerCharge);
     player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
@@ -3334,6 +4213,14 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     renderHud();
     return {
       note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  const freeStay = await maybeUseFreePortStayCoupon(player, card, ownerCharge, owner);
+  if (freeStay) {
+    return {
+      note: `Voce usou Porto Livre em ${card.code} e nao pagou estadia a ${owner.name}.`,
       statusLabel: player.status_label,
     };
   }
@@ -3381,6 +4268,14 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
+      const freeToll = await maybeUseFreeTollCoupon(player, card, fee);
+      if (freeToll) {
+        return {
+          note: `${playerActionName(player)} usou Pedagio Livre em ${card.code} e nao pagou ao banco.`,
+          statusLabel: player.status_label,
+        };
+      }
+
       updatePlayerCash(player, -fee);
       player.status_label = `pagou ${formatCurrency(fee)}`;
       pushActionLog(player, 'Pedagio ao banco', `${card.code}: ${formatCurrency(fee)}.`);
@@ -3409,6 +4304,14 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       renderHud();
       return {
         note: `Voce comprou o pedagio ${card.code} por ${formatCurrency(card.price)}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
+    const freeToll = await maybeUseFreeTollCoupon(player, card, fee);
+    if (freeToll) {
+      return {
+        note: `Voce usou Pedagio Livre em ${card.code} e nao pagou ao banco.`,
         statusLabel: player.status_label,
       };
     }
@@ -3443,6 +4346,14 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
+    const freeToll = await maybeUseFreeTollCoupon(player, card, ownerCharge, owner);
+    if (freeToll) {
+      return {
+        note: `${playerActionName(player)} usou Pedagio Livre em ${card.code} e nao pagou a ${owner.name}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
     updatePlayerCash(player, -ownerCharge);
     updatePlayerCash(owner, ownerCharge);
     player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
@@ -3474,6 +4385,14 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     renderHud();
     return {
       note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  const freeToll = await maybeUseFreeTollCoupon(player, card, ownerCharge, owner);
+  if (freeToll) {
+    return {
+      note: `Voce usou Pedagio Livre em ${card.code} e nao pagou a ${owner.name}.`,
       statusLabel: player.status_label,
     };
   }
@@ -3917,16 +4836,33 @@ function applyBootstrapPayload(payload) {
   state.portCards = payload.port_cards || [];
   state.tollCards = payload.toll_cards || [];
   state.chanceCards = payload.chance_cards || [];
+  state.chanceDeck = payload.chance_deck || { draw_pile: [], discard_pile: [], held_card_ids: [] };
+  if (state.chanceDeck.draw_pile?.length && !state.chanceDeck.discard_pile?.length && !state.chanceDeck.held_card_ids?.length) {
+    state.chanceDeck.draw_pile = shuffleArray(state.chanceDeck.draw_pile);
+  }
   state.freightPermissionCards = payload.freight_permission_cards || [];
   state.players = (payload.players || []).map((player) => ({
     coupons: [],
     last_roll: null,
     skip_turns: 0,
     needs_new_contract: false,
+    cashFlashValue: 0,
+    cashFlashExpiresAt: 0,
+    cashFlashToken: '',
     ...player,
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
     skip_turns: player.skip_turns || 0,
+    cashFlashValue: 0,
+    cashFlashExpiresAt: 0,
+    cashFlashToken: '',
+    active_contract: player.active_contract
+      ? {
+          toll_requirement_waived: false,
+          ...player.active_contract,
+          toll_requirement_waived: Boolean(player.active_contract.toll_requirement_waived),
+        }
+      : player.active_contract,
   }));
   state.rules = payload.rules || {};
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
@@ -3937,12 +4873,14 @@ function applyBootstrapPayload(payload) {
   state.view.humanDrawerOpen = true;
   state.view.actionFeedExpanded = false;
   state.view.selectedMiniCardsByPlayer = {};
+  state.view.expandedActionFeedsByPlayer = {};
   state.flow.openingRoundRunning = false;
   state.flow.followupSetupRunning = false;
   state.flow.turnCycleRunning = false;
   state.actionFeed = [];
   buildCardIndexes();
   syncDerivedState();
+  renderSettingsOverlay();
   renderHud();
   renderShipOverlay();
   renderActionFeed();
@@ -4032,7 +4970,7 @@ function cpuShouldBuyOrigin(player, card) {
 function preparationDelayFor(player, longDelay = false) {
   return player?.is_human
     ? (longDelay ? PREP_STEP_DELAY_LONG_MS : PREP_STEP_DELAY_MS)
-    : CPU_STEP_DELAY_MS;
+    : currentCpuStepDelay();
 }
 
 async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', needsPermission = true, originMode = 'draw' } = {}) {
@@ -4322,11 +5260,11 @@ async function submitSetupSelection(event) {
       humanNote: 'Agora o usuario deve jogar os dois dados de movimentacao.',
     });
 
-    await delay(PREP_STEP_DELAY_LONG_MS);
+    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_LONG_MS));
     await runCpuOpeningRound();
     state.setup.submitting = false;
     updateSetupStartButton();
-    delay(PREP_STEP_DELAY_LONG_MS).then(() => {
+    delay(currentCpuRevealDelay(PREP_STEP_DELAY_LONG_MS)).then(() => {
       runSubsequentTurnCycle().catch(() => {});
     });
   } catch (_error) {
@@ -4371,6 +5309,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tag = active?.tagName || '';
     if (active?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
+    if (event.code === 'Escape' && !event.repeat) {
+      if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeSettingsOverlay();
+        return;
+      }
+    }
+
     if (event.code === 'Enter' && !event.repeat) {
       if (triggerEnterOnOverlay()) {
         event.preventDefault();
@@ -4384,7 +5330,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     togglePaused();
   });
 
+  byId('game-action-log')?.addEventListener('click', () => {
+    if (currentLogMode() !== 'global') return;
+    state.view.actionFeedExpanded = !state.view.actionFeedExpanded;
+    renderActionFeed();
+  });
+
+  byId('preview-settings-button')?.addEventListener('click', () => {
+    openSettingsOverlay();
+  });
+  byId('settings-close-button')?.addEventListener('click', () => {
+    closeSettingsOverlay();
+  });
+  getSettingsOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getSettingsOverlay()) {
+      closeSettingsOverlay();
+    }
+  });
+  [getSettingsLogModeGlobalInput(), getSettingsLogModePlayerInput()].forEach((input) => {
+    input?.addEventListener('change', (event) => {
+      if (!event.target.checked) return;
+      state.settings.logMode = event.target.value === 'global' ? 'global' : 'player';
+      renderSettingsOverlay();
+      renderActionFeed();
+    });
+  });
+  getSettingsCpuSpeedInput()?.addEventListener('input', (event) => {
+    state.settings.cpuSpeed = Number(event.target.value || 0.5);
+    renderSettingsOverlay();
+  });
+  getSettingsLogLifetimeInput()?.addEventListener('input', (event) => {
+    state.settings.logLifetimeMs = Math.round(Number(event.target.value || 12) * 1000);
+    applyActionFeedLifetime();
+    renderSettingsOverlay();
+    renderActionFeed();
+  });
+
   byId('preview-rival-list')?.addEventListener('click', (event) => {
+    const playerLog = event.target.closest('.preview-rival-action-log');
+    if (playerLog?.dataset?.playerLogPlayerId) {
+      event.stopPropagation();
+      togglePlayerActionFeedExpanded(playerLog.dataset.playerLogPlayerId);
+      renderRivals();
+      return;
+    }
     const mini = event.target.closest('.preview-mini-selectable');
     if (mini?.dataset?.playerId && mini?.dataset?.miniType && mini?.dataset?.miniKey) {
       event.stopPropagation();
@@ -4402,11 +5391,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         : card.dataset.playerId;
     }
     renderRivals();
-  });
-
-  byId('game-action-log')?.addEventListener('click', () => {
-    state.view.actionFeedExpanded = !state.view.actionFeedExpanded;
-    renderActionFeed();
   });
 
   getPropertyInspectorOverlay()?.addEventListener('click', () => {

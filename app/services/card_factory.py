@@ -135,6 +135,7 @@ def build_chance_cards() -> list[dict[str, Any]]:
                 'title': item.title,
                 'description': item.description,
                 'effect_text': item.effect_text,
+                'effect': item.effect,
                 'category': item.category,
                 'category_label': 'Sorte' if item.category == 'sorte' else 'Revés',
                 'accent': style['accent'],

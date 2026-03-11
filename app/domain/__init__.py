@@ -2,8 +2,10 @@ from .models import (
     BoardEdge,
     BoardNode,
     ChanceCard,
+    ChanceDeckState,
     Contract,
     ContractStatus,
+    CouponKind,
     GameData,
     GameRules,
     GameState,
@@ -15,14 +17,17 @@ from .models import (
     ShipPermission,
     ShipType,
     StopQuote,
+    StoredCoupon,
 )
 
 __all__ = [
     "BoardEdge",
     "BoardNode",
     "ChanceCard",
+    "ChanceDeckState",
     "Contract",
     "ContractStatus",
+    "CouponKind",
     "GameData",
     "GameRules",
     "GameState",
@@ -34,4 +39,5 @@ __all__ = [
     "ShipPermission",
     "ShipType",
     "StopQuote",
+    "StoredCoupon",
 ]

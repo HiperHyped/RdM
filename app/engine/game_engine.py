@@ -4,8 +4,11 @@ import random
 import re
 
 from app.domain import (
+    ChanceCard,
+    ChanceDeckState,
     Contract,
     ContractStatus,
+    CouponKind,
     GameData,
     GameRules,
     GameState,
@@ -16,6 +19,7 @@ from app.domain import (
     ShipPermission,
     ShipType,
     StopQuote,
+    StoredCoupon,
 )
 from app.services.data_loader import load_game_data, load_game_rules
 
@@ -43,6 +47,8 @@ class ReiDosMaresEngine:
         self._ship_counter = 0
         self._permission_counter = 0
         self._contract_counter = 0
+        self._coupon_counter = 0
+        self.reset_chance_deck(shuffle=True)
 
     @property
     def data(self) -> GameData:
@@ -51,6 +57,98 @@ class ReiDosMaresEngine:
     @property
     def rules(self) -> GameRules:
         return self.state.rules
+
+    def ordered_chance_cards(self) -> list[ChanceCard]:
+        return sorted(self.data.cards, key=lambda card: card.order)
+
+    def reset_chance_deck(self, *, shuffle: bool = True) -> ChanceDeckState:
+        draw_pile = [card.id for card in self.ordered_chance_cards()]
+        if shuffle:
+            self.rng.shuffle(draw_pile)
+        self.state.chance_deck = ChanceDeckState(
+            draw_pile=draw_pile,
+            discard_pile=[],
+            held_card_ids=set(),
+        )
+        return self.state.chance_deck
+
+    def draw_chance_card(self) -> ChanceCard:
+        deck = self.state.chance_deck
+        if not deck.draw_pile:
+            self._reshuffle_chance_discard_into_draw()
+        if not deck.draw_pile:
+            raise RuleViolation("No chance cards available.")
+        return self.require_chance_card(deck.draw_pile.pop(0))
+
+    def discard_chance_card(self, card_id: str) -> ChanceCard:
+        card = self.require_chance_card(card_id)
+        deck = self.state.chance_deck
+        if card.id in deck.held_card_ids:
+            raise RuleViolation("Held chance cards cannot be discarded.")
+        if card.id in deck.draw_pile:
+            raise RuleViolation("Chance card must be drawn before being discarded.")
+        if card.id not in deck.discard_pile:
+            deck.discard_pile.append(card.id)
+        return card
+
+    def store_chance_coupon(self, player_id: str, card_id: str) -> StoredCoupon:
+        player = self.require_player(player_id)
+        card = self.require_chance_card(card_id)
+        deck = self.state.chance_deck
+        if card.id in deck.draw_pile:
+            raise RuleViolation("Chance card must be drawn before becoming a held coupon.")
+        if card.id in deck.held_card_ids:
+            raise RuleViolation("Chance card is already being held as coupon.")
+
+        coupon = StoredCoupon(
+            id=self.next_coupon_id(),
+            kind=self._coupon_kind_for_card(card),
+            owner_id=player.id,
+            source_card_id=card.id,
+            label=card.title,
+        )
+        self.state.coupons[coupon.id] = coupon
+        player.coupons.append(coupon.id)
+        deck.held_card_ids.add(card.id)
+        deck.discard_pile = [item for item in deck.discard_pile if item != card.id]
+        return coupon
+
+    def consume_coupon(self, coupon_id: str) -> StoredCoupon:
+        coupon = self.require_coupon(coupon_id)
+        if coupon.status != "held":
+            raise RuleViolation(f"Coupon {coupon_id} is not available anymore.")
+
+        player = self.require_player(coupon.owner_id)
+        player.coupons = [item for item in player.coupons if item != coupon.id]
+
+        coupon.status = "consumed"
+        deck = self.state.chance_deck
+        deck.held_card_ids.discard(coupon.source_card_id)
+        if coupon.source_card_id not in deck.discard_pile:
+            deck.discard_pile.append(coupon.source_card_id)
+        return coupon
+
+    def _reshuffle_chance_discard_into_draw(self) -> None:
+        deck = self.state.chance_deck
+        if deck.draw_pile:
+            return
+        fresh_draw = [card_id for card_id in deck.discard_pile if card_id not in deck.held_card_ids]
+        if not fresh_draw:
+            return
+        self.rng.shuffle(fresh_draw)
+        deck.draw_pile = fresh_draw
+        deck.discard_pile = []
+
+    def _coupon_kind_for_card(self, card: ChanceCard) -> CouponKind:
+        effect_type = card.effect.get("type")
+        if effect_type != "coupon":
+            raise RuleViolation(f"Chance card {card.id} does not create a stored coupon.")
+
+        raw_kind = str(card.effect.get("coupon") or "")
+        try:
+            return CouponKind(raw_kind)
+        except ValueError as exc:
+            raise RuleViolation(f"Unknown coupon kind: {raw_kind}") from exc
 
     def add_player(
         self,
@@ -342,6 +440,10 @@ class ReiDosMaresEngine:
         self._contract_counter += 1
         return f"ct-{self._contract_counter:04d}"
 
+    def next_coupon_id(self) -> str:
+        self._coupon_counter += 1
+        return f"coupon-{self._coupon_counter:04d}"
+
     def require_player(self, player_id: str) -> Player:
         player = self.state.players.get(player_id)
         if player is None:
@@ -365,3 +467,15 @@ class ReiDosMaresEngine:
         if card is None:
             raise RuleViolation(f"Unknown property code: {property_code}")
         return card
+
+    def require_chance_card(self, card_id: str) -> ChanceCard:
+        card = next((item for item in self.data.cards if item.id == card_id), None)
+        if card is None:
+            raise RuleViolation(f"Unknown chance card id: {card_id}")
+        return card
+
+    def require_coupon(self, coupon_id: str) -> StoredCoupon:
+        coupon = self.state.coupons.get(coupon_id)
+        if coupon is None:
+            raise RuleViolation(f"Unknown coupon id: {coupon_id}")
+        return coupon
