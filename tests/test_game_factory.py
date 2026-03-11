@@ -23,6 +23,9 @@ def test_ui_bootstrap_exposes_empty_first_turn_session() -> None:
         'discard_pile': [],
         'held_card_ids': [],
     }
+    assert payload['rules']['origin_owner_commission_share'] == 0.5
+    assert payload['rules']['toll_owner_share'] == 0.5
+    assert payload['rules']['extra_permission_cost'] == 2000
 
     players = payload['players']
     rivals = payload['rivals']

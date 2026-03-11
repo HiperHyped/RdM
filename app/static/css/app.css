@@ -4460,3 +4460,51 @@ kbd {
     transform: translateY(-5px) scale(1.02);
   }
 }
+
+
+/* Advanced Economy UI START */
+.preview-permission-mini,
+.preview-property-mini {
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-mini-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 180, 41, 0.45);
+  background: rgba(240, 180, 41, 0.18);
+  color: #fff2bf;
+  font-size: 0.45rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preview-permission-mini.is-mortgaged,
+.preview-property-mini.is-mortgaged {
+  filter: saturate(0.68) brightness(0.94);
+  box-shadow: inset 0 0 0 1px rgba(240, 180, 41, 0.22);
+  background-image: repeating-linear-gradient(135deg, rgba(240, 180, 41, 0.08) 0, rgba(240, 180, 41, 0.08) 10px, transparent 10px, transparent 20px);
+}
+
+.preview-rival-card.is-bankrupt {
+  opacity: 0.72;
+  border-color: rgba(228, 87, 87, 0.32);
+  box-shadow: 0 0 0 1px rgba(228, 87, 87, 0.08), var(--shadow);
+}
+
+.preview-rival-card.is-bankrupt .preview-rival-top strong,
+.preview-rival-card.is-bankrupt .preview-rival-cash {
+  color: #ffd7d7;
+}
+
+.preview-rival-card.is-bankrupt .preview-rival-dot {
+  box-shadow: 0 0 0 2px rgba(228, 87, 87, 0.22);
+}
+
+/* Advanced Economy UI END */

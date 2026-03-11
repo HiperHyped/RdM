@@ -812,9 +812,21 @@ async function resolveFuelStopForPlayer(player, node) {
     };
   }
 
-  updatePlayerCash(player, -amount);
-  player.status_label = `abasteceu ${formatCurrency(amount)}`;
-  pushActionLog(player, 'Abastecimento', `Pagou ${formatCurrency(amount)} ao banco.`);
+  const outcome = await bankChargeOutcome(player, amount, {
+    action: 'Abastecimento',
+    detail: `Pagou ${formatCurrency(amount)} ao banco.`,
+    statusLabel: `abasteceu ${formatCurrency(amount)}`,
+    reason: `abastecimento em ${player.location_label}`,
+  });
+  renderHud();
+  if (outcome.bankrupt) {
+    return {
+      paid: 0,
+      usedCoupon: false,
+      note: `${playerActionName(player)} nao conseguiu pagar o abastecimento em ${player.location_label} e faliu.`,
+      statusLabel: player.status_label,
+    };
+  }
   return {
     paid: amount,
     usedCoupon: false,
@@ -838,10 +850,11 @@ function addPropertyToPlayer(player, code) {
 
 function buyProperty(player, code) {
   const card = getPropertyCard(code);
-  if (!card) return false;
+  if (!player || player.bankrupt || !card) return false;
   if (player.property_codes.includes((code || '').toUpperCase())) return true;
   if (player.cash < card.price) return false;
   updatePlayerCash(player, -card.price);
+  setPropertyMortgaged(card.code, false);
   addPropertyToPlayer(player, code);
   return true;
 }
@@ -854,8 +867,9 @@ function removePropertyFromPlayer(player, code) {
 
 function transferProperty(fromPlayer, toPlayer, code, amount) {
   const normalized = (code || '').toUpperCase();
-  if (!fromPlayer || !toPlayer) return false;
+  if (!fromPlayer || !toPlayer || fromPlayer.bankrupt || toPlayer.bankrupt) return false;
   if (!fromPlayer.property_codes?.includes(normalized)) return false;
+  if (isPropertyMortgaged(normalized)) return false;
   if (toPlayer.cash < amount) return false;
   updatePlayerCash(toPlayer, -amount);
   updatePlayerCash(fromPlayer, amount);
@@ -876,6 +890,443 @@ function getPropertyStopRate(player, card) {
 function getPortStopRate(player, card) {
   return getPropertyStopRate(player, card);
 }
+
+// ===== Advanced Economy Integration START =====
+function economyLib() {
+  return window.RDMEconomy || null;
+}
+
+function normalizedGameRules() {
+  const lib = economyLib();
+  return lib?.normalizeRules ? lib.normalizeRules(state.rules || {}) : (state.rules || {});
+}
+
+function alivePlayers() {
+  return (state.players || []).filter((player) => !player?.bankrupt);
+}
+
+function isPropertyMortgaged(code) {
+  return Boolean(getPropertyCard(code)?.mortgaged);
+}
+
+function setPropertyMortgaged(code, mortgaged) {
+  const card = getPropertyCard(code);
+  if (!card) return null;
+  card.mortgaged = Boolean(mortgaged);
+  return card;
+}
+
+function findPermissionRecord(player, permissionId) {
+  return (player?.permissions || []).find((permission) => String(permission.id) === String(permissionId)) || null;
+}
+
+function activePermissionRecord(player) {
+  return findPermissionRecord(player, player?.active_permission_id || '');
+}
+
+function permissionPurchasePrice(permission) {
+  return Math.max(0, Number(permission?.purchase_price || normalizedGameRules().extra_permission_cost || 2000));
+}
+
+function isPermissionMortgaged(player, permissionId) {
+  return Boolean(findPermissionRecord(player, permissionId)?.mortgaged);
+}
+
+function regionPortCards(continent) {
+  return (state.portCards || []).filter((card) => String(card.continent || '') === String(continent || ''));
+}
+
+function playerHasRegionMonopoly(player, continent) {
+  if (!player || player.bankrupt || !continent) return false;
+  const cards = regionPortCards(continent);
+  if (!cards.length) return false;
+  return cards.every((card) => player.property_codes?.includes(card.code) && !isPropertyMortgaged(card.code));
+}
+
+function monopolyRegionsForPlayer(player) {
+  if (!player || player.bankrupt) return [];
+  return [...new Set((state.portCards || []).map((card) => card.continent).filter(Boolean))]
+    .filter((continent) => playerHasRegionMonopoly(player, continent));
+}
+
+function propertyMortgageCredit(card) {
+  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(card?.price || 0, normalizedGameRules()) : Math.floor(Number(card?.price || 0) * 0.5);
+}
+
+function propertyRedeemCost(card) {
+  return economyLib()?.redeemCost ? economyLib().redeemCost(card?.price || 0, normalizedGameRules()) : Math.round(propertyMortgageCredit(card) * 1.5);
+}
+
+function permissionMortgageCredit(permission) {
+  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(permissionPurchasePrice(permission), normalizedGameRules()) : Math.floor(permissionPurchasePrice(permission) * 0.5);
+}
+
+function permissionRedeemCost(permission) {
+  return economyLib()?.redeemCost ? economyLib().redeemCost(permissionPurchasePrice(permission), normalizedGameRules()) : Math.round(permissionMortgageCredit(permission) * 1.5);
+}
+
+function syncActivePermissionAfterEconomyChange(player) {
+  if (!player) return;
+  const available = (player.permissions || []).filter((permission) => !permission.mortgaged);
+  const active = activePermissionRecord(player);
+  if (active && !active.mortgaged) return;
+  if (available.length) {
+    const next = available[0];
+    player.active_permission_id = next.id;
+    player.active_permission_label = next.title;
+    player.ship_type = next.kind;
+    player.ship_type_label = next.title;
+    return;
+  }
+  player.active_permission_id = null;
+  player.active_permission_label = '--';
+  player.ship_type = null;
+  player.ship_type_label = '--';
+  player.ship_visible = false;
+}
+
+function canMortgageProperty(player, code) {
+  const normalized = String(code || '').toUpperCase();
+  if (!player || player.bankrupt || !normalized) return false;
+  if (!player.property_codes?.includes(normalized)) return false;
+  return !isPropertyMortgaged(normalized);
+}
+
+function canRedeemProperty(player, code) {
+  const normalized = String(code || '').toUpperCase();
+  const card = getPropertyCard(normalized);
+  if (!player || player.bankrupt || !card) return false;
+  if (!player.property_codes?.includes(normalized) || !card.mortgaged) return false;
+  return player.cash >= propertyRedeemCost(card);
+}
+
+function canMortgagePermission(player, permissionId) {
+  const permission = findPermissionRecord(player, permissionId);
+  if (!player || player.bankrupt || !permission) return false;
+  if (permission.mortgaged) return false;
+  const activePermissionId = String(player.active_permission_id || '');
+  const contractInProgress = Boolean(
+    player.active_contract
+    && !player.active_contract.completed
+    && player.active_contract.destination
+    && player.active_contract.destination !== '--'
+    && !player.needs_new_contract
+  );
+  if (String(permission.id) === activePermissionId && contractInProgress) return false;
+  return true;
+}
+
+function canRedeemPermission(player, permissionId) {
+  const permission = findPermissionRecord(player, permissionId);
+  if (!player || player.bankrupt || !permission || !permission.mortgaged) return false;
+  return player.cash >= permissionRedeemCost(permission);
+}
+
+function mortgagePropertyForPlayer(player, code, { auto = false, reason = 'hipoteca' } = {}) {
+  if (!canMortgageProperty(player, code)) return false;
+  const card = setPropertyMortgaged(code, true);
+  const credit = propertyMortgageCredit(card);
+  updatePlayerCash(player, credit);
+  player.status_label = `hipotecou ${card.code}`;
+  pushActionLog(player, auto ? 'Hipoteca automatica' : 'Hipoteca', `${card.code}: recebeu ${formatCurrency(credit)} (${reason}).`);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return true;
+}
+
+function redeemPropertyForPlayer(player, code, { auto = false } = {}) {
+  if (!canRedeemProperty(player, code)) return false;
+  const card = getPropertyCard(code);
+  const cost = propertyRedeemCost(card);
+  updatePlayerCash(player, -cost);
+  setPropertyMortgaged(code, false);
+  player.status_label = `resgatou ${card.code}`;
+  pushActionLog(player, auto ? 'Resgate automatico' : 'Resgate', `${card.code}: pagou ${formatCurrency(cost)} ao banco.`);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return true;
+}
+
+function mortgagePermissionForPlayer(player, permissionId, { auto = false, reason = 'hipoteca' } = {}) {
+  if (!canMortgagePermission(player, permissionId)) return false;
+  const permission = findPermissionRecord(player, permissionId);
+  const credit = permissionMortgageCredit(permission);
+  permission.mortgaged = true;
+  updatePlayerCash(player, credit);
+  syncActivePermissionAfterEconomyChange(player);
+  player.status_label = `hipotecou ${permission.title}`;
+  pushActionLog(player, auto ? 'Hipoteca automatica' : 'Hipoteca', `${permission.title}: recebeu ${formatCurrency(credit)} (${reason}).`);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return true;
+}
+
+function redeemPermissionForPlayer(player, permissionId, { auto = false } = {}) {
+  if (!canRedeemPermission(player, permissionId)) return false;
+  const permission = findPermissionRecord(player, permissionId);
+  const cost = permissionRedeemCost(permission);
+  updatePlayerCash(player, -cost);
+  permission.mortgaged = false;
+  syncActivePermissionAfterEconomyChange(player);
+  player.status_label = `resgatou ${permission.title}`;
+  pushActionLog(player, auto ? 'Resgate automatico' : 'Resgate', `${permission.title}: pagou ${formatCurrency(cost)} ao banco.`);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return true;
+}
+
+function mortgageCandidatesForPlayer(player) {
+  if (!player || player.bankrupt) return [];
+  const propertyCandidates = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card && !card.mortgaged)
+    .map((card) => ({
+      type: 'property',
+      key: card.code,
+      label: card.code,
+      credit: propertyMortgageCredit(card),
+      priority: playerHasRegionMonopoly(player, card.continent) ? 2 : 1,
+    }));
+  const permissionCandidates = (player.permissions || [])
+    .filter((permission) => canMortgagePermission(player, permission.id))
+    .map((permission) => ({
+      type: 'permission',
+      key: permission.id,
+      label: permission.title,
+      credit: permissionMortgageCredit(permission),
+      priority: 3,
+    }));
+  return [...propertyCandidates, ...permissionCandidates]
+    .filter((entry) => entry.credit > 0)
+    .sort((left, right) => (left.priority - right.priority) || (left.credit - right.credit) || String(left.label).localeCompare(String(right.label)));
+}
+
+function performMortgageCandidate(player, candidate, reason) {
+  if (!player || !candidate) return false;
+  if (candidate.type === 'property') return mortgagePropertyForPlayer(player, candidate.key, { auto: true, reason });
+  if (candidate.type === 'permission') return mortgagePermissionForPlayer(player, candidate.key, { auto: true, reason });
+  return false;
+}
+
+function releaseCouponsOnBankruptcy(player) {
+  (player?.coupons || []).forEach((coupon) => {
+    if (typeof coupon !== 'string' && coupon?.source_card_id) {
+      releaseHeldChanceCardToDiscard(coupon.source_card_id);
+    }
+  });
+  player.coupons = [];
+}
+
+function bankruptPlayer(player, { creditor = null, reason = 'divida nao honrada', detail = '' } = {}) {
+  if (!player || player.bankrupt) return false;
+  const remainingCash = Math.max(0, Number(player.cash || 0));
+  if (creditor && remainingCash > 0) {
+    updatePlayerCash(player, -remainingCash);
+    updatePlayerCash(creditor, remainingCash);
+    pushActionLog(creditor, 'Recebeu espolio', `${player.name}: ${formatCurrency(remainingCash)}.`);
+  }
+  (player.property_codes || []).forEach((code) => {
+    setPropertyMortgaged(code, false);
+  });
+  player.property_codes = [];
+  refreshOwnedCounts(player);
+  (player.permissions || []).forEach((permission) => {
+    permission.mortgaged = false;
+  });
+  player.permissions = [];
+  player.active_permission_id = null;
+  player.active_permission_label = '--';
+  player.ship_type = null;
+  player.ship_type_label = '--';
+  player.active_contract = null;
+  player.needs_new_contract = false;
+  player.ship_visible = false;
+  player.bankrupt = true;
+  player.status_label = 'falido';
+  releaseCouponsOnBankruptcy(player);
+  pushActionLog(player, 'Falencia', detail ? `${reason}: ${detail}.` : `${reason}.`);
+  renderHud();
+  renderNodeOverlay();
+  renderShipOverlay();
+  return true;
+}
+
+function mortgageCandidateKey(candidate) {
+  return `${candidate?.type || ''}:${candidate?.key || ''}`;
+}
+
+function mortgageCandidateLabel(candidate) {
+  if (!candidate) return 'ativo';
+  if (candidate.type === 'property') {
+    const card = getPropertyCard(candidate.key);
+    return `${candidate.label} (${card?.is_toll ? 'Pedagio' : 'Porto'})`;
+  }
+  return `${candidate.label} (Permissao)`;
+}
+
+function mortgageCandidateCardCode(candidate) {
+  return candidate?.type === 'property' ? String(candidate.key || '').toUpperCase() : '';
+}
+
+async function promptHumanMortgageForLiquidity(player, due, { reason = 'pagamento obrigatorio', creditor = null } = {}) {
+  const skippedCandidates = new Set();
+
+  while (player && !player.bankrupt && player.cash < due) {
+    const availableCandidates = mortgageCandidatesForPlayer(player)
+      .filter((candidate) => !skippedCandidates.has(mortgageCandidateKey(candidate)));
+    if (!availableCandidates.length) break;
+
+    const candidate = availableCandidates[0];
+    const shortage = Math.max(0, due - player.cash);
+    const projectedCash = player.cash + Number(candidate.credit || 0);
+    const canContinueAfterMortgage = projectedCash >= due;
+    const choice = await openDecisionModal({
+      title: 'Hipoteca necessaria',
+      copy: `Faltam ${formatCurrency(shortage)} para ${reason}. Hipotecar ${mortgageCandidateLabel(candidate)} por ${formatCurrency(candidate.credit)}?${canContinueAfterMortgage ? '' : ` Ainda faltara ${formatCurrency(Math.max(0, due - projectedCash))} depois disso.`}`,
+      primaryLabel: `Hipotecar ${formatCurrency(candidate.credit)}`,
+      secondaryLabel: availableCandidates.length > 1 ? 'Ver outra opcao' : 'Declarar falencia',
+      cardCode: mortgageCandidateCardCode(candidate),
+    });
+
+    if (choice === 'primary') {
+      const mortgaged = performMortgageCandidate(player, candidate, reason);
+      if (mortgaged) {
+        skippedCandidates.clear();
+        continue;
+      }
+    }
+
+    skippedCandidates.add(mortgageCandidateKey(candidate));
+  }
+
+  if (player && player.cash >= due) return true;
+  bankruptPlayer(player, { creditor, reason, detail: `faltavam ${formatCurrency(Math.max(0, due - (player?.cash || 0)))}` });
+  return false;
+}
+
+async function ensurePlayerLiquidity(player, amount, { reason = 'pagamento obrigatorio', creditor = null } = {}) {
+  const due = Math.max(0, Number(amount || 0));
+  if (!player || due <= 0 || player.bankrupt) return true;
+  if (player.cash >= due) return true;
+
+  if (player.is_human) {
+    return promptHumanMortgageForLiquidity(player, due, { reason, creditor });
+  }
+
+  const candidates = mortgageCandidatesForPlayer(player);
+  for (const candidate of candidates) {
+    if (player.cash >= due) break;
+    performMortgageCandidate(player, candidate, reason);
+  }
+  if (player.cash >= due) return true;
+  bankruptPlayer(player, { creditor, reason, detail: `faltavam ${formatCurrency(Math.max(0, due - player.cash))}` });
+  return false;
+}
+
+async function bankChargeOutcome(player, amount, { action = 'Pagamento ao banco', detail = '', statusLabel = null, reason = 'pagamento ao banco' } = {}) {
+  const due = Math.max(0, Number(amount || 0));
+  if (!player || due <= 0) return { paid: 0, bankrupt: false };
+  if (!await ensurePlayerLiquidity(player, due, { reason })) {
+    return { paid: 0, bankrupt: true };
+  }
+  updatePlayerCash(player, -due);
+  player.status_label = statusLabel || `pagou ${formatCurrency(due)}`;
+  pushActionLog(player, action, detail || `${formatCurrency(due)} ao banco.`);
+  return { paid: due, bankrupt: false };
+}
+
+async function playerChargeOutcome(player, receiver, amount, { payerAction = 'Pagamento', receiverAction = 'Recebimento', payerDetail = '', receiverDetail = '', statusLabel = null, reason = 'pagamento a outro jogador' } = {}) {
+  const due = Math.max(0, Number(amount || 0));
+  if (!player || !receiver || due <= 0) return { paid: 0, bankrupt: false };
+  if (!await ensurePlayerLiquidity(player, due, { reason, creditor: receiver })) {
+    return { paid: 0, bankrupt: true };
+  }
+  updatePlayerCash(player, -due);
+  updatePlayerCash(receiver, due);
+  player.status_label = statusLabel || `pagou ${formatCurrency(due)}`;
+  pushActionLog(player, payerAction, payerDetail || `${formatCurrency(due)} para ${receiver.name}.`);
+  pushActionLog(receiver, receiverAction, receiverDetail || `${formatCurrency(due)} de ${player.name}.`);
+  return { paid: due, bankrupt: false };
+}
+
+function contractSettlementBreakdown(player, contract, modifiers = {}) {
+  const originOwner = ownerPlayerOf(contract?.origin || '');
+  const tollOwner = ownerPlayerOf(contract?.mandatory_toll || '');
+  const originCard = getPropertyCard(contract?.origin || '');
+  const tollIncomeEligible = Boolean(
+    tollOwner
+    && tollOwner.id !== player?.id
+    && !tollOwner.bankrupt
+    && !isPropertyMortgaged(contract?.mandatory_toll || '')
+    && !contract?.toll_requirement_waived
+  );
+  const originCommissionEligible = Boolean(
+    originOwner
+    && originOwner.id !== player?.id
+    && !originOwner.bankrupt
+    && !isPropertyMortgaged(contract?.origin || '')
+  );
+  const monopolyDouble = Boolean(
+    originCard
+    && originCard.kind === 'port'
+    && player?.property_codes?.includes(originCard.code)
+    && !isPropertyMortgaged(originCard.code)
+    && playerHasRegionMonopoly(player, originCard.continent)
+  );
+  const lib = economyLib();
+  const breakdown = lib?.computeContractSettlement
+    ? lib.computeContractSettlement({
+        baseFreightValue: Number(contract?.base_freight_value || contract?.freight_value || 0),
+        roundsElapsed: Number(contract?.rounds_elapsed || 1),
+        targetRounds: Number(contract?.target_rounds || state.rules.target_rounds || 4),
+        freightMultiplier: Number(modifiers.freightMultiplier || 1),
+        waiveOriginShare: Boolean(modifiers.waiveOriginShare),
+        originOwnerEligible: originCommissionEligible,
+        tollOwnerEligible: tollIncomeEligible,
+        originMonopolyDouble: monopolyDouble,
+        rules: normalizedGameRules(),
+      })
+    : { base: 0, adjustedBase: 0, gross: 0, targetRounds: 4, roundsElapsed: 1, earlyRounds: 0, lateRounds: 0, adjustment: 0, freightMultiplier: 1, waiveOriginShare: false, monopolyMultiplier: 1, originCommission: 0, tollShare: 0, total: 0 };
+  return {
+    ...breakdown,
+    originOwner: originCommissionEligible ? originOwner : null,
+    tollOwner: tollIncomeEligible ? tollOwner : null,
+  };
+}
+
+function stopChargeBreakdown(player, card) {
+  const owner = ownerPlayerOf(card?.code || '');
+  const { fee, multiplier } = getPropertyStopRate(player, card);
+  const ownerEligible = Boolean(owner && owner.id !== player?.id && !owner.bankrupt && !isPropertyMortgaged(card?.code || ''));
+  const lib = economyLib();
+  const breakdown = lib?.computeStopCharge
+    ? lib.computeStopCharge({
+        fee,
+        multiplier,
+        ownerEligible,
+        hasRegionMonopoly: ownerEligible && card?.kind === 'port' && playerHasRegionMonopoly(owner, card?.continent || ''),
+        regionSize: regionPortCards(card?.continent || '').length || 1,
+        propertyKind: card?.kind || 'port',
+        rules: normalizedGameRules(),
+      })
+    : { bankFee: fee, ownerCharge: ownerEligible ? (fee * multiplier) : 0, monopolyApplied: false, monopolyRegionSize: 1 };
+  return {
+    owner,
+    fee,
+    multiplier,
+    ownerEligible,
+    bankFee: breakdown.bankFee,
+    ownerCharge: breakdown.ownerCharge,
+    monopolyApplied: breakdown.monopolyApplied,
+    monopolyRegionSize: breakdown.monopolyRegionSize,
+    mortgaged: isPropertyMortgaged(card?.code || ''),
+  };
+}
+// ===== Advanced Economy Integration END =====
 
 function getRate(card, shipType) {
   return card?.rows?.find((row) => row.kind === shipType) || null;
@@ -931,14 +1382,16 @@ function cargoIconMarkup(kind, className) {
 }
 
 function permissionMiniMarkup(permission) {
+  const mortgaged = Boolean(permission?.mortgaged);
   return `
-    <article class="preview-permission-mini" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
+    <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
+      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
       <header class="preview-permission-mini-head">${permission.title}</header>
       <div class="preview-permission-mini-row top">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
       </div>
-      <div class="preview-permission-mini-body">Permissao</div>
+      <div class="preview-permission-mini-body">${mortgaged ? 'Hipotecada' : 'Permissao'}</div>
       <div class="preview-permission-mini-row bottom">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
@@ -963,8 +1416,10 @@ function propertyMiniRowsMarkup(card) {
 
 function propertyMiniMarkup(card) {
   const tollHeadClass = card.is_toll ? ' preview-property-mini-head-toll' : '';
+  const mortgaged = Boolean(card?.mortgaged);
   return `
-    <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
+    <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}${mortgaged ? ' is-mortgaged' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
+      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
       <header class="preview-property-mini-head${tollHeadClass}">
         ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
@@ -982,8 +1437,8 @@ function propertyMiniMarkup(card) {
         <div class="preview-property-mini-rows">${propertyMiniRowsMarkup(card)}</div>
       </div>
       <footer class="preview-property-mini-foot">
-        <span>Preco</span>
-        <strong>${card.price}</strong>
+        <span>${mortgaged ? 'Resgate' : 'Preco'}</span>
+        <strong>${mortgaged ? formatCurrency(propertyRedeemCost(card)) : card.price}</strong>
       </footer>
     </article>
   `;
@@ -1120,7 +1575,14 @@ function playerActionLogMarkup(player) {
 }
 
 function contractSummaryMarkup(player, contract) {
-  if (!contract || !player?.active_permission_label) {
+  if (player?.bankrupt) {
+    return `
+      <div class="preview-rival-contract-line is-empty">
+        <span class="preview-rival-contract-muted">companhia falida</span>
+      </div>
+    `;
+  }
+  if (!contract || !player?.active_permission_label || player.active_permission_label === '--') {
     return `
       <div class="preview-rival-contract-line is-empty">
         <span class="preview-rival-contract-muted">primeiro turno pendente</span>
@@ -1257,6 +1719,7 @@ function miniCouponMarkup(playerId, coupon, selected = false) {
   });
 }
 
+
 function routeStopMarkup(code, { large = false } = {}) {
   const normalized = String(code || '').toUpperCase();
   const largeClass = large ? ' is-large' : '';
@@ -1380,7 +1843,7 @@ function renderRivals() {
     const isOpen = isHuman ? state.view.humanDrawerOpen : state.view.openSystemDrawerId === player.id;
     const isActive = Boolean(active && active.id === player.id);
     const card = document.createElement('article');
-    card.className = `preview-rival-card${isOpen ? ' is-open' : ''}${isHuman ? ' is-human' : ''}${isActive ? ' is-active-player' : ''}`;
+    card.className = `preview-rival-card${isOpen ? ' is-open' : ''}${isHuman ? ' is-human' : ''}${isActive ? ' is-active-player' : ''}${player.bankrupt ? ' is-bankrupt' : ''}`;
     card.dataset.playerId = player.id;
     card.style.setProperty('--rival-accent', player.color_hex || '#8fd7ff');
     card.style.setProperty('--card-grow', '1');
@@ -1388,7 +1851,7 @@ function renderRivals() {
       ${playerActionLogMarkup(player)}
       <div class="preview-rival-top">
         <span class="preview-rival-dot" style="background:${player.color_hex}"></span>
-        <strong>${isHuman ? player.name : `&#129302; ${player.name}`}</strong>
+        <strong>${isHuman ? player.name : `&#129302; ${player.name}`}${player.bankrupt ? ' (falido)' : ''}</strong>
         <span class="preview-rival-cash-wrap">${playerCashFlashMarkup(player)}<span class="preview-rival-cash">${player.cash_display}</span></span>
       </div>
       ${contractSummaryMarkup(player, contract)}
@@ -1561,6 +2024,8 @@ function createPermissionRecord(card) {
     title: card.title,
     accent: card.accent,
     text: card.text,
+    purchase_price: Number(card.purchase_price || normalizedGameRules().extra_permission_cost || 2000),
+    mortgaged: Boolean(card.mortgaged),
   };
 }
 
@@ -2012,21 +2477,36 @@ function calculateContractPreviewForPlayer(player, destinationCard, originCode =
   const permissionKind = player?.active_permission_id || player?.ship_type || '';
   const distance = Number(state.distances?.[resolvedOriginCode]?.[destinationCard.code] || 0);
   const rate = getRate(originCard, permissionKind) || { fee: 0, multiplier: 1 };
-  const ownsOrigin = Boolean(player?.property_codes?.includes(resolvedOriginCode));
-  const base = distance * rate.fee;
-  const total = ownsOrigin ? (base * rate.multiplier) : base;
-  const formula = ownsOrigin
-    ? `${distance} x ${rate.fee} x ${rate.multiplier} = ${total}`
-    : `${distance} x ${rate.fee} = ${total}`;
+  const ownsOrigin = Boolean(player?.property_codes?.includes(resolvedOriginCode) && !isPropertyMortgaged(resolvedOriginCode));
+  const hasOriginMonopoly = Boolean(ownsOrigin && originCard?.kind === 'port' && playerHasRegionMonopoly(player, originCard.continent));
+  const lib = economyLib();
+  const preview = lib?.computeContractPreview
+    ? lib.computeContractPreview({
+        distance,
+        fee: Number(rate.fee || 0),
+        multiplier: Number(rate.multiplier || 1),
+        ownsOrigin,
+        hasOriginMonopoly,
+        rules: normalizedGameRules(),
+      })
+    : {
+        base: distance * Number(rate.fee || 0),
+        ownedBase: distance * Number(rate.fee || 0),
+        total: distance * Number(rate.fee || 0),
+        formula: `${distance} x ${Number(rate.fee || 0)} = ${distance * Number(rate.fee || 0)}`,
+      };
   return {
     originCode: resolvedOriginCode,
     destinationCode: destinationCard.code,
     distance,
-    fee: rate.fee,
-    multiplier: rate.multiplier,
+    fee: Number(rate.fee || 0),
+    multiplier: Number(rate.multiplier || 1),
     ownsOrigin,
-    total,
-    formula,
+    hasOriginMonopoly,
+    base: Number(preview.base || 0),
+    ownedBase: Number(preview.ownedBase || preview.total || 0),
+    total: Number(preview.total || 0),
+    formula: preview.formula || `${distance} x ${Number(rate.fee || 0)} = ${Number(preview.total || 0)}`,
   };
 }
 
@@ -2050,16 +2530,20 @@ function applyDestinationSelectionForPlayer(player, card, { updateSession = fals
     contract.deadline_progress = `1/${contract.target_rounds}`;
     contract.distance_label = `Distancia ${preview.distance}`;
     contract.cargo_label = player.active_permission_label || 'Sem carga';
-    contract.freight_label = `Frete $ ${preview.total}`;
+    contract.freight_label = `Frete ${formatCurrency(preview.total)}`;
     contract.freight_value = preview.total;
-    contract.base_freight_value = preview.total;
+    contract.base_freight_value = preview.ownedBase;
     contract.settlement_adjustment = 0;
     contract.settlement_value = preview.total;
     contract.distance_value = preview.distance;
     contract.origin_owned = preview.ownsOrigin;
-    contract.note = preview.ownsOrigin
-      ? `Contrato: ${preview.formula} (D x E x M), porque o porto de partida foi comprado.`
-      : `Contrato: ${preview.formula} (D x E), porque o porto de partida nao foi comprado.`;
+    contract.origin_monopoly = preview.hasOriginMonopoly;
+    const reasonParts = [];
+    if (preview.ownsOrigin) reasonParts.push('porto de partida comprado');
+    if (preview.hasOriginMonopoly) reasonParts.push('monopolio no porto de partida');
+    contract.note = reasonParts.length
+      ? `Contrato: ${preview.formula}. Aplicado ${reasonParts.join(' + ')}.`
+      : `Contrato: ${preview.formula}. Sem bonus de propriedade no porto de partida.`;
   }
   player.status_label = 'contrato inicial definido';
   const resolvedNote = note || contract?.note || 'Contrato inicial calculado.';
@@ -2104,12 +2588,13 @@ function applyReroutedDestinationForPlayer(player, card, preview = null) {
   contract.destination = card.code;
   contract.distance_label = `Distancia ${resolvedPreview.distance}`;
   contract.cargo_label = player.active_permission_label || 'Sem carga';
-  contract.freight_label = `Frete $ ${resolvedPreview.total}`;
+  contract.freight_label = `Frete ${formatCurrency(resolvedPreview.total)}`;
   contract.freight_value = resolvedPreview.total;
-  contract.base_freight_value = resolvedPreview.total;
+  contract.base_freight_value = resolvedPreview.ownedBase;
   contract.settlement_value = resolvedPreview.total;
   contract.distance_value = resolvedPreview.distance;
   contract.origin_owned = resolvedPreview.ownsOrigin;
+  contract.origin_monopoly = resolvedPreview.hasOriginMonopoly;
   contract.route_stage = destinationNodeId && player.board_node_id === destinationNodeId && contract.toll_passed
     ? 'arrived'
     : (contract.toll_passed ? 'to_destination' : 'to_toll');
@@ -2265,11 +2750,17 @@ function resetContractFromCurrentPort(player, { updateSession = false, actionLab
 }
 
 async function maybeHandleCurrentPortAfterDelivery(player) {
-  if (!player) return false;
+  if (!player || player.bankrupt) return false;
   const card = getPropertyCard(player.location_code || '');
   if (!card || card.kind !== 'port') return false;
   const owner = ownerPlayerOf(card.code);
   const negotiationPrice = Math.round(card.price * 1.5);
+
+  if (owner && owner.id !== player.id && isPropertyMortgaged(card.code)) {
+    pushActionLog(player, 'Titulo hipotecado', `${card.code} esta hipotecado e nao pode ser negociado agora.`);
+    renderHud();
+    return false;
+  }
 
   if (player.is_human) {
     if (!owner) {
@@ -2950,35 +3441,7 @@ function advanceContractRoundForPlayer(player) {
 }
 
 function resolveContractSettlement(player, contract, { freightMultiplier = 1, waiveOriginShare = false } = {}) {
-  const base = Number(contract?.base_freight_value || contract?.freight_value || 0);
-  const targetRounds = Number(contract?.target_rounds || state.rules.target_rounds || 4);
-  const roundsElapsed = Math.max(1, Number(contract?.rounds_elapsed || 1));
-  const bonusPerRound = Number(state.rules.bonus_per_early_round || 0);
-  const penaltyPerRound = Number(state.rules.penalty_per_late_round || 0);
-  const earlyRounds = Math.max(0, targetRounds - roundsElapsed);
-  const lateRounds = Math.max(0, roundsElapsed - targetRounds);
-  const adjustment = (earlyRounds * bonusPerRound) - (lateRounds * penaltyPerRound);
-  const adjustedBase = Math.max(0, Math.round(base * freightMultiplier));
-  const gross = Math.max(0, adjustedBase + adjustment);
-  const originOwner = ownerPlayerOf(contract?.origin || '');
-  const originCommission = originOwner && originOwner.id !== player?.id && !waiveOriginShare
-    ? Math.max(0, Math.floor(gross * Number(state.rules.origin_owner_commission_share || 0)))
-    : 0;
-  return {
-    base,
-    adjustedBase,
-    gross,
-    targetRounds,
-    roundsElapsed,
-    earlyRounds,
-    lateRounds,
-    adjustment,
-    freightMultiplier,
-    waiveOriginShare,
-    originOwner,
-    originCommission,
-    total: Math.max(0, gross - originCommission),
-  };
+  return contractSettlementBreakdown(player, contract, { freightMultiplier, waiveOriginShare });
 }
 
 async function resolveSettlementCouponModifiersForPlayer(player, contract) {
@@ -2998,7 +3461,7 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
   }
 
   const originOwner = ownerPlayerOf(contract.origin || '');
-  if (originOwner && originOwner.id !== player.id) {
+  if (originOwner && originOwner.id !== player.id && !originOwner.bankrupt && !isPropertyMortgaged(contract.origin || '')) {
     const usedSkipOwnerShare = await maybeSpendCoupon(player, 'skip_owner_share', {
       title: 'Quebra de Contrato',
       copy: `Usar Quebra de Contrato para impedir a comissao de ${originOwner.name} sobre o frete deste contrato?`,
@@ -3029,8 +3492,16 @@ async function completeContractForPlayer(player) {
     updatePlayerCash(settlement.originOwner, settlement.originCommission);
     pushActionLog(
       settlement.originOwner,
-      'Recebeu comissao',
+      'Recebeu comissao do PP',
       `${contract.origin}: ${formatCurrency(settlement.originCommission)} de ${player.name}.`,
+    );
+  }
+  if (settlement.tollShare > 0 && settlement.tollOwner) {
+    updatePlayerCash(settlement.tollOwner, settlement.tollShare);
+    pushActionLog(
+      settlement.tollOwner,
+      'Recebeu comissao do pedagio',
+      `${contract.mandatory_toll}: ${formatCurrency(settlement.tollShare)} de ${player.name}.`,
     );
   }
 
@@ -3045,8 +3516,11 @@ async function completeContractForPlayer(player) {
   contract.deadline_progress = `${settlement.roundsElapsed}/${settlement.targetRounds}`;
 
   const detailParts = [];
+  if (settlement.monopolyMultiplier > 1) {
+    detailParts.push('monopolio do porto de partida x2');
+  }
   if (settlement.freightMultiplier > 1) {
-    detailParts.push(`frete dobrado para ${formatCurrency(settlement.adjustedBase)}`);
+    detailParts.push(`cupom de frete x${settlement.freightMultiplier}`);
   }
   if (settlement.adjustment > 0) {
     detailParts.push(`bonus ${formatCurrency(settlement.adjustment)}`);
@@ -3054,15 +3528,18 @@ async function completeContractForPlayer(player) {
     detailParts.push(`onus ${formatCurrency(Math.abs(settlement.adjustment))}`);
   }
   if (settlement.originCommission > 0 && settlement.originOwner) {
-    detailParts.push(`comissao ${formatCurrency(settlement.originCommission)} para ${settlement.originOwner.name}`);
+    detailParts.push(`comissao PP ${formatCurrency(settlement.originCommission)} para ${settlement.originOwner.name}`);
   } else if (settlement.waiveOriginShare && settlement.originOwner) {
-    detailParts.push(`comissao de ${settlement.originOwner.name} bloqueada`);
+    detailParts.push(`comissao do PP de ${settlement.originOwner.name} bloqueada`);
+  }
+  if (settlement.tollShare > 0 && settlement.tollOwner) {
+    detailParts.push(`comissao PE ${formatCurrency(settlement.tollShare)} para ${settlement.tollOwner.name}`);
   }
   const detailLine = detailParts.length
     ? `${formatCurrency(settlement.total)} liquidos (${detailParts.join(' | ')}).`
     : `${formatCurrency(settlement.total)} sem ajuste adicional.`;
 
-  contract.note = `${playerActionName(player)} concluiu o contrato e recebeu ${formatCurrency(settlement.total)}.`;
+  contract.note = `${playerActionName(player)} concluiu o contrato e recebeu ${formatCurrency(settlement.total)} liquidos.`;
   player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
   pushActionLog(player, 'Contrato concluido', detailLine);
   renderHud();
@@ -3847,7 +4324,7 @@ async function movePlayerByPortOffset(player, offset, { stepDelay = 260 } = {}) 
 }
 
 function otherPlayers(player) {
-  return state.players.filter((entry) => entry.id !== player?.id);
+  return alivePlayers().filter((entry) => entry.id !== player?.id);
 }
 
 async function resolveLandingAfterForcedMovement(player, { stepDelay = 260 } = {}) {
@@ -3922,30 +4399,65 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       break;
     }
     case 'pay_money': {
-      updatePlayerCash(player, -(effect.amount || 0));
-      note = `${playerActionName(player)} pagou ${formatCurrency(effect.amount || 0)}.`;
-      detail = `Pagou ${formatCurrency(effect.amount || 0)}.`;
-      statusLabel = `pagou ${formatCurrency(effect.amount || 0)}`;
+      const amount = effect.amount || 0;
+      const outcome = await bankChargeOutcome(player, amount, {
+        action: 'Carta: pagamento ao banco',
+        detail: `Pagou ${formatCurrency(amount)} ao banco.`,
+        statusLabel: `pagou ${formatCurrency(amount)}`,
+        reason: `carta ${card.title}`,
+      });
+      note = outcome.bankrupt
+        ? `${playerActionName(player)} nao conseguiu pagar ${formatCurrency(amount)} ao banco e faliu.`
+        : `${playerActionName(player)} pagou ${formatCurrency(amount)}.`;
+      detail = outcome.bankrupt
+        ? `Nao honrou ${formatCurrency(amount)} ao banco e faliu.`
+        : `Pagou ${formatCurrency(amount)}.`;
+      statusLabel = player.status_label;
       break;
     }
     case 'gain_from_each': {
       const amount = effect.amount || 0;
       const rivals = otherPlayers(player);
-      rivals.forEach((entry) => updatePlayerCash(entry, -amount));
-      updatePlayerCash(player, amount * rivals.length);
-      note = `${playerActionName(player)} recebeu ${formatCurrency(amount)} de cada adversario.`;
-      detail = `Recebeu ${formatCurrency(amount * rivals.length)} de ${rivals.length} jogadores.`;
-      statusLabel = `recebeu ${formatCurrency(amount * rivals.length)}`;
+      let totalReceived = 0;
+      for (const entry of rivals) {
+        const outcome = await playerChargeOutcome(entry, player, amount, {
+          payerAction: 'Carta: pagamento',
+          receiverAction: 'Carta: recebimento',
+          payerDetail: `${formatCurrency(amount)} para ${player.name}.`,
+          receiverDetail: `${formatCurrency(amount)} de ${entry.name}.`,
+          statusLabel: `pagou ${formatCurrency(amount)}`,
+          reason: `carta ${card.title}`,
+        });
+        totalReceived += Number(outcome.paid || 0);
+      }
+      note = `${playerActionName(player)} recebeu ${formatCurrency(totalReceived)} dos demais jogadores.`;
+      detail = `Recebeu ${formatCurrency(totalReceived)} de ${rivals.length} jogador(es).`;
+      statusLabel = totalReceived > 0 ? `recebeu ${formatCurrency(totalReceived)}` : player.status_label;
       break;
     }
     case 'pay_each': {
       const amount = effect.amount || 0;
       const rivals = otherPlayers(player);
-      rivals.forEach((entry) => updatePlayerCash(entry, amount));
-      updatePlayerCash(player, -(amount * rivals.length));
-      note = `${playerActionName(player)} pagou ${formatCurrency(amount)} a cada adversario.`;
-      detail = `Pagou ${formatCurrency(amount * rivals.length)} para ${rivals.length} jogadores.`;
-      statusLabel = `pagou ${formatCurrency(amount * rivals.length)}`;
+      let totalPaid = 0;
+      let paidCount = 0;
+      for (const entry of rivals) {
+        const outcome = await playerChargeOutcome(player, entry, amount, {
+          payerAction: 'Carta: pagamento',
+          receiverAction: 'Carta: recebimento',
+          payerDetail: `${formatCurrency(amount)} para ${entry.name}.`,
+          receiverDetail: `${formatCurrency(amount)} de ${player.name}.`,
+          statusLabel: `pagou ${formatCurrency(amount)}`,
+          reason: `carta ${card.title}`,
+        });
+        totalPaid += Number(outcome.paid || 0);
+        if (outcome.paid > 0) paidCount += 1;
+        if (outcome.bankrupt) break;
+      }
+      note = player.bankrupt
+        ? `${playerActionName(player)} nao conseguiu pagar todos os jogadores e faliu.`
+        : `${playerActionName(player)} pagou ${formatCurrency(amount)} a cada adversario.`;
+      detail = `Pagou ${formatCurrency(totalPaid)} para ${paidCount} jogador(es).`;
+      statusLabel = player.status_label;
       break;
     }
     case 'receive_half_current_freight': {
@@ -3955,7 +4467,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
         contract.base_freight_value = reducedValue;
         contract.freight_value = reducedValue;
         contract.settlement_value = reducedValue;
-        contract.freight_label = `Frete $ ${reducedValue}`;
+        contract.freight_label = `Frete ${formatCurrency(reducedValue)}`;
       }
       note = `${playerActionName(player)} teve o frete atual reduzido para metade: ${formatCurrency(reducedValue)}.`;
       detail = `Frete reduzido para ${formatCurrency(reducedValue)}.`;
@@ -4072,10 +4584,10 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     return { note: `${playerActionName(player)} parou em porto sem dados.`, statusLabel: player?.status_label || '--' };
   }
 
-  const owner = ownerPlayerOf(card.code);
-  const { fee, multiplier } = getPropertyStopRate(player, card);
-  const ownerCharge = fee * multiplier;
+  const stop = stopChargeBreakdown(player, card);
+  const owner = stop.owner;
   const negotiationPrice = Math.round(card.price * 1.5);
+  const monopolySuffix = stop.monopolyApplied ? ` (monopolio x${stop.monopolyRegionSize})` : '';
 
   setSession({
     active_player_id: player.id,
@@ -4096,7 +4608,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
-      const freeStay = await maybeUseFreePortStayCoupon(player, card, fee);
+      const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.bankFee);
       if (freeStay) {
         return {
           note: `${playerActionName(player)} usou Porto Livre em ${card.code} e nao pagou estadia ao banco.`,
@@ -4104,12 +4616,21 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
-      updatePlayerCash(player, -fee);
-      player.status_label = `pagou ${formatCurrency(fee)}`;
-      pushActionLog(player, 'Estadia ao banco', `${card.code}: ${formatCurrency(fee)}.`);
+      const outcome = await bankChargeOutcome(player, stop.bankFee, {
+        action: 'Estadia ao banco',
+        detail: `${card.code}: ${formatCurrency(stop.bankFee)}.`,
+        statusLabel: `pagou ${formatCurrency(stop.bankFee)}`,
+        reason: `estadia em ${card.code}`,
+      });
       renderHud();
+      if (outcome.bankrupt) {
+        return {
+          note: `${playerActionName(player)} nao conseguiu pagar a estadia de ${formatCurrency(stop.bankFee)} em ${card.code} e faliu.`,
+          statusLabel: player.status_label,
+        };
+      }
       return {
-        note: `${playerActionName(player)} pagou ${formatCurrency(fee)} ao banco em ${card.code}.`,
+        note: `${playerActionName(player)} pagou ${formatCurrency(stop.bankFee)} ao banco em ${card.code}.`,
         statusLabel: player.status_label,
       };
     }
@@ -4118,10 +4639,10 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     const choice = await openDecisionModal({
       title: `${card.code} sem dono`,
       copy: canBuy
-        ? `Comprar o porto por ${formatCurrency(card.price)} ou pagar estadia de ${formatCurrency(fee)} ao banco?`
-        : `Voce nao tem caixa para comprar ${card.code}. Pague estadia de ${formatCurrency(fee)} ao banco.`,
-      primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(fee)}`,
-      secondaryLabel: `Pagar ${formatCurrency(fee)}`,
+        ? `Comprar o porto por ${formatCurrency(card.price)} ou pagar estadia de ${formatCurrency(stop.bankFee)} ao banco?`
+        : `Voce nao tem caixa para comprar ${card.code}. Pague estadia de ${formatCurrency(stop.bankFee)} ao banco.`,
+      primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(stop.bankFee)}`,
+      secondaryLabel: `Pagar ${formatCurrency(stop.bankFee)}`,
       hideSecondary: !canBuy,
       cardCode: card.code,
     });
@@ -4136,7 +4657,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    const freeStay = await maybeUseFreePortStayCoupon(player, card, fee);
+    const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.bankFee);
     if (freeStay) {
       return {
         note: `Voce usou Porto Livre em ${card.code} e nao pagou estadia ao banco.`,
@@ -4144,12 +4665,21 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    updatePlayerCash(player, -fee);
-    player.status_label = `pagou ${formatCurrency(fee)}`;
-    pushActionLog(player, 'Estadia ao banco', `${card.code}: ${formatCurrency(fee)}.`);
+    const outcome = await bankChargeOutcome(player, stop.bankFee, {
+      action: 'Estadia ao banco',
+      detail: `${card.code}: ${formatCurrency(stop.bankFee)}.`,
+      statusLabel: `pagou ${formatCurrency(stop.bankFee)}`,
+      reason: `estadia em ${card.code}`,
+    });
     renderHud();
+    if (outcome.bankrupt) {
+      return {
+        note: `Voce nao conseguiu pagar a estadia de ${formatCurrency(stop.bankFee)} em ${card.code} e faliu.`,
+        statusLabel: player.status_label,
+      };
+    }
     return {
-      note: `Voce pagou ${formatCurrency(fee)} ao banco em ${card.code}.`,
+      note: `Voce pagou ${formatCurrency(stop.bankFee)} ao banco em ${card.code}.`,
       statusLabel: player.status_label,
     };
   }
@@ -4157,24 +4687,40 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   if (owner.id === player.id) {
     if (player.is_human) {
       await openDecisionModal({
-        title: `${card.code} ja e seu`,
-        copy: `O porto ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
+        title: stop.mortgaged ? `${card.code} hipotecado` : `${card.code} ja e seu`,
+        copy: stop.mortgaged
+          ? `O porto ${card.code} esta hipotecado. Ele nao rende estadia nem conta para monopolio ate ser resgatado.`
+          : `O porto ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
         primaryLabel: 'Continuar',
         hideSecondary: true,
         cardCode: card.code,
       });
     }
-    player.status_label = `porto proprio ${card.code}`;
-    pushActionLog(player, 'Porto proprio', `${card.code} ja pertence a sua companhia.`);
+    player.status_label = stop.mortgaged ? `porto hipotecado ${card.code}` : `porto proprio ${card.code}`;
+    pushActionLog(player, stop.mortgaged ? 'Porto hipotecado' : 'Porto proprio', stop.mortgaged
+      ? `${card.code} esta hipotecado e sem renda.`
+      : `${card.code} ja pertence a sua companhia.`);
     renderHud();
     return {
-      note: `${playerActionName(player)} parou em ${card.code}, que ja pertence a sua companhia.`,
+      note: stop.mortgaged
+        ? `${playerActionName(player)} parou em ${card.code}, que esta hipotecado e sem cobranca de estadia.`
+        : `${playerActionName(player)} parou em ${card.code}, que ja pertence a sua companhia.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  if (stop.mortgaged || !stop.ownerEligible || stop.ownerCharge <= 0) {
+    player.status_label = `porto hipotecado ${card.code}`;
+    pushActionLog(player, 'Porto hipotecado', `${card.code} pertence a ${owner.name}, mas esta hipotecado e nao cobra estadia.`);
+    renderHud();
+    return {
+      note: `${playerActionName(player)} parou em ${card.code}, mas nao pagou estadia porque o titulo de ${owner.name} esta hipotecado.`,
       statusLabel: player.status_label,
     };
   }
 
   if (!player.is_human) {
-    const freeStay = await maybeUseFreePortStayCoupon(player, card, ownerCharge, owner);
+    const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.ownerCharge, owner);
     if (freeStay) {
       return {
         note: `${playerActionName(player)} usou Porto Livre em ${card.code} e nao pagou estadia a ${owner.name}.`,
@@ -4182,14 +4728,23 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    updatePlayerCash(player, -ownerCharge);
-    updatePlayerCash(owner, ownerCharge);
-    player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
-    pushActionLog(player, 'Estadia ao dono', `${card.code}: ${formatCurrency(ownerCharge)} para ${owner.name}.`);
-    pushActionLog(owner, 'Recebeu estadia', `${card.code}: ${formatCurrency(ownerCharge)} de ${player.name}.`);
+    const outcome = await playerChargeOutcome(player, owner, stop.ownerCharge, {
+      payerAction: 'Estadia ao dono',
+      receiverAction: 'Recebeu estadia',
+      payerDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} para ${owner.name}${monopolySuffix}.`,
+      receiverDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} de ${player.name}${monopolySuffix}.`,
+      statusLabel: `pagou ${formatCurrency(stop.ownerCharge)}`,
+      reason: `estadia em ${card.code}`,
+    });
     renderHud();
+    if (outcome.bankrupt) {
+      return {
+        note: `${playerActionName(player)} nao conseguiu pagar a estadia de ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code} e faliu.`,
+        statusLabel: player.status_label,
+      };
+    }
     return {
-      note: `${playerActionName(player)} pagou ${formatCurrency(ownerCharge)} a ${owner.name} em ${card.code}.`,
+      note: `${playerActionName(player)} pagou ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code}.`,
       statusLabel: player.status_label,
     };
   }
@@ -4198,9 +4753,9 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   const choice = await openDecisionModal({
     title: `${card.code} pertence a ${owner.name}`,
     copy: canNegotiate
-      ? `Pague ${formatCurrency(ownerCharge)} de estadia ao dono ou negocie a compra do porto por ${formatCurrency(negotiationPrice)}.`
-      : `Pague ${formatCurrency(ownerCharge)} de estadia ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
-    primaryLabel: `Pagar ${formatCurrency(ownerCharge)}`,
+      ? `Pague ${formatCurrency(stop.ownerCharge)} de estadia ao dono ou negocie a compra do porto por ${formatCurrency(negotiationPrice)}.`
+      : `Pague ${formatCurrency(stop.ownerCharge)} de estadia ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
+    primaryLabel: `Pagar ${formatCurrency(stop.ownerCharge)}`,
     secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
     hideSecondary: !canNegotiate,
     cardCode: card.code,
@@ -4217,7 +4772,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  const freeStay = await maybeUseFreePortStayCoupon(player, card, ownerCharge, owner);
+  const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.ownerCharge, owner);
   if (freeStay) {
     return {
       note: `Voce usou Porto Livre em ${card.code} e nao pagou estadia a ${owner.name}.`,
@@ -4225,14 +4780,23 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  updatePlayerCash(player, -ownerCharge);
-  updatePlayerCash(owner, ownerCharge);
-  player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
-  pushActionLog(player, 'Estadia ao dono', `${card.code}: ${formatCurrency(ownerCharge)} para ${owner.name}.`);
-  pushActionLog(owner, 'Recebeu estadia', `${card.code}: ${formatCurrency(ownerCharge)} de voce.`);
+  const outcome = await playerChargeOutcome(player, owner, stop.ownerCharge, {
+    payerAction: 'Estadia ao dono',
+    receiverAction: 'Recebeu estadia',
+    payerDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} para ${owner.name}${monopolySuffix}.`,
+    receiverDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} de voce${monopolySuffix}.`,
+    statusLabel: `pagou ${formatCurrency(stop.ownerCharge)}`,
+    reason: `estadia em ${card.code}`,
+  });
   renderHud();
+  if (outcome.bankrupt) {
+    return {
+      note: `Voce nao conseguiu pagar a estadia de ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code} e faliu.`,
+      statusLabel: player.status_label,
+    };
+  }
   return {
-    note: `Voce pagou ${formatCurrency(ownerCharge)} a ${owner.name} em ${card.code}.`,
+    note: `Voce pagou ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code}.`,
     statusLabel: player.status_label,
   };
 }
@@ -4244,9 +4808,8 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     return { note: `${playerActionName(player)} parou em pedagio sem dados.`, statusLabel: player?.status_label || '--' };
   }
 
-  const owner = ownerPlayerOf(card.code);
-  const { fee, multiplier } = getPropertyStopRate(player, card);
-  const ownerCharge = fee * multiplier;
+  const stop = stopChargeBreakdown(player, card);
+  const owner = stop.owner;
   const negotiationPrice = Math.round(card.price * 1.5);
 
   setSession({
@@ -4268,7 +4831,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
-      const freeToll = await maybeUseFreeTollCoupon(player, card, fee);
+      const freeToll = await maybeUseFreeTollCoupon(player, card, stop.bankFee);
       if (freeToll) {
         return {
           note: `${playerActionName(player)} usou Pedagio Livre em ${card.code} e nao pagou ao banco.`,
@@ -4276,12 +4839,21 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
         };
       }
 
-      updatePlayerCash(player, -fee);
-      player.status_label = `pagou ${formatCurrency(fee)}`;
-      pushActionLog(player, 'Pedagio ao banco', `${card.code}: ${formatCurrency(fee)}.`);
+      const outcome = await bankChargeOutcome(player, stop.bankFee, {
+        action: 'Pedagio ao banco',
+        detail: `${card.code}: ${formatCurrency(stop.bankFee)}.`,
+        statusLabel: `pagou ${formatCurrency(stop.bankFee)}`,
+        reason: `pedagio em ${card.code}`,
+      });
       renderHud();
+      if (outcome.bankrupt) {
+        return {
+          note: `${playerActionName(player)} nao conseguiu pagar o pedagio de ${formatCurrency(stop.bankFee)} em ${card.code} e faliu.`,
+          statusLabel: player.status_label,
+        };
+      }
       return {
-        note: `${playerActionName(player)} pagou ${formatCurrency(fee)} ao banco em ${card.code}.`,
+        note: `${playerActionName(player)} pagou ${formatCurrency(stop.bankFee)} ao banco em ${card.code}.`,
         statusLabel: player.status_label,
       };
     }
@@ -4290,10 +4862,10 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     const choice = await openDecisionModal({
       title: `${card.code} sem dono`,
       copy: canBuy
-        ? `Comprar o pedagio por ${formatCurrency(card.price)} ou pagar ${formatCurrency(fee)} ao banco?`
-        : `Voce nao tem caixa para comprar ${card.code}. Pague ${formatCurrency(fee)} ao banco.`,
-      primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(fee)}`,
-      secondaryLabel: `Pagar ${formatCurrency(fee)}`,
+        ? `Comprar o pedagio por ${formatCurrency(card.price)} ou pagar ${formatCurrency(stop.bankFee)} ao banco?`
+        : `Voce nao tem caixa para comprar ${card.code}. Pague ${formatCurrency(stop.bankFee)} ao banco.`,
+      primaryLabel: canBuy ? `Comprar ${formatCurrency(card.price)}` : `Pagar ${formatCurrency(stop.bankFee)}`,
+      secondaryLabel: `Pagar ${formatCurrency(stop.bankFee)}`,
       hideSecondary: !canBuy,
       cardCode: card.code,
     });
@@ -4308,7 +4880,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    const freeToll = await maybeUseFreeTollCoupon(player, card, fee);
+    const freeToll = await maybeUseFreeTollCoupon(player, card, stop.bankFee);
     if (freeToll) {
       return {
         note: `Voce usou Pedagio Livre em ${card.code} e nao pagou ao banco.`,
@@ -4316,12 +4888,21 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    updatePlayerCash(player, -fee);
-    player.status_label = `pagou ${formatCurrency(fee)}`;
-    pushActionLog(player, 'Pedagio ao banco', `${card.code}: ${formatCurrency(fee)}.`);
+    const outcome = await bankChargeOutcome(player, stop.bankFee, {
+      action: 'Pedagio ao banco',
+      detail: `${card.code}: ${formatCurrency(stop.bankFee)}.`,
+      statusLabel: `pagou ${formatCurrency(stop.bankFee)}`,
+      reason: `pedagio em ${card.code}`,
+    });
     renderHud();
+    if (outcome.bankrupt) {
+      return {
+        note: `Voce nao conseguiu pagar o pedagio de ${formatCurrency(stop.bankFee)} em ${card.code} e faliu.`,
+        statusLabel: player.status_label,
+      };
+    }
     return {
-      note: `Voce pagou ${formatCurrency(fee)} ao banco em ${card.code}.`,
+      note: `Voce pagou ${formatCurrency(stop.bankFee)} ao banco em ${card.code}.`,
       statusLabel: player.status_label,
     };
   }
@@ -4329,24 +4910,40 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   if (owner.id === player.id) {
     if (player.is_human) {
       await openDecisionModal({
-        title: `${card.code} ja e seu`,
-        copy: `O pedagio ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
+        title: stop.mortgaged ? `${card.code} hipotecado` : `${card.code} ja e seu`,
+        copy: stop.mortgaged
+          ? `O pedagio ${card.code} esta hipotecado. Ele nao rende cobranca nem comissao sobre frete ate ser resgatado.`
+          : `O pedagio ${card.code} ja pertence a sua companhia. Nenhuma acao e necessaria.`,
         primaryLabel: 'Continuar',
         hideSecondary: true,
         cardCode: card.code,
       });
     }
-    player.status_label = `pedagio proprio ${card.code}`;
-    pushActionLog(player, 'Pedagio proprio', `${card.code} ja pertence a sua companhia.`);
+    player.status_label = stop.mortgaged ? `pedagio hipotecado ${card.code}` : `pedagio proprio ${card.code}`;
+    pushActionLog(player, stop.mortgaged ? 'Pedagio hipotecado' : 'Pedagio proprio', stop.mortgaged
+      ? `${card.code} esta hipotecado e sem renda.`
+      : `${card.code} ja pertence a sua companhia.`);
     renderHud();
     return {
-      note: `${playerActionName(player)} parou em ${card.code}, que ja pertence a sua companhia.`,
+      note: stop.mortgaged
+        ? `${playerActionName(player)} parou em ${card.code}, que esta hipotecado e sem cobranca.`
+        : `${playerActionName(player)} parou em ${card.code}, que ja pertence a sua companhia.`,
+      statusLabel: player.status_label,
+    };
+  }
+
+  if (stop.mortgaged || !stop.ownerEligible || stop.ownerCharge <= 0) {
+    player.status_label = `pedagio hipotecado ${card.code}`;
+    pushActionLog(player, 'Pedagio hipotecado', `${card.code} pertence a ${owner.name}, mas esta hipotecado e nao cobra pedagio.`);
+    renderHud();
+    return {
+      note: `${playerActionName(player)} parou em ${card.code}, mas nao pagou porque o titulo de ${owner.name} esta hipotecado.`,
       statusLabel: player.status_label,
     };
   }
 
   if (!player.is_human) {
-    const freeToll = await maybeUseFreeTollCoupon(player, card, ownerCharge, owner);
+    const freeToll = await maybeUseFreeTollCoupon(player, card, stop.ownerCharge, owner);
     if (freeToll) {
       return {
         note: `${playerActionName(player)} usou Pedagio Livre em ${card.code} e nao pagou a ${owner.name}.`,
@@ -4354,14 +4951,23 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
       };
     }
 
-    updatePlayerCash(player, -ownerCharge);
-    updatePlayerCash(owner, ownerCharge);
-    player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
-    pushActionLog(player, 'Pedagio ao dono', `${card.code}: ${formatCurrency(ownerCharge)} para ${owner.name}.`);
-    pushActionLog(owner, 'Recebeu pedagio', `${card.code}: ${formatCurrency(ownerCharge)} de ${player.name}.`);
+    const outcome = await playerChargeOutcome(player, owner, stop.ownerCharge, {
+      payerAction: 'Pedagio ao dono',
+      receiverAction: 'Recebeu pedagio',
+      payerDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} para ${owner.name}.`,
+      receiverDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} de ${player.name}.`,
+      statusLabel: `pagou ${formatCurrency(stop.ownerCharge)}`,
+      reason: `pedagio em ${card.code}`,
+    });
     renderHud();
+    if (outcome.bankrupt) {
+      return {
+        note: `${playerActionName(player)} nao conseguiu pagar o pedagio de ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code} e faliu.`,
+        statusLabel: player.status_label,
+      };
+    }
     return {
-      note: `${playerActionName(player)} pagou ${formatCurrency(ownerCharge)} a ${owner.name} em ${card.code}.`,
+      note: `${playerActionName(player)} pagou ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code}.`,
       statusLabel: player.status_label,
     };
   }
@@ -4370,9 +4976,9 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   const choice = await openDecisionModal({
     title: `${card.code} pertence a ${owner.name}`,
     copy: canNegotiate
-      ? `Pague ${formatCurrency(ownerCharge)} ao dono ou negocie a compra do pedagio por ${formatCurrency(negotiationPrice)}.`
-      : `Pague ${formatCurrency(ownerCharge)} ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
-    primaryLabel: `Pagar ${formatCurrency(ownerCharge)}`,
+      ? `Pague ${formatCurrency(stop.ownerCharge)} ao dono ou negocie a compra do pedagio por ${formatCurrency(negotiationPrice)}.`
+      : `Pague ${formatCurrency(stop.ownerCharge)} ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
+    primaryLabel: `Pagar ${formatCurrency(stop.ownerCharge)}`,
     secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
     hideSecondary: !canNegotiate,
     cardCode: card.code,
@@ -4389,7 +4995,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  const freeToll = await maybeUseFreeTollCoupon(player, card, ownerCharge, owner);
+  const freeToll = await maybeUseFreeTollCoupon(player, card, stop.ownerCharge, owner);
   if (freeToll) {
     return {
       note: `Voce usou Pedagio Livre em ${card.code} e nao pagou a ${owner.name}.`,
@@ -4397,14 +5003,23 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  updatePlayerCash(player, -ownerCharge);
-  updatePlayerCash(owner, ownerCharge);
-  player.status_label = `pagou ${formatCurrency(ownerCharge)}`;
-  pushActionLog(player, 'Pedagio ao dono', `${card.code}: ${formatCurrency(ownerCharge)} para ${owner.name}.`);
-  pushActionLog(owner, 'Recebeu pedagio', `${card.code}: ${formatCurrency(ownerCharge)} de voce.`);
+  const outcome = await playerChargeOutcome(player, owner, stop.ownerCharge, {
+    payerAction: 'Pedagio ao dono',
+    receiverAction: 'Recebeu pedagio',
+    payerDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} para ${owner.name}.`,
+    receiverDetail: `${card.code}: ${formatCurrency(stop.ownerCharge)} de voce.`,
+    statusLabel: `pagou ${formatCurrency(stop.ownerCharge)}`,
+    reason: `pedagio em ${card.code}`,
+  });
   renderHud();
+  if (outcome.bankrupt) {
+    return {
+      note: `Voce nao conseguiu pagar o pedagio de ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code} e faliu.`,
+      statusLabel: player.status_label,
+    };
+  }
   return {
-    note: `Voce pagou ${formatCurrency(ownerCharge)} a ${owner.name} em ${card.code}.`,
+    note: `Voce pagou ${formatCurrency(stop.ownerCharge)} a ${owner.name} em ${card.code}.`,
     statusLabel: player.status_label,
   };
 }
@@ -4833,14 +5448,16 @@ function applyMapPayload(payload) {
 
 function applyBootstrapPayload(payload) {
   state.playerColors = payload.player_colors || [];
-  state.portCards = payload.port_cards || [];
-  state.tollCards = payload.toll_cards || [];
+  state.rules = economyLib()?.normalizeRules ? economyLib().normalizeRules(payload.rules || {}) : (payload.rules || {});
+  state.portCards = (payload.port_cards || []).map((card) => ({ ...card, mortgaged: Boolean(card.mortgaged) }));
+  state.tollCards = (payload.toll_cards || []).map((card) => ({ ...card, mortgaged: Boolean(card.mortgaged) }));
   state.chanceCards = payload.chance_cards || [];
   state.chanceDeck = payload.chance_deck || { draw_pile: [], discard_pile: [], held_card_ids: [] };
   if (state.chanceDeck.draw_pile?.length && !state.chanceDeck.discard_pile?.length && !state.chanceDeck.held_card_ids?.length) {
     state.chanceDeck.draw_pile = shuffleArray(state.chanceDeck.draw_pile);
   }
   state.freightPermissionCards = payload.freight_permission_cards || [];
+  const defaultPermissionPrice = Number(state.rules.extra_permission_cost || 2000);
   state.players = (payload.players || []).map((player) => ({
     coupons: [],
     last_roll: null,
@@ -4849,10 +5466,19 @@ function applyBootstrapPayload(payload) {
     cashFlashValue: 0,
     cashFlashExpiresAt: 0,
     cashFlashToken: '',
+    bankrupt: false,
     ...player,
+    property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
+    permissions: (player.permissions || []).map((permission) => ({
+      ...permission,
+      purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
+      mortgaged: Boolean(permission.mortgaged),
+    })),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
     skip_turns: player.skip_turns || 0,
+    needs_new_contract: Boolean(player.needs_new_contract),
+    bankrupt: Boolean(player.bankrupt),
     cashFlashValue: 0,
     cashFlashExpiresAt: 0,
     cashFlashToken: '',
@@ -4864,7 +5490,7 @@ function applyBootstrapPayload(payload) {
         }
       : player.active_contract,
   }));
-  state.rules = payload.rules || {};
+  state.players.forEach((player) => syncActivePermissionAfterEconomyChange(player));
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
@@ -4961,7 +5587,7 @@ function populateSetupFromPayload(payload) {
 
 function cpuShouldBuyOrigin(player, card) {
   const policy = player?.purchase_policy || 'always';
-  if (!card) return false;
+  if (!card || player?.bankrupt) return false;
   if (policy === 'never') return false;
   if (policy === 'random') return player.cash >= card.price && Math.random() >= 0.5;
   return player.cash >= card.price;
@@ -4974,7 +5600,17 @@ function preparationDelayFor(player, longDelay = false) {
 }
 
 async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', needsPermission = true, originMode = 'draw' } = {}) {
-  if (!player) return null;
+  if (!player || player.bankrupt) return null;
+
+  syncActivePermissionAfterEconomyChange(player);
+  if (!needsPermission && !activePermissionRecord(player)) {
+    player.status_label = 'sem permissao ativa';
+    pushActionLog(player, 'Sem permissao ativa', player.is_human
+      ? 'Resgate uma permissao hipotecada antes de abrir novo contrato.'
+      : `${player.name} nao tem permissao disponivel para novo contrato.`);
+    renderHud();
+    return null;
+  }
 
   const shortDelay = preparationDelayFor(player, false);
   const longDelay = preparationDelayFor(player, true);
@@ -5099,7 +5735,7 @@ async function runCpuOpeningTurn(player) {
 }
 
 async function runPlayerSubsequentTurn(player, turnNumber) {
-  if (!player) return;
+  if (!player || player.bankrupt) return;
 
   const phaseLabel = `Turno ${String(turnNumber).padStart(2, '0')}`;
   if (!player.is_human) {
@@ -5192,7 +5828,7 @@ async function runSubsequentTurnCycle() {
       renderHud();
       await delay(PREP_STEP_DELAY_LONG_MS);
 
-      for (const player of state.players) {
+      for (const player of alivePlayers()) {
         await runPlayerSubsequentTurn(player, nextTurn);
       }
     }
@@ -5374,6 +6010,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderRivals();
       return;
     }
+
     const mini = event.target.closest('.preview-mini-selectable');
     if (mini?.dataset?.playerId && mini?.dataset?.miniType && mini?.dataset?.miniKey) {
       event.stopPropagation();
