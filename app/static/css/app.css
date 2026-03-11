@@ -2382,6 +2382,20 @@ kbd {
   transform: translateY(-3px) rotate(4deg) scale(1.02);
 }
 
+.movement-die.is-double {
+  border-color: rgba(108, 230, 144, 0.78);
+  background: linear-gradient(180deg, #f4fff6, #d2f6db);
+  box-shadow: 0 0 0 3px rgba(108, 230, 144, 0.16), 0 20px 42px rgba(20, 110, 48, 0.28);
+}
+
+.movement-dice-summary.is-double .movement-dice-total {
+  color: #6ee690;
+}
+
+.movement-dice-summary.is-double .movement-dice-note {
+  color: #a8f0ba;
+}
+
 .movement-die-value {
   font-size: 4.2rem;
   font-weight: 900;
@@ -4049,6 +4063,10 @@ kbd {
   justify-self: end;
 }
 
+.preview-rival-last-roll.is-double {
+  filter: drop-shadow(0 0 10px rgba(108, 230, 144, 0.28));
+}
+
 .preview-rival-die {
   width: 24px;
   height: 24px;
@@ -4063,6 +4081,13 @@ kbd {
   font-weight: 900;
   line-height: 1;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.preview-rival-die.is-double {
+  border-color: rgba(108, 230, 144, 0.78);
+  background: linear-gradient(180deg, #f4fff6, #d2f6db);
+  color: #124222;
+  box-shadow: 0 0 0 2px rgba(108, 230, 144, 0.18), 0 8px 18px rgba(18, 66, 34, 0.2);
 }
 
 .preview-rival-route {

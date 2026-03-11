@@ -1,6 +1,6 @@
-# Rei dos Mares
+﻿# Rei dos Mares
 
-Novo recomeço do app browser do jogo de tabuleiro `Rei dos Mares`.
+Novo recomeÃ§o do app browser do jogo de tabuleiro `Rei dos Mares`.
 
 ## Principios desta base
 
@@ -61,3 +61,8 @@ python -m pytest -q
   - propriedade sem dono: pode comprar, senao paga estadia ao banco
   - propriedade com dono: paga estadia ao dono pelo valor `x`
 - A calibracao do mapa ainda esta em fase 1: captura de pontos e projecao equiretangular inicial.
+
+## Documentacao completa
+
+- [docs/DEVELOPER_DOCUMENTATION.md](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/docs/DEVELOPER_DOCUMENTATION.md)
+

@@ -83,6 +83,7 @@ const state = {
     order: [],
     frame: 0,
     rafId: 0,
+    closeTimerId: 0,
     resolver: null,
     playerId: '',
     autoStart: false,
@@ -586,6 +587,9 @@ function setPlayerNode(player, nodeId) {
 function setSession(patch) {
   state.session = { ...(state.session || {}), ...patch };
   renderHud();
+  if (Object.prototype.hasOwnProperty.call(patch || {}, 'active_player_id')) {
+    renderNodeOverlay();
+  }
 }
 
 function cargoIconMarkup(kind, className) {
@@ -735,11 +739,14 @@ function contractSummaryMarkup(player, contract) {
     `;
   }
   const tone = contractDeadlineTone(contract);
+  const lastRollIsDouble = Array.isArray(player?.last_roll)
+    && player.last_roll.length === 2
+    && player.last_roll[0] === player.last_roll[1];
   const lastRollMarkup = Array.isArray(player?.last_roll) && player.last_roll.length === 2
     ? `
-      <div class="preview-rival-last-roll" aria-label="Ultima jogada">
-        <span class="preview-rival-die">${player.last_roll[0]}</span>
-        <span class="preview-rival-die">${player.last_roll[1]}</span>
+      <div class="preview-rival-last-roll${lastRollIsDouble ? ' is-double' : ''}" aria-label="Ultima jogada">
+        <span class="preview-rival-die${lastRollIsDouble ? ' is-double' : ''}">${player.last_roll[0]}</span>
+        <span class="preview-rival-die${lastRollIsDouble ? ' is-double' : ''}">${player.last_roll[1]}</span>
       </div>
     `
     : '';
@@ -2182,7 +2189,7 @@ function triggerEnterOnOverlay() {
   }
   if (!getChanceDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getChanceDrawButton();
-    if (button && !button.disabled) { button.click(); return true; }
+    if (button && !button.disabled && !state.chanceDraw.revealOnly) { button.click(); return true; }
   }
   if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
     const button = getDecisionPrimary();
@@ -2198,21 +2205,23 @@ function renderMovementDice() {
 
   const total = state.movementDice.values[0] + state.movementDice.values[1];
   const isDouble = state.movementDice.values[0] === state.movementDice.values[1];
+  const highlightDouble = Boolean(state.movementDice.rolled && !state.movementDice.rolling && isDouble);
   const rollingClass = state.movementDice.rolling ? ' is-rolling' : '';
+  const doubleClass = highlightDouble ? ' is-double' : '';
   const note = state.movementDice.rolling
     ? 'Rolando...'
-    : (isDouble ? 'Dupla.' : 'Sem dupla.');
+    : (highlightDouble ? 'Dupla: jogada extra se nao chegar em PD.' : 'Sem dupla.');
 
   stage.innerHTML = `
-    <div class="movement-dice-pair">
-      <article class="movement-die${rollingClass}">
+    <div class="movement-dice-pair${doubleClass}">
+      <article class="movement-die${rollingClass}${doubleClass}">
         <span class="movement-die-value">${state.movementDice.values[0]}</span>
       </article>
-      <article class="movement-die${rollingClass}">
+      <article class="movement-die${rollingClass}${doubleClass}">
         <span class="movement-die-value">${state.movementDice.values[1]}</span>
       </article>
     </div>
-    <div class="movement-dice-summary">
+    <div class="movement-dice-summary${doubleClass}">
       <strong class="movement-dice-total">Total ${total}</strong>
       <span class="movement-dice-note">${note}</span>
     </div>
@@ -2370,6 +2379,38 @@ function buildHumanMovementPath() {
   return buildMovementPathForPlayer(humanPlayer());
 }
 
+function isDoubleRoll(values) {
+  return Array.isArray(values) && values.length === 2 && values[0] === values[1];
+}
+
+function playerReachedDestination(player) {
+  const contract = player?.active_contract;
+  const destinationNodeId = getPropertyNode(contract?.destination)?.id;
+  return Boolean(destinationNodeId && player?.board_node_id === destinationNodeId);
+}
+
+function canTakeExtraRollFromDouble(player, diceResult) {
+  if (!player || !diceResult?.isDouble) return false;
+  if (!player.active_contract) return false;
+  if (playerReachedDestination(player)) return false;
+  if (player.active_contract.completed || player.needs_new_contract) return false;
+  return true;
+}
+
+function doubleRollPrompt(player, diceResult) {
+  const [left, right] = diceResult?.values || [0, 0];
+  if (player?.is_human) {
+    return {
+      actionLabel: 'Dados duplos: nova rolagem',
+      note: `Voce tirou dupla ${left} + ${right}. Como nao chegou em PD, pode rolar novamente.`,
+    };
+  }
+  return {
+    actionLabel: `${player?.name || 'Jogador'}: dupla ${left} + ${right}`,
+    note: `${player?.name || 'Jogador'} tirou dupla ${left} + ${right} e vai jogar novamente porque ainda nao chegou em PD.`,
+  };
+}
+
 async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, diceValues = null, updateSession = true } = {}) {
   const contract = player?.active_contract;
   if (!player || !contract) return;
@@ -2504,40 +2545,91 @@ async function runTurnExecutionForPlayer(player, {
   if (!player?.active_contract) return null;
 
   if (player.is_human) {
-    setSession({
-      active_player_id: player.id,
-      action_label: humanActionLabel,
-      note: humanNote,
-    });
-    const diceResult = await openHumanMovementDice();
-    if (!diceResult?.total) return null;
-    player.last_roll = [...diceResult.values];
-    await animatePlayerMovement(player, diceResult.total, {
-      stepDelay: humanStepDelay,
-      diceValues: [...diceResult.values],
-      updateSession: true,
-    });
+    let diceResult = null;
+    let rerollIndex = 0;
+
+    while (player?.active_contract) {
+      const prompt = rerollIndex > 0
+        ? doubleRollPrompt(player, diceResult)
+        : { actionLabel: humanActionLabel, note: humanNote };
+
+      setSession({
+        active_player_id: player.id,
+        action_label: prompt.actionLabel,
+        note: prompt.note,
+      });
+
+      diceResult = await openHumanMovementDice({
+        promptText: rerollIndex > 0
+          ? 'Saiu dupla. Pressione Enter ou clique para rolar novamente.'
+          : 'Pressione Enter ou clique para rolar.',
+      });
+      if (!diceResult?.total) return diceResult;
+
+      player.last_roll = [...diceResult.values];
+      await animatePlayerMovement(player, diceResult.total, {
+        stepDelay: humanStepDelay,
+        diceValues: [...diceResult.values],
+        updateSession: true,
+      });
+
+      if (!canTakeExtraRollFromDouble(player, diceResult)) {
+        return diceResult;
+      }
+
+      pushActionLog(player, 'Dados duplos', `Rolou ${diceResult.values[0]} + ${diceResult.values[1]} e ganhou uma nova rolagem.`);
+      renderHud();
+      rerollIndex += 1;
+    }
+
     return diceResult;
   }
 
-  const dice = [randomDie(), randomDie()];
-  player.last_roll = [...dice];
-  setSession({
-    active_player_id: player.id,
-    phase: phaseLabel,
-    action_label: cpuActionLabel || `${player.name}: ${dice[0]} + ${dice[1]}`,
-    dice: [...dice],
-    note: cpuNote || `${player.name} rolou ${dice[0]} + ${dice[1]} e iniciou o movimento.`,
-  });
-  renderHud();
-  await delay(650);
-  await animatePlayerMovement(player, dice[0] + dice[1], {
-    stepDelay: cpuStepDelay,
-    diceValues: [...dice],
-    updateSession: true,
-  });
-  await delay(CPU_STEP_DELAY_MS);
-  return { values: [...dice], total: dice[0] + dice[1], isDouble: dice[0] === dice[1] };
+  let diceResult = null;
+  let rerollIndex = 0;
+
+  while (player?.active_contract) {
+    const dice = [randomDie(), randomDie()];
+    diceResult = { values: [...dice], total: dice[0] + dice[1], isDouble: isDoubleRoll(dice) };
+    player.last_roll = [...dice];
+
+    const prompt = rerollIndex > 0
+      ? {
+        actionLabel: `${player.name}: jogada extra ${dice[0]} + ${dice[1]}`,
+        note: `${player.name} ganhou uma nova rolagem por dupla e agora move com ${dice[0]} + ${dice[1]}.`,
+      }
+      : {
+        actionLabel: cpuActionLabel || `${player.name}: ${dice[0]} + ${dice[1]}`,
+        note: cpuNote || `${player.name} rolou ${dice[0]} + ${dice[1]} e iniciou o movimento.`,
+      };
+
+    setSession({
+      active_player_id: player.id,
+      phase: phaseLabel,
+      action_label: prompt.actionLabel,
+      dice: [...dice],
+      note: prompt.note,
+    });
+    renderHud();
+    await delay(650);
+    await animatePlayerMovement(player, diceResult.total, {
+      stepDelay: cpuStepDelay,
+      diceValues: [...dice],
+      updateSession: true,
+    });
+
+    if (!canTakeExtraRollFromDouble(player, diceResult)) {
+      await delay(CPU_STEP_DELAY_MS);
+      return diceResult;
+    }
+
+    pushActionLog(player, 'Dados duplos', `${player.name} rolou ${dice[0]} + ${dice[1]} e vai jogar novamente.`);
+    renderHud();
+    rerollIndex += 1;
+    await delay(CPU_STEP_DELAY_MS);
+  }
+
+  return diceResult;
 }
 
 function startMovementDiceRoll() {
@@ -2592,13 +2684,13 @@ function startMovementDiceRoll() {
   state.movementDice.rafId = window.requestAnimationFrame(step);
 }
 
-function openHumanMovementDice() {
+function openHumanMovementDice({ promptText = 'Pressione Enter ou clique para rolar.' } = {}) {
   state.movementDice.rolling = false;
   state.movementDice.rolled = false;
   state.movementDice.values = [randomDie(), randomDie()];
   state.movementDice.finalValues = [1, 1];
   setMovementDiceActive('Aguardando rolagem');
-  setMovementDiceResult('Pressione Enter ou clique para rolar.');
+  setMovementDiceResult(promptText);
   renderMovementDice();
   setMovementDiceVisible(true);
   return new Promise((resolve) => {
@@ -2711,6 +2803,17 @@ function setChanceDrawActive(message) {
   if (node) node.textContent = message;
 }
 
+function clearChanceDrawTimers() {
+  if (state.chanceDraw.rafId) {
+    window.cancelAnimationFrame(state.chanceDraw.rafId);
+    state.chanceDraw.rafId = 0;
+  }
+  if (state.chanceDraw.closeTimerId) {
+    window.clearTimeout(state.chanceDraw.closeTimerId);
+    state.chanceDraw.closeTimerId = 0;
+  }
+}
+
 function chanceVisibleCards() {
   if (state.chanceDraw.revealOnly && state.chanceDraw.selectedCardId) {
     const selected = state.chanceCards.find((card) => card.id === state.chanceDraw.selectedCardId);
@@ -2784,24 +2887,29 @@ function renderChanceDraw() {
   }).join('');
 
   if (button) {
-    button.disabled = state.chanceDraw.drawing;
+    button.disabled = state.chanceDraw.drawing || state.chanceDraw.revealOnly || Boolean(state.chanceDraw.selectedCardId);
     button.textContent = state.chanceDraw.drawing ? 'Embaralhando...' : 'Sortear';
     button.style.display = (state.chanceDraw.revealOnly || Boolean(state.chanceDraw.selectedCardId)) ? 'none' : 'inline-flex';
   }
 }
 
 function closeChanceDraw(card = null) {
+  clearChanceDrawTimers();
   setChanceDrawVisible(false);
   const resolver = state.chanceDraw.resolver;
   state.chanceDraw.resolver = null;
   state.chanceDraw.playerId = '';
   state.chanceDraw.autoStart = false;
   state.chanceDraw.revealOnly = false;
+  state.chanceDraw.selectedCardId = '';
+  state.chanceDraw.drawing = false;
   if (resolver) resolver(card);
 }
 
 function startChanceDraw() {
+  if (state.chanceDraw.revealOnly || state.chanceDraw.selectedCardId) return;
   if (state.chanceDraw.drawing || !state.chanceCards.length) return;
+  clearChanceDrawTimers();
   state.chanceDraw.drawing = true;
   state.chanceDraw.selectedCardId = '';
   state.chanceDraw.frame = 0;
@@ -2839,7 +2947,7 @@ function startChanceDraw() {
     setChanceDrawResult(`Carta sorteada: ${card?.title || '--'}.`);
     renderChanceDraw();
 
-    window.setTimeout(() => closeChanceDraw(card), 850);
+    state.chanceDraw.closeTimerId = window.setTimeout(() => closeChanceDraw(card), 850);
   }
 
   if (state.chanceDraw.rafId) {
@@ -2849,20 +2957,21 @@ function startChanceDraw() {
 }
 
 function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
+  clearChanceDrawTimers();
   state.chanceDraw.drawing = false;
   state.chanceDraw.selectedCardId = '';
   state.chanceDraw.frame = 0;
-  state.chanceDraw.order = shuffleArray(state.chanceCards.map((card) => card.id));
+  state.chanceDraw.order = state.chanceCards.map((card) => card.id);
   state.chanceDraw.playerId = player?.id || '';
   state.chanceDraw.autoStart = autoStart;
   state.chanceDraw.revealOnly = false;
   const copy = byId('chance-draw-copy');
 
   if (autoStart) {
-    const selectedId = randomChoice(state.chanceDraw.order);
-    const card = state.chanceCards.find((item) => item.id === selectedId) || null;
-    state.chanceDraw.selectedCardId = selectedId || '';
-    state.chanceDraw.order = selectedId ? [selectedId] : state.chanceDraw.order;
+    const card = randomChoice(state.chanceCards);
+    const selectedId = card?.id || '';
+    state.chanceDraw.selectedCardId = selectedId;
+    state.chanceDraw.order = selectedId ? [selectedId] : [];
     state.chanceDraw.revealOnly = true;
     setChanceDrawActive(card ? `${chanceCategoryLabel(card)}: ${card.title}` : 'Carta revelada');
     setChanceDrawResult(card ? `${playerActionName(player)} revelou ${card.title}.` : 'Carta revelada.');
@@ -2873,10 +2982,11 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
     setChanceDrawVisible(true);
     return new Promise((resolve) => {
       state.chanceDraw.resolver = resolve;
-      window.setTimeout(() => closeChanceDraw(card), 1800);
+      state.chanceDraw.closeTimerId = window.setTimeout(() => closeChanceDraw(card), 1800);
     });
   }
 
+  state.chanceDraw.order = shuffleArray(state.chanceCards.map((card) => card.id));
   setChanceDrawActive('Aguardando sorteio');
   setChanceDrawResult('Pressione Enter ou clique para sortear.');
   if (copy) {
