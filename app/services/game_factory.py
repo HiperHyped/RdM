@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.domain import PropertyKind
 from app.maptools.calibration import project_node_records
 from app.maptools.repository import BoardWorkspaceRepository
 from app.services.card_factory import build_chance_cards, build_freight_permission_cards, build_port_title_cards, build_toll_title_cards
 from app.services.data_loader import load_game_data, load_game_rules, load_player_colors
 
-RIVAL_NAMES = ['Jogador 1', 'Jogador 2', 'Jogador 3', 'Jogador 4', 'Jogador 5']
+PLAYER_NAMES = ['Jogador 1', 'Jogador 2', 'Jogador 3', 'Jogador 4', 'Jogador 5', 'Jogador 6']
 
 SHIP_MASKS = {
     'bulk': '/static/assets/ships/recolorable/bulk_mask.png',
@@ -106,11 +105,22 @@ def _resolve_setup(
     return resolved_name, resolved_color_id, resolved_rival_count
 
 
+def _resolve_robot_setup(robot_count: int | None) -> int:
+    return max(2, min(6, robot_count if robot_count is not None else 6))
+
+
 def _assign_colors(player_colors: list[dict[str, Any]], human_color_id: str, rival_count: int) -> dict[str, str]:
     remaining_color_ids = [item['id'] for item in player_colors if item['id'] != human_color_id]
     assignments = {'human': human_color_id}
     for index in range(rival_count):
         assignments[f'cpu-{index + 1}'] = remaining_color_ids[index]
+    return assignments
+
+
+def _assign_robot_colors(player_colors: list[dict[str, Any]], robot_count: int) -> dict[str, str]:
+    assignments: dict[str, str] = {}
+    for index in range(robot_count):
+        assignments[f'cpu-{index + 1}'] = player_colors[index]['id']
     return assignments
 
 
@@ -173,6 +183,85 @@ def _build_initial_chance_deck(chance_cards: list[dict[str, Any]]) -> dict[str, 
     }
 
 
+def _build_common_ui_payload(
+    *,
+    players: list[dict[str, Any]],
+    player_colors: list[dict[str, Any]],
+    rules,
+    data,
+    setup_defaults: dict[str, Any],
+    active_player_id: str,
+    action_label: str,
+    note: str,
+) -> dict[str, Any]:
+    workspace = BoardWorkspaceRepository()
+    snapshot = workspace.load_snapshot()
+    projected_nodes = project_node_records(snapshot.nodes, snapshot.calibration)
+    properties = [_serialize_property(card, data.continent_styles) for card in data.properties.values()]
+    chance_cards = build_chance_cards()
+    chance_deck = _build_initial_chance_deck(chance_cards)
+    human = next((player for player in players if player.get('is_human')), None)
+    rivals = [player for player in players if not player.get('is_human')]
+
+    return {
+        'title': 'Rei dos Mares',
+        'player_colors': player_colors,
+        'freight_permission_cards': build_freight_permission_cards(),
+        'chance_cards': chance_cards,
+        'chance_deck': chance_deck,
+        'port_cards': build_port_title_cards(),
+        'toll_cards': build_toll_title_cards(),
+        'properties': properties,
+        'distances': data.distances,
+        'rules': {
+            'initial_cash': rules.initial_cash,
+            'target_rounds': rules.target_rounds,
+            'bonus_per_early_round': rules.bonus_per_early_round,
+            'penalty_per_late_round': rules.penalty_per_late_round,
+            'origin_owner_commission_share': rules.origin_owner_commission_share,
+            'toll_owner_share': rules.toll_owner_share,
+            'freight_uses_multiplier_value_when_origin_owned': rules.freight_uses_multiplier_value_when_origin_owned,
+            'monopoly_stay_uses_multiplier_times_region_size': rules.monopoly_stay_uses_multiplier_times_region_size,
+            'monopoly_origin_doubles_freight': rules.monopoly_origin_doubles_freight,
+            'mortgage_credit_ratio': 0.5,
+            'mortgage_release_multiplier': 1.5,
+            'extra_permission_cost': rules.extra_permission_cost,
+        },
+        'assets': {
+            'ship_masks': SHIP_MASKS,
+            'ship_fill_masks': SHIP_FILL_MASKS,
+            'ship_sprites': SHIP_SPRITES,
+            'cargo_icons': CARGO_ICONS,
+        },
+        'players': players,
+        'setup_defaults': setup_defaults,
+        'human_company': human,
+        'active_contract': None,
+        'session': {
+            'turn_number': 1,
+            'turn_label': 'Turno 01',
+            'phase': 'Preparacao inicial',
+            'active_player_id': active_player_id,
+            'action_label': action_label,
+            'dice': [0, 0],
+            'note': note,
+        },
+        'rivals': rivals,
+        'capture_status': {
+            'node_count': len(snapshot.nodes),
+            'route_groups': len({node.route_id for node in snapshot.nodes if node.route_id}),
+            'image_width': snapshot.calibration.image_width,
+            'image_height': snapshot.calibration.image_height,
+        },
+        'board': {
+            'nodes': [node.model_dump(mode='json') for node in snapshot.nodes],
+            'projected_nodes': [node.model_dump(mode='json') for node in projected_nodes],
+            'calibration': snapshot.calibration.model_dump(mode='json'),
+            'source_image_url': snapshot.calibration.source_image_url,
+        },
+    }
+
+
 def build_ui_bootstrap(
     company_name: str | None = None,
     human_color_id: str | None = None,
@@ -206,7 +295,7 @@ def build_ui_bootstrap(
         players.append(
             _empty_player_record(
                 player_id=rival_id,
-                name=RIVAL_NAMES[index],
+                name=PLAYER_NAMES[index],
                 color_id=color_assignments[rival_id],
                 color_hex=color_meta[color_assignments[rival_id]]['hex'],
                 cash=rules.initial_cash,
@@ -214,74 +303,54 @@ def build_ui_bootstrap(
             )
         )
 
-    workspace = BoardWorkspaceRepository()
-    snapshot = workspace.load_snapshot()
-    projected_nodes = project_node_records(snapshot.nodes, snapshot.calibration)
-    properties = [_serialize_property(card, data.continent_styles) for card in data.properties.values()]
-    chance_cards = build_chance_cards()
-    chance_deck = _build_initial_chance_deck(chance_cards)
-
-    human = players[0]
-    rivals = players[1:]
-
-    return {
-        'title': 'Rei dos Mares',
-        'player_colors': player_colors,
-        'freight_permission_cards': build_freight_permission_cards(),
-        'chance_cards': chance_cards,
-        'chance_deck': chance_deck,
-        'port_cards': build_port_title_cards(),
-        'toll_cards': build_toll_title_cards(),
-        'properties': properties,
-        'distances': data.distances,
-        'rules': {
-            'initial_cash': rules.initial_cash,
-            'target_rounds': rules.target_rounds,
-            'bonus_per_early_round': rules.bonus_per_early_round,
-            'penalty_per_late_round': rules.penalty_per_late_round,
-            'origin_owner_commission_share': rules.origin_owner_commission_share,
-            'toll_owner_share': rules.toll_owner_share,
-            'freight_uses_multiplier_value_when_origin_owned': rules.freight_uses_multiplier_value_when_origin_owned,
-            'monopoly_stay_uses_multiplier_times_region_size': rules.monopoly_stay_uses_multiplier_times_region_size,
-            'monopoly_origin_doubles_freight': rules.monopoly_origin_doubles_freight,
-            'mortgage_credit_ratio': 0.5,
-            'mortgage_release_multiplier': 1.5,
-            'extra_permission_cost': rules.extra_permission_cost,
-        },
-        'assets': {
-            'ship_masks': SHIP_MASKS,
-            'ship_fill_masks': SHIP_FILL_MASKS,
-            'ship_sprites': SHIP_SPRITES,
-            'cargo_icons': CARGO_ICONS,
-        },
-        'players': players,
-        'setup_defaults': {
+    return _build_common_ui_payload(
+        players=players,
+        player_colors=player_colors,
+        rules=rules,
+        data=data,
+        setup_defaults={
             'company_name': resolved_name,
             'human_color_id': resolved_color_id,
             'rival_count': resolved_rival_count,
         },
-        'human_company': human,
-        'active_contract': None,
-        'session': {
-            'turn_number': 1,
-            'turn_label': 'Turno 01',
-            'phase': 'Preparacao inicial',
-            'active_player_id': 'human',
-            'action_label': 'Sortear permissao de frete',
-            'dice': [0, 0],
-            'note': 'A partida comeca sem navios, sem contratos e sem porto de partida definido.',
+        active_player_id='human',
+        action_label='Sortear permissao de frete',
+        note='A partida comeca sem navios, sem contratos e sem porto de partida definido.',
+    )
+
+
+def build_robots_ui_bootstrap(robot_count: int | None = None) -> dict[str, Any]:
+    data = load_game_data()
+    rules = load_game_rules()
+    player_colors = load_player_colors()
+    resolved_robot_count = _resolve_robot_setup(robot_count)
+    color_meta = {item['id']: item for item in player_colors}
+    color_assignments = _assign_robot_colors(player_colors, resolved_robot_count)
+
+    players: list[dict[str, Any]] = []
+    for index in range(resolved_robot_count):
+        player_id = f'cpu-{index + 1}'
+        players.append(
+            _empty_player_record(
+                player_id=player_id,
+                name=PLAYER_NAMES[index],
+                color_id=color_assignments[player_id],
+                color_hex=color_meta[color_assignments[player_id]]['hex'],
+                cash=rules.initial_cash,
+                is_human=False,
+            )
+        )
+
+    active_player_id = players[0]['id'] if players else ''
+    return _build_common_ui_payload(
+        players=players,
+        player_colors=player_colors,
+        rules=rules,
+        data=data,
+        setup_defaults={
+            'robot_count': resolved_robot_count,
         },
-        'rivals': rivals,
-        'capture_status': {
-            'node_count': len(snapshot.nodes),
-            'route_groups': len({node.route_id for node in snapshot.nodes if node.route_id}),
-            'image_width': snapshot.calibration.image_width,
-            'image_height': snapshot.calibration.image_height,
-        },
-        'board': {
-            'nodes': [node.model_dump(mode='json') for node in snapshot.nodes],
-            'projected_nodes': [node.model_dump(mode='json') for node in projected_nodes],
-            'calibration': snapshot.calibration.model_dump(mode='json'),
-            'source_image_url': snapshot.calibration.source_image_url,
-        },
-    }
+        active_player_id=active_player_id,
+        action_label='Preparar mesa de robos',
+        note='A mesa comeca sem usuario, apenas com companhias controladas por robos.',
+    )

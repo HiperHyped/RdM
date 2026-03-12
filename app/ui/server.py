@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import re
 from typing import Any, Literal
@@ -20,7 +20,7 @@ from app.maptools import (
     geo_to_pixel,
     project_node_records,
 )
-from app.services import build_chance_cards, build_freight_permission_cards, build_port_title_cards, build_toll_title_cards, build_ui_bootstrap, load_game_data
+from app.services import build_chance_cards, build_freight_permission_cards, build_port_title_cards, build_robots_ui_bootstrap, build_toll_title_cards, build_ui_bootstrap, load_game_data
 
 
 class GameSetupRequest(BaseModel):
@@ -28,6 +28,10 @@ class GameSetupRequest(BaseModel):
     color_id: str
     rival_count: int = Field(default=5, ge=2, le=5)
 
+
+
+class RobotsSetupRequest(BaseModel):
+    robot_count: int = Field(default=6, ge=2, le=6)
 
 class EditorNodeCreate(BaseModel):
     kind: Literal['port', 'toll', 'fuel', 'chance']
@@ -210,6 +214,15 @@ def create_app() -> FastAPI:
             context={'page_title': 'Preview do Jogo'},
         )
 
+
+    @app.get('/preview/robots-ui', response_class=HTMLResponse)
+    async def robots_ui_preview(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='robots_ui.html',
+            context={'page_title': 'Preview dos Robos'},
+        )
+
     @app.get('/preview/port-titles', response_class=HTMLResponse)
     async def port_titles_preview(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
@@ -331,6 +344,15 @@ def create_app() -> FastAPI:
             human_color_id=payload.color_id,
             rival_count=payload.rival_count,
         )
+
+
+    @app.get('/api/robots/bootstrap')
+    async def robots_bootstrap() -> dict[str, Any]:
+        return build_robots_ui_bootstrap()
+
+    @app.post('/api/robots/setup')
+    async def robots_setup(payload: RobotsSetupRequest) -> dict[str, Any]:
+        return build_robots_ui_bootstrap(robot_count=payload.robot_count)
 
     @app.get('/api/map/bootstrap')
     async def map_bootstrap() -> dict[str, Any]:
@@ -507,3 +529,4 @@ def create_app() -> FastAPI:
         return _serialize_snapshot(snapshot, data.properties, data.continent_styles)
 
     return app
+

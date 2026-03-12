@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.services import build_ui_bootstrap
+from app.services import build_robots_ui_bootstrap, build_ui_bootstrap
 
 
 def test_ui_bootstrap_exposes_empty_first_turn_session() -> None:
@@ -62,3 +62,21 @@ def test_ui_bootstrap_respects_setup_choices() -> None:
     assert len(payload['rivals']) == 3
     assert all(rival['color_id'] != 'red' for rival in payload['rivals'])
     assert [rival['name'] for rival in payload['rivals']] == ['Jogador 1', 'Jogador 2', 'Jogador 3']
+
+def test_robots_ui_bootstrap_creates_only_cpu_players() -> None:
+    payload = build_robots_ui_bootstrap(robot_count=6)
+
+    assert payload['human_company'] is None
+    assert payload['session']['active_player_id'] == 'cpu-1'
+    assert payload['setup_defaults'] == {'robot_count': 6}
+    assert len(payload['players']) == 6
+    assert len(payload['rivals']) == 6
+    assert all(player['is_human'] is False for player in payload['players'])
+    assert [player['name'] for player in payload['players']] == [
+        'Jogador 1',
+        'Jogador 2',
+        'Jogador 3',
+        'Jogador 4',
+        'Jogador 5',
+        'Jogador 6',
+    ]

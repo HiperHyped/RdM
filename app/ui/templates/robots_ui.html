@@ -13,10 +13,23 @@
   <div id="game-preview-ships" class="game-preview-ships" aria-hidden="true"></div>
   <div id="game-preview-hitlayer" class="game-preview-hitlayer" aria-hidden="true"></div>
 
-  <section id="game-action-log" class="game-action-log" aria-live="polite">
-    <p class="eyebrow">Acoes do turno</p>
-    <div id="game-action-feed" class="game-action-feed"></div>
-  </section>
+  <div id="game-log-overlay" class="report-overlay is-hidden" aria-hidden="true">
+    <section class="report-modal report-modal-log" aria-labelledby="log-title">
+      <div class="report-head">
+        <div>
+          <p class="eyebrow">Log</p>
+          <h2 id="log-title">Historico da simulacao</h2>
+        </div>
+        <button id="log-close-button" type="button" class="settings-close-button" aria-label="Fechar log">Fechar</button>
+      </div>
+      <div class="log-body">
+        <section id="game-action-log" class="game-action-log is-modal" aria-live="polite">
+          <p class="eyebrow">Acoes do turno</p>
+          <div id="game-action-feed" class="game-action-feed"></div>
+        </section>
+      </div>
+    </section>
+  </div>
 
   <div id="game-pause-indicator" class="game-pause-indicator is-hidden" aria-live="polite" aria-label="Jogo pausado">
     <span>||</span>
@@ -47,16 +60,16 @@
               <span>Por jogador</span>
             </label>
           </div>
-          <span class="settings-note">Escolha entre o painel unico no canto superior direito ou stacks locais sobre cada balao.</span>
+          <span class="settings-note">Escolha entre acompanhar os stacks locais sobre cada balao ou usar a janela central aberta pelo botao Log.</span>
         </div>
 
         <label class="settings-row" for="settings-cpu-speed">
           <div class="settings-row-top">
             <span class="settings-label">Velocidade dos robos</span>
-            <strong id="settings-cpu-speed-value" class="settings-value">0,50x</strong>
+            <strong id="settings-cpu-speed-value" class="settings-value">10,00x</strong>
           </div>
-          <input id="settings-cpu-speed" class="settings-slider" type="range" min="0.1" max="4" step="0.05" value="0.5" />
-          <span class="settings-note">Quanto maior, mais rapido o jogo executa as acoes autom?ticas dos robos.</span>
+          <input id="settings-cpu-speed" class="settings-slider" type="range" min="0.1" max="50" step="0.1" value="10" />
+          <span class="settings-note">Quanto maior, mais rapido o jogo executa as acoes automaticas dos robos.</span>
         </label>
 
         <label class="settings-row" for="settings-log-lifetime">
@@ -65,9 +78,41 @@
             <strong id="settings-log-lifetime-value" class="settings-value">12 s</strong>
           </div>
           <input id="settings-log-lifetime" class="settings-slider" type="range" min="4" max="30" step="1" value="12" />
-          <span class="settings-note">Controla por quanto tempo os logs ficam visiveis, tanto no painel geral quanto no modo por jogador.</span>
+          <span class="settings-note">Controla por quanto tempo os logs ficam visiveis, tanto na janela Log quanto no modo por jogador.</span>
         </label>
+
+        <div class="settings-row">
+          <div class="settings-row-top">
+            <span class="settings-label">Segundo plano</span>
+            <strong id="settings-background-mode-value" class="settings-value">Desligado</strong>
+          </div>
+          <div class="settings-choice-group" role="radiogroup" aria-label="Execucao em segundo plano">
+            <label class="settings-choice" for="settings-background-mode-off">
+              <input id="settings-background-mode-off" type="radio" name="settings-background-mode" value="off" checked />
+              <span>Desligado</span>
+            </label>
+            <label class="settings-choice" for="settings-background-mode-on">
+              <input id="settings-background-mode-on" type="radio" name="settings-background-mode" value="on" />
+              <span>Ligado</span>
+            </label>
+          </div>
+          <span class="settings-note">Continua a simulacao quando a aba fica em segundo plano.</span>
+        </div>
       </div>
+    </section>
+  </div>
+
+  <div id="game-report-overlay" class="report-overlay is-hidden" aria-hidden="true">
+    <section class="report-modal" aria-labelledby="report-title">
+      <div class="report-head">
+        <div>
+          <p class="eyebrow">Relatorios</p>
+          <h2 id="report-title">Painel da simulacao</h2>
+        </div>
+        <button id="report-close-button" type="button" class="settings-close-button" aria-label="Fechar relatorio">Fechar</button>
+      </div>
+      <div id="report-tabs" class="report-tabs" role="tablist" aria-label="Relatorios disponiveis"></div>
+      <div id="report-body" class="report-body"></div>
     </section>
   </div>
 
@@ -78,27 +123,17 @@
   <div id="game-setup-overlay" class="game-setup-overlay">
     <section class="game-setup-modal" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
-      <h1 id="game-setup-title">Monte sua companhia</h1>
-      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia e quantos adversarios do sistema entrarao na partida.</p>
+      <h1 id="game-setup-title">Configure a mesa de robos</h1>
+      <p class="body-copy compact">Escolha quantos robos do sistema entrarao na simulacao. Todos os jogadores da partida serao controlados automaticamente.</p>
 
       <form id="game-setup-form" class="game-setup-form">
-        <label class="game-setup-field">
-          <span>Nome da companhia</span>
-          <input id="setup-company-name" class="game-setup-input" type="text" maxlength="28" autocomplete="off" />
-        </label>
-
         <div class="game-setup-field">
-          <span>Cor da companhia</span>
-          <div id="setup-color-grid" class="game-setup-color-grid"></div>
-        </div>
-
-        <div class="game-setup-field">
-          <span>Numero de adversarios</span>
+          <span>Numero de robos</span>
           <div id="setup-rival-counts" class="game-setup-counts"></div>
         </div>
 
         <div class="game-setup-actions">
-          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
+          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar mesa</button>
         </div>
       </form>
     </section>
@@ -111,6 +146,8 @@
           <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
           <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
+          <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
+          <button id="preview-log-button" type="button" class="preview-ghost-button" aria-label="Log">&#128221;</button>
         </div>
         <h1 id="preview-turn">Turno 01</h1>
       </div>
@@ -119,8 +156,8 @@
     <section class="preview-panel preview-company is-hidden" aria-hidden="true">
       <div class="preview-section-head">
         <div>
-          <p class="eyebrow">Sua Empresa</p>
-          <h2 id="preview-human-name">Minha Companhia</h2>
+          <p class="eyebrow">Companhia em foco</p>
+          <h2 id="preview-human-name">Mesa de Robos</h2>
         </div>
         <span id="preview-human-port" class="preview-soft-badge">--</span>
       </div>
@@ -242,25 +279,14 @@
     </section>
   </div>
 
-  <div id="permission-choice-overlay" class="permission-choice-overlay is-hidden">
-    <section class="permission-choice-modal" aria-labelledby="permission-choice-title">
-      <div class="permission-choice-head">
-        <div>
-          <p class="eyebrow">Novo contrato</p>
-          <h2 id="permission-choice-title">Escolha a permissao</h2>
-        </div>
-        <span id="permission-choice-origin" class="permission-choice-origin">Origem --</span>
-      </div>
-      <p id="permission-choice-copy" class="body-copy compact permission-choice-copy">Escolha a permissao para este contrato.</p>
-      <div id="permission-choice-stage" class="permission-choice-stage"></div>
-    </section>
-  </div>
-
   <section class="preview-panel preview-rivals">
     <div id="preview-rival-list" class="preview-rival-grid"></div>
   </section>
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
-<script src="{{ request.url_for('static', path='js/game-preview.js') }}?v=economy-integration-v1"></script>
+<script src="{{ request.url_for('static', path='js/robots-ui.js') }}?v=robots-ui-v1"></script>
 {% endblock %}
+
+
+

@@ -1,4 +1,4 @@
-﻿const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
+const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -42,7 +42,7 @@ const state = {
     started: false,
     companyName: '',
     selectedColorId: '',
-    rivalCount: 5,
+    rivalCount: 6,
     submitting: false,
   },
   permissionDraw: {
@@ -80,13 +80,6 @@ const state = {
   decision: {
     resolver: null,
   },
-  permissionChoice: {
-    resolver: null,
-    playerId: '',
-    originCode: '',
-    ownsOrigin: false,
-    choices: [],
-  },
   chanceDraw: {
     drawing: false,
     selectedCardId: '',
@@ -101,9 +94,19 @@ const state = {
   },
   actionFeed: [],
   settings: {
-    cpuSpeed: 0.5,
+    cpuSpeed: 10,
     logLifetimeMs: 12000,
     logMode: 'player',
+    runInBackground: false,
+  },
+  report: {
+    activeKey: 'cash-by-turn',
+    cashHistory: [],
+    snapshotKeys: [],
+    windowModes: {
+      'cash-by-turn': 'recent',
+      'patrimony-by-turn': 'recent',
+    },
   },
   pause: {
     waiters: [],
@@ -118,6 +121,7 @@ const state = {
     paused: false,
     actionFeedExpanded: false,
     propertyInspectorCode: '',
+    deferredUiRefresh: false,
   },
   projection: {
     plot: null,
@@ -138,12 +142,27 @@ function byId(id) {
   return document.getElementById(id);
 }
 
+function nextMacrotask() {
+  if (typeof MessageChannel === 'function') {
+    return new Promise((resolve) => {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => resolve();
+      channel.port2.postMessage(0);
+    });
+  }
+  return new Promise((resolve) => window.setTimeout(resolve, 0));
+}
+
 function getPauseIndicator() {
   return byId('game-pause-indicator');
 }
 
 function getPropertyInspectorOverlay() { return byId('property-inspector-overlay'); }
 function getPropertyInspectorStage() { return byId('property-inspector-stage'); }
+function getLogOverlay() { return byId('game-log-overlay'); }
+function getReportOverlay() { return byId('game-report-overlay'); }
+function getReportTabs() { return byId('report-tabs'); }
+function getReportBody() { return byId('report-body'); }
 
 function hasCentralOverlayOpen() {
   const ids = [
@@ -153,9 +172,10 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
-    'permission-choice-overlay',
     'property-inspector-overlay',
     'game-settings-overlay',
+    'game-log-overlay',
+    'game-report-overlay',
   ];
   return ids.some((id) => {
     const node = byId(id);
@@ -197,7 +217,11 @@ function propertyInspectorMarkup(card) {
   `;
 }
 
-function renderPropertyInspector() {
+function renderPropertyInspector({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
+  }
   const overlay = getPropertyInspectorOverlay();
   const stage = getPropertyInspectorStage();
   if (!overlay || !stage) return;
@@ -278,8 +302,14 @@ function togglePaused() {
 }
 
 async function delay(ms) {
+  if (shouldRunRobotsInBackground()) {
+    await nextMacrotask();
+    return;
+  }
+
   let remaining = Math.max(0, Number(ms) || 0);
   while (remaining > 0) {
+    if (shouldRunRobotsInBackground()) return;
     if (state.view.paused) {
       await waitForResume();
       continue;
@@ -287,6 +317,7 @@ async function delay(ms) {
     const slice = Math.min(remaining, 40);
     const startedAt = performance.now();
     await new Promise((resolve) => window.setTimeout(resolve, slice));
+    if (shouldRunRobotsInBackground()) return;
     if (state.view.paused) continue;
     remaining -= (performance.now() - startedAt);
   }
@@ -311,15 +342,15 @@ function scaledCpuDelay(baseMs, minMs = 80) {
 }
 
 function currentCpuMoveDelay() {
-  return scaledCpuDelay(CPU_MOVE_DELAY_MS, 60);
+  return scaledCpuDelay(CPU_MOVE_DELAY_MS, 4);
 }
 
 function currentCpuStepDelay() {
-  return scaledCpuDelay(CPU_STEP_DELAY_MS, 90);
+  return scaledCpuDelay(CPU_STEP_DELAY_MS, 6);
 }
 
 function currentCpuRevealDelay(baseMs = 650) {
-  return scaledCpuDelay(baseMs, 120);
+  return scaledCpuDelay(baseMs, 10);
 }
 
 function currentLogLifetimeMs() {
@@ -340,6 +371,43 @@ function settingsCpuSpeedLabel(value = cpuSpeedFactor()) {
 
 function settingsLogLifetimeLabel(ms = currentLogLifetimeMs()) {
   return `${Math.round((Number(ms) || 0) / 1000)} s`;
+}
+
+function backgroundExecutionEnabled() {
+  return Boolean(state.settings?.runInBackground);
+}
+
+function isDocumentHidden() {
+  return document.visibilityState === 'hidden';
+}
+
+function shouldRunRobotsInBackground() {
+  return backgroundExecutionEnabled() && isDocumentHidden();
+}
+
+function settingsBackgroundModeLabel(enabled = backgroundExecutionEnabled()) {
+  return enabled ? 'Ligado' : 'Desligado';
+}
+
+function shouldDeferUiRefresh() {
+  return shouldRunRobotsInBackground();
+}
+
+function markDeferredUiRefresh() {
+  state.view.deferredUiRefresh = true;
+}
+
+function flushDeferredUiRefresh() {
+  if (shouldDeferUiRefresh() || !state.view.deferredUiRefresh) return;
+  state.view.deferredUiRefresh = false;
+  renderHud({ force: true });
+  renderActionFeed({ force: true });
+  renderNodeOverlay({ force: true });
+  renderShipOverlay({ force: true });
+  renderPropertyInspector({ force: true });
+  if (!getReportOverlay()?.classList.contains('is-hidden')) {
+    renderReportOverlay();
+  }
 }
 
 function pruneActionFeed() {
@@ -372,7 +440,11 @@ function renderSettingsOverlay() {
   const logModeValue = getSettingsLogModeValue();
   const logModeGlobalInput = getSettingsLogModeGlobalInput();
   const logModePlayerInput = getSettingsLogModePlayerInput();
+  const backgroundModeValue = getSettingsBackgroundModeValue();
+  const backgroundModeOffInput = getSettingsBackgroundModeOffInput();
+  const backgroundModeOnInput = getSettingsBackgroundModeOnInput();
   const logMode = currentLogMode();
+  const backgroundEnabled = backgroundExecutionEnabled();
   if (cpuInput) cpuInput.value = String(cpuSpeedFactor());
   if (cpuValue) cpuValue.textContent = settingsCpuSpeedLabel();
   if (logInput) logInput.value = String(Math.round(currentLogLifetimeMs() / 1000));
@@ -380,6 +452,9 @@ function renderSettingsOverlay() {
   if (logModeValue) logModeValue.textContent = settingsLogModeLabel(logMode);
   if (logModeGlobalInput) logModeGlobalInput.checked = logMode === 'global';
   if (logModePlayerInput) logModePlayerInput.checked = logMode !== 'global';
+  if (backgroundModeValue) backgroundModeValue.textContent = settingsBackgroundModeLabel(backgroundEnabled);
+  if (backgroundModeOffInput) backgroundModeOffInput.checked = !backgroundEnabled;
+  if (backgroundModeOnInput) backgroundModeOnInput.checked = backgroundEnabled;
 }
 
 function openSettingsOverlay() {
@@ -389,6 +464,328 @@ function openSettingsOverlay() {
 
 function closeSettingsOverlay() {
   setSettingsVisible(false);
+}
+
+function setLogVisible(visible) {
+  const overlay = getLogOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function setReportVisible(visible) {
+  const overlay = getReportOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function reportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  const label = String(snapshot?.label || '').trim();
+  if (label) return label;
+  return normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio';
+}
+
+function compactReportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  return normalizedTurn > 0 ? `T${String(normalizedTurn).padStart(2, '0')}` : 'INI';
+}
+
+function reportEmptyMarkup(message = 'O historico do relatorio vai aparecer conforme os turnos avancarem.') {
+  return `<div class="report-empty">${message}</div>`;
+}
+
+function reportWindowModeFor(reportKey) {
+  return state.report?.windowModes?.[reportKey] === 'full' ? 'full' : 'recent';
+}
+
+function reportVisibleSnapshots(snapshots, reportKey) {
+  return reportWindowModeFor(reportKey) === 'full' ? snapshots : snapshots.slice(-30);
+}
+
+function reportCountLabel(snapshots, visibleSnapshots) {
+  if (!snapshots.length) return '0 marco(s)';
+  if (visibleSnapshots.length === snapshots.length) return `${snapshots.length} marco(s)`;
+  return `${visibleSnapshots.length} de ${snapshots.length} marco(s)`;
+}
+
+function reportWindowToggleMarkup(reportKey) {
+  const mode = reportWindowModeFor(reportKey);
+  return `
+    <div class="report-range-toggle" role="group" aria-label="Janela do grafico">
+      <button type="button" class="report-range-button${mode === 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="full">Desde o inicio</button>
+      <button type="button" class="report-range-button${mode !== 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="recent">Ultimos 30</button>
+    </div>
+  `;
+}
+
+function cashSnapshotValue(snapshot, playerId) {
+  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
+  return Number(entry?.cash || 0);
+}
+
+function assetSnapshotValue(snapshot, playerId) {
+  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
+  return Number(entry?.asset_total || 0);
+}
+
+function patrimonySnapshotValue(snapshot, playerId) {
+  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
+  return Number(entry?.patrimony_total || 0);
+}
+
+function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn', metric, ariaLabel = 'Grafico do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const valueGetter = metric === 'patrimony'
+    ? patrimonySnapshotValue
+    : cashSnapshotValue;
+
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(valueGetter(snapshot, player.id));
+    });
+  });
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const rawRange = Math.max(1, maxValue - minValue);
+  const padding = Math.max(180, Math.round(rawRange * 0.16));
+  const domainMin = Math.max(0, minValue - padding);
+  const domainMax = maxValue + padding;
+  const domainRange = Math.max(1, domainMax - domainMin);
+  const height = 460;
+  const frame = { top: 22, right: 22, bottom: 56, left: 96 };
+  const width = Math.max(860, Math.min(980, frame.left + frame.right + (visibleSnapshots.length * 28)));
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((domainMax - value) / domainRange) * innerHeight);
+  const ticks = Array.from({ length: 5 }, (_, index) => domainMin + ((domainRange / 4) * index));
+
+  const gridMarkup = ticks.map((value) => {
+    const y = yFor(value);
+    return `
+      <g>
+        <line class="report-grid-line" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>
+        <text class="report-axis-label" x="${frame.left - 10}" y="${(y + 4).toFixed(2)}" text-anchor="end">${formatCurrency(Math.round(value))}</text>
+      </g>
+    `;
+  }).join('');
+
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    const x = xFor(index);
+    return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 12}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  const seriesMarkup = players.map((player) => {
+    const points = visibleSnapshots.map((snapshot, index) => `${xFor(index).toFixed(2)},${yFor(valueGetter(snapshot, player.id)).toFixed(2)}`).join(' ');
+    return `<g><polyline class="report-series-line" stroke="${player.color_hex || '#8fd7ff'}" points="${points}"></polyline></g>`;
+  }).join('');
+
+  const legendMarkup = players.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+    </span>
+  `).join('');
+
+  return `
+    <div class="report-chart-shell">
+      <div class="report-legend">${legendMarkup}</div>
+      <div class="report-chart-scroll">
+        <svg class="report-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+          ${gridMarkup}
+          ${seriesMarkup}
+          ${xLabelsMarkup}
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+function cashByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'cash-by-turn',
+    metric: 'cash',
+    ariaLabel: 'Grafico de dinheiro por turno',
+  });
+}
+
+function patrimonyByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'patrimony-by-turn',
+    metric: 'patrimony',
+    ariaLabel: 'Grafico de patrimonio por turno',
+  });
+}
+
+function reportPlayers() {
+  return (state.players || []).map((player) => ({
+    id: player.id,
+    name: player.name,
+    color_hex: player.color_hex || '#8fd7ff',
+  }));
+}
+
+function cashByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'cash-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Dinheiro de jogador por turno</strong>
+          <span>Historico de caixa fechado no fim de cada turno global da simulacao.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('cash-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${cashByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function patrimonyByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'patrimony-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Patrimonio de jogador por turno</strong>
+          <span>Dinheiro somado ao valor-base dos ativos de cada jogador em cada fechamento.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('patrimony-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${patrimonyByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function renderReportOverlay() {
+  const tabs = getReportTabs();
+  const body = getReportBody();
+  if (!tabs || !body) return;
+
+  const activeKey = state.report?.activeKey || 'cash-by-turn';
+  tabs.innerHTML = `
+    <button type="button" class="report-tab${activeKey === 'cash-by-turn' ? ' is-active' : ''}" data-report-key="cash-by-turn" role="tab" aria-selected="${activeKey === 'cash-by-turn' ? 'true' : 'false'}">Dinheiro por turno</button>
+    <button type="button" class="report-tab${activeKey === 'patrimony-by-turn' ? ' is-active' : ''}" data-report-key="patrimony-by-turn" role="tab" aria-selected="${activeKey === 'patrimony-by-turn' ? 'true' : 'false'}">Patrimonio por turno</button>
+  `;
+
+  if (activeKey === 'patrimony-by-turn') {
+    body.innerHTML = patrimonyByTurnReportMarkup();
+    return;
+  }
+
+  body.innerHTML = activeKey === 'cash-by-turn'
+    ? cashByTurnReportMarkup()
+    : reportEmptyMarkup('Esse relatorio ainda nao foi implementado.');
+}
+
+function openLogOverlay() {
+  renderActionFeed();
+  setLogVisible(true);
+}
+
+function closeLogOverlay() {
+  setLogVisible(false);
+}
+
+function openReportOverlay() {
+  renderReportOverlay();
+  setReportVisible(true);
+}
+
+function closeReportOverlay() {
+  setReportVisible(false);
+}
+
+function playerAssetBookValue(player) {
+  if (!player) return 0;
+  const propertiesValue = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter(Boolean)
+    .reduce((total, card) => total + Math.max(0, Number(card.price || 0)), 0);
+  const permissionsValue = (player.permissions || [])
+    .reduce((total, permission) => total + permissionPurchasePrice(permission), 0);
+  return propertiesValue + permissionsValue;
+}
+
+function captureCashSnapshot({
+  label = state.session?.turn_label || 'Turno --',
+  turnNumber = Number(state.session?.turn_number || 0),
+  phase = state.session?.phase || '',
+  force = false,
+} = {}) {
+  if (!(state.players || []).length) return;
+
+  const normalizedTurn = Number(turnNumber || 0);
+  const normalizedLabel = String(label || '').trim() || (normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio');
+  const key = `${normalizedTurn}|${normalizedLabel}`;
+  const snapshot = {
+    key,
+    turnNumber: normalizedTurn,
+    label: normalizedLabel,
+    phase: String(phase || ''),
+    players: (state.players || []).map((player) => {
+      const cash = Number(player.cash || 0);
+      const assetTotal = playerAssetBookValue(player);
+      return {
+        id: player.id,
+        name: player.name,
+        cash,
+        asset_total: assetTotal,
+        patrimony_total: cash + assetTotal,
+        color: player.color_hex || '#8fd7ff',
+      };
+    }),
+  };
+
+  const existingIndex = (state.report?.snapshotKeys || []).indexOf(key);
+  if (existingIndex >= 0) {
+    if (!force) return;
+    state.report.cashHistory[existingIndex] = snapshot;
+  } else {
+    state.report.snapshotKeys.push(key);
+    state.report.cashHistory.push(snapshot);
+  }
+  renderReportOverlay();
+}
+
+function resetReportData() {
+  state.report.cashHistory = [];
+  state.report.snapshotKeys = [];
+  captureCashSnapshot({
+    label: 'Inicio',
+    turnNumber: 0,
+    phase: 'Mesa inicial',
+    force: true,
+  });
 }
 
 function playerActionLogEntries(playerId) {
@@ -455,6 +852,10 @@ function getSettingsCpuSpeedInput() { return byId('settings-cpu-speed'); }
 function getSettingsCpuSpeedValue() { return byId('settings-cpu-speed-value'); }
 function getSettingsLogLifetimeInput() { return byId('settings-log-lifetime'); }
 function getSettingsLogLifetimeValue() { return byId('settings-log-lifetime-value'); }
+function getSettingsBackgroundModeValue() { return byId('settings-background-mode-value'); }
+function getSettingsBackgroundModeOffInput() { return byId('settings-background-mode-off'); }
+function getSettingsBackgroundModeOnInput() { return byId('settings-background-mode-on'); }
+function reportSnapshots() { return state.report?.cashHistory || []; }
 
 function humanPlayer() {
   return state.players.find((player) => player.id === 'human') || null;
@@ -469,7 +870,15 @@ function playerById(id) {
 }
 
 function activePlayer() {
-  return playerById(state.session?.active_player_id) || humanPlayer() || state.players[0] || null;
+  return playerById(state.session?.active_player_id) || humanPlayer() || alivePlayers()[0] || state.players[0] || null;
+}
+
+function defaultSessionPlayerId() {
+  return alivePlayers()[0]?.id || state.players[0]?.id || '';
+}
+
+function focusPlayer() {
+  return humanPlayer() || activePlayer() || state.players[0] || null;
 }
 
 function getPropertyCard(code) {
@@ -520,7 +929,7 @@ function buildCardIndexes() {
 function syncDerivedState() {
   state.humanCompany = humanPlayer();
   state.rivals = rivalPlayers();
-  state.activeContract = state.humanCompany?.active_contract || null;
+  state.activeContract = state.humanCompany?.active_contract || focusPlayer()?.active_contract || null;
 }
 
 function brightenHex(hex, mix = 0.28) {
@@ -537,7 +946,7 @@ function playerActionName(player) {
 }
 
 function globalActionFeedMarkup(entries) {
-  const visibleEntries = (entries || []).slice(0, 8);
+  const visibleEntries = (entries || []).slice(0, 18);
   if (!visibleEntries.length) {
     return `
       <article class="game-action-entry is-empty">
@@ -563,17 +972,15 @@ function globalActionFeedMarkup(entries) {
   }).join('');
 }
 
-function renderActionFeed() {
-  const entries = pruneActionFeed();
-  const panel = byId('game-action-log');
-  const target = byId('game-action-feed');
-  const globalMode = currentLogMode() === 'global';
-  if (panel) {
-    panel.classList.toggle('is-hidden', !globalMode);
-    panel.classList.toggle('is-collapsed', globalMode && !state.view.actionFeedExpanded);
+function renderActionFeed({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
   }
-  if (target) target.innerHTML = globalMode ? globalActionFeedMarkup(entries) : '';
-  renderRivals();
+  const entries = pruneActionFeed();
+  const target = byId('game-action-feed');
+  if (target) target.innerHTML = globalActionFeedMarkup(entries);
+  renderRivals({ force });
 }
 
 function scheduleActionLogExpiry(entryId) {
@@ -1032,7 +1439,6 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
       fee,
       multiplier,
       comparisonValue: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
-      projectedFreight: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
       isCurrent: String(permission.id) === currentPermissionId,
     };
   });
@@ -1041,17 +1447,6 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
     ownsOrigin,
     choices,
   };
-}
-
-function bestContractPermissionChoiceForOrigin(player, originCode = null) {
-  const selection = contractPermissionChoicesForOrigin(player, originCode);
-  return selection.choices.reduce((best, entry) => {
-    if (!best) return entry;
-    if (entry.comparisonValue > best.comparisonValue) return entry;
-    if (entry.comparisonValue < best.comparisonValue) return best;
-    if (entry.isCurrent) return entry;
-    return best;
-  }, null);
 }
 
 function applyBestContractPermissionForRobot(player, originCode = null) {
@@ -1944,7 +2339,11 @@ function playerDrawerMarkup(player) {
   `;
 }
 
-function renderRivals() {
+function renderRivals({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
+  }
   pruneActionFeed();
 
   const target = byId('preview-rival-list');
@@ -1983,19 +2382,20 @@ function renderRivals() {
   scheduleMiniHandLayout();
 }
 
-function renderHud() {
+function renderHud({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
+  }
 
-  const human = humanPlayer();
-  const contract = human?.active_contract || null;
+  const focus = focusPlayer();
   setText('preview-turn', state.session?.turn_label || 'Turno 01');
-  const active = activePlayer();
-  const activeContract = active?.active_contract || null;
-  setText('preview-human-name', human?.name || 'Minha Companhia');
-  setText('preview-human-port', human?.location_label || '--');
-  setText('preview-cash', human?.cash_display || formatCurrency(state.rules.initial_cash || 0));
+  setText('preview-human-name', focus?.name || 'Mesa de Robos');
+  setText('preview-human-port', focus?.location_label || '--');
+  setText('preview-cash', focus?.cash_display || formatCurrency(state.rules.initial_cash || 0));
 
-  renderCompanyList(human);
-  renderRivals();
+  renderCompanyList(focus);
+  renderRivals({ force });
 }
 
 function ensurePlayerContractDraft(player) {
@@ -3321,6 +3721,10 @@ function triggerEnterOnOverlay() {
     const button = byId('settings-close-button');
     if (button && !button.disabled) { button.click(); return true; }
   }
+  if (!getReportOverlay()?.classList.contains('is-hidden')) {
+    const button = byId('report-close-button');
+    if (button && !button.disabled) { button.click(); return true; }
+  }
   if (!getPermissionDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getPermissionDrawButton();
     if (button && !button.disabled) { button.click(); return true; }
@@ -3342,10 +3746,6 @@ function triggerEnterOnOverlay() {
   if (!getChanceDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getChanceDrawButton();
     if (button && !button.disabled && !state.chanceDraw.revealOnly) { button.click(); return true; }
-  }
-  if (!getPermissionChoiceOverlay()?.classList.contains('is-hidden')) {
-    const button = getPermissionChoiceStage()?.querySelector('.permission-choice-card.is-current, .permission-choice-card');
-    if (button && !button.disabled) { button.click(); return true; }
   }
   if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
     const button = getDecisionPrimary();
@@ -4065,101 +4465,6 @@ function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryL
   });
 }
 
-
-function getPermissionChoiceOverlay() {
-  return byId('permission-choice-overlay');
-}
-
-function getPermissionChoiceTitle() {
-  return byId('permission-choice-title');
-}
-
-function getPermissionChoiceOrigin() {
-  return byId('permission-choice-origin');
-}
-
-function getPermissionChoiceCopy() {
-  return byId('permission-choice-copy');
-}
-
-function getPermissionChoiceStage() {
-  return byId('permission-choice-stage');
-}
-
-function setPermissionChoiceVisible(visible) {
-  const overlay = getPermissionChoiceOverlay();
-  if (!overlay) return;
-  overlay.classList.toggle('is-hidden', !visible);
-}
-
-function closePermissionChoice(permissionId = '') {
-  setPermissionChoiceVisible(false);
-  const resolver = state.permissionChoice.resolver;
-  state.permissionChoice.resolver = null;
-  state.permissionChoice.playerId = '';
-  state.permissionChoice.originCode = '';
-  state.permissionChoice.ownsOrigin = false;
-  state.permissionChoice.choices = [];
-  if (resolver) resolver(permissionId);
-}
-
-function renderPermissionChoice() {
-  const titleNode = getPermissionChoiceTitle();
-  const originNode = getPermissionChoiceOrigin();
-  const copyNode = getPermissionChoiceCopy();
-  const stage = getPermissionChoiceStage();
-  if (!titleNode || !originNode || !copyNode || !stage) return;
-
-  const player = playerById(state.permissionChoice.playerId);
-  const selection = {
-    originCode: state.permissionChoice.originCode,
-    ownsOrigin: state.permissionChoice.ownsOrigin,
-    choices: state.permissionChoice.choices || [],
-  };
-
-  titleNode.textContent = 'Escolha a permissao';
-  originNode.textContent = selection.originCode ? `Origem ${selection.originCode}` : 'Origem --';
-  copyNode.textContent = 'Escolha a permissao para o proximo contrato.';
-
-  stage.innerHTML = selection.choices.map((entry) => {
-    const factorLabel = `${Number(entry.multiplier || 1).toFixed(2).replace('.', ',')}x`;
-    const detailLabel = selection.ownsOrigin
-      ? `Frete base ${formatCurrency(entry.fee)} | Multiplicador ${factorLabel}`
-      : `Estadia ${formatCurrency(entry.fee)}`;
-    return `
-      <button type="button" class="permission-choice-card${entry.isCurrent ? ' is-current' : ''}" data-permission-choice-id="${entry.permission.id}">
-        <span class="permission-choice-card-icon">${cargoIconMarkup(entry.permission.kind, 'permission-choice-icon-image')}</span>
-        <span class="permission-choice-card-copy">
-          <strong>${entry.permission.title}</strong>
-          <span class="permission-choice-card-detail">${detailLabel}</span>
-        </span>
-        <span class="permission-choice-card-badge">${entry.isCurrent ? 'Atual' : 'Usar'}</span>
-        <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
-      </button>
-    `;
-  }).join('');
-
-  if (!player || !selection.choices.length) {
-    closePermissionChoice(player?.active_permission_id || '');
-  }
-}
-
-function openHumanPermissionChoice(player, { originCode = null } = {}) {
-  const selection = contractPermissionChoicesForOrigin(player, originCode);
-  if (!player || selection.choices.length <= 1) {
-    return Promise.resolve(selection.choices[0]?.permission?.id || player?.active_permission_id || '');
-  }
-  state.permissionChoice.playerId = player.id;
-  state.permissionChoice.originCode = selection.originCode;
-  state.permissionChoice.ownsOrigin = selection.ownsOrigin;
-  state.permissionChoice.choices = selection.choices;
-  renderPermissionChoice();
-  setPermissionChoiceVisible(true);
-  return new Promise((resolve) => {
-    state.permissionChoice.resolver = resolve;
-  });
-}
-
 function getChanceDrawOverlay() {
   return byId('chance-draw-overlay');
 }
@@ -4433,6 +4738,13 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
 
   if (autoStart) {
     const card = drawChanceCardFromDeck();
+    if (shouldRunRobotsInBackground()) {
+      state.chanceDraw.playerId = '';
+      state.chanceDraw.autoStart = false;
+      state.chanceDraw.revealOnly = false;
+      state.chanceDraw.selectedCardId = '';
+      return Promise.resolve(card);
+    }
     const selectedId = card?.id || '';
     state.chanceDraw.selectedCardId = selectedId;
     state.chanceDraw.order = selectedId ? [selectedId] : [];
@@ -4446,6 +4758,10 @@ function openChanceDrawForPlayer(player, { autoStart = false } = {}) {
     setChanceDrawVisible(true);
     return new Promise((resolve) => {
       state.chanceDraw.resolver = resolve;
+      if (shouldRunRobotsInBackground()) {
+        closeChanceDraw(card);
+        return;
+      }
       state.chanceDraw.closeTimerId = window.setTimeout(() => closeChanceDraw(card), currentCpuRevealDelay(1800));
     });
   }
@@ -5376,7 +5692,11 @@ function renderRouteOverlay() {
   });
 }
 
-function renderNodeOverlay() {
+function renderNodeOverlay({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
+  }
   const overlay = getNodeOverlay();
   const plot = getPlotDiv();
   if (!overlay || !plot) return;
@@ -5521,7 +5841,11 @@ function renderNodeOverlay() {
   });
 }
 
-function renderShipOverlay() {
+function renderShipOverlay({ force = false } = {}) {
+  if (!force && shouldDeferUiRefresh()) {
+    markDeferredUiRefresh();
+    return;
+  }
   const overlay = getShipOverlay();
   if (!overlay) return;
   overlay.innerHTML = '';
@@ -5725,7 +6049,9 @@ function applyBootstrapPayload(payload) {
   state.actionFeed = [];
   buildCardIndexes();
   syncDerivedState();
+  resetReportData();
   renderSettingsOverlay();
+  renderReportOverlay();
   renderHud();
   renderShipOverlay();
   renderActionFeed();
@@ -5741,7 +6067,7 @@ function setSetupOverlayVisible(visible) {
 function updateSetupStartButton() {
   const button = byId('setup-start-button');
   if (!button) return;
-  button.disabled = state.setup.submitting || !state.setup.companyName.trim() || !state.setup.selectedColorId;
+  button.disabled = state.setup.submitting;
 }
 
 function renderSetupColorGrid() {
@@ -5769,7 +6095,7 @@ function renderSetupRivalCounts() {
   const target = byId('setup-rival-counts');
   if (!target) return;
   target.innerHTML = '';
-  [2, 3, 4, 5].forEach((count) => {
+  [2, 3, 4, 5, 6].forEach((count) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `game-setup-count${state.setup.rivalCount === count ? ' is-active' : ''}`;
@@ -5785,21 +6111,11 @@ function renderSetupRivalCounts() {
 
 function populateSetupFromPayload(payload) {
   const defaults = payload.setup_defaults || {};
-  state.setup.companyName = defaults.company_name || 'Minha Companhia';
-  state.setup.selectedColorId = defaults.human_color_id || state.playerColors[0]?.id || '';
-  state.setup.rivalCount = defaults.rival_count || 5;
+  state.setup.companyName = '';
+  state.setup.selectedColorId = '';
+  state.setup.rivalCount = defaults.robot_count || defaults.rival_count || 6;
   state.setup.submitting = false;
 
-  const nameInput = byId('setup-company-name');
-  if (nameInput) {
-    nameInput.value = state.setup.companyName;
-    nameInput.addEventListener('input', (event) => {
-      state.setup.companyName = event.target.value;
-      updateSetupStartButton();
-    });
-  }
-
-  renderSetupColorGrid();
   renderSetupRivalCounts();
   updateSetupStartButton();
 }
@@ -5895,30 +6211,8 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
 
   const originCode = player.location_code || ensurePlayerContractDraft(player)?.origin || '';
 
-  if (!needsPermission) {
-    if (player.is_human) {
-      const selection = contractPermissionChoicesForOrigin(player, originCode);
-      if (selection.choices.length > 1) {
-        setSession({
-          active_player_id: player.id,
-          phase: phaseLabel,
-          action_label: 'Escolher permissao',
-          note: 'Escolha a permissao para o proximo contrato.',
-        });
-        renderHud();
-        const selectedPermissionId = await openHumanPermissionChoice(player, { originCode: selection.originCode });
-        if (selectedPermissionId) {
-          const result = setActivePermissionForPlayer(player, selectedPermissionId, { statusLabel: 'permissao escolhida' });
-          if (result.changed && result.permission) {
-            pushActionLog(player, 'Permissao escolhida', result.permission.title);
-            renderHud();
-          }
-        }
-        await delay(shortDelay);
-      }
-    } else {
-      applyBestContractPermissionForRobot(player, originCode);
-    }
+  if (!needsPermission && !player.is_human) {
+    applyBestContractPermissionForRobot(player, originCode);
   }
 
   if (player.is_human) {
@@ -5967,7 +6261,6 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
 async function runCpuOpeningTurn(player) {
   if (!player) return;
 
-  state.view.openRivalDrawerId = player.id;
   await runContractOpeningForPlayer(player, {
     phaseLabel: `Primeiro turno - ${player.name}`,
     needsPermission: true,
@@ -5985,13 +6278,7 @@ async function runPlayerSubsequentTurn(player, turnNumber) {
   if (!player || player.bankrupt) return;
 
   const phaseLabel = `Turno ${String(turnNumber).padStart(2, '0')}`;
-  if (!player.is_human) {
-    state.view.openRivalDrawerId = player.id;
-    renderHud();
-  } else {
-    state.view.openRivalDrawerId = null;
-    renderHud();
-  }
+  renderHud();
 
   if ((player.skip_turns || 0) > 0) {
     player.skip_turns = Math.max(0, (player.skip_turns || 0) - 1);
@@ -6067,7 +6354,7 @@ async function runSubsequentTurnCycle() {
         turn_number: nextTurn,
         turn_label: `Turno ${String(nextTurn).padStart(2, '0')}`,
         phase: `Turno ${String(nextTurn).padStart(2, '0')}`,
-        active_player_id: 'human',
+        active_player_id: defaultSessionPlayerId(),
         action_label: 'Nova rodada',
         note: `A rodada ${String(nextTurn).padStart(2, '0')} vai comecar.`,
         dice: [0, 0],
@@ -6078,6 +6365,13 @@ async function runSubsequentTurnCycle() {
       for (const player of alivePlayers()) {
         await runPlayerSubsequentTurn(player, nextTurn);
       }
+
+      captureCashSnapshot({
+        label: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        turnNumber: nextTurn,
+        phase: 'Fechamento da rodada',
+        force: true,
+      });
     }
   } finally {
     state.flow.turnCycleRunning = false;
@@ -6093,12 +6387,18 @@ async function runCpuOpeningRound() {
       await runCpuOpeningTurn(player);
     }
 
-    state.view.openRivalDrawerId = null;
+    state.view.openSystemDrawerId = null;
     setSession({
-      active_player_id: 'human',
+      active_player_id: defaultSessionPlayerId(),
       phase: 'Primeiro turno concluido',
       action_label: 'Todos os jogadores preparados',
       note: 'Todos os jogadores concluiram o primeiro turno inicial.',
+    });
+    captureCashSnapshot({
+      label: 'Turno 01',
+      turnNumber: 1,
+      phase: 'Fechamento do primeiro turno',
+      force: true,
     });
     renderHud();
     renderNodeOverlay();
@@ -6116,13 +6416,11 @@ async function submitSetupSelection(event) {
   updateSetupStartButton();
 
   try {
-    const payload = await fetchJson('/api/game/setup', {
+    const payload = await fetchJson('/api/robots/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        company_name: state.setup.companyName.trim() || 'Minha Companhia',
-        color_id: state.setup.selectedColorId,
-        rival_count: state.setup.rivalCount,
+        robot_count: state.setup.rivalCount,
       }),
     });
 
@@ -6130,20 +6428,7 @@ async function submitSetupSelection(event) {
     state.setup.started = true;
     setSetupOverlayVisible(false);
     await renderMap();
-    await delay(140);
-    await runContractOpeningForPlayer(humanPlayer(), {
-      phaseLabel: 'Primeiro turno',
-      needsPermission: true,
-      originMode: 'draw',
-    });
-    await delay(PREP_STEP_DELAY_MS);
-    await runTurnExecutionForPlayer(humanPlayer(), {
-      phaseLabel: 'Primeiro turno',
-      humanActionLabel: 'Rolar 2 dados',
-      humanNote: 'Agora o usuario deve jogar os dois dados de movimentacao.',
-    });
-
-    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_LONG_MS));
+    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_MS));
     await runCpuOpeningRound();
     state.setup.submitting = false;
     updateSetupStartButton();
@@ -6153,14 +6438,14 @@ async function submitSetupSelection(event) {
   } catch (_error) {
     state.setup.submitting = false;
     updateSetupStartButton();
-    window.alert('Nao foi possivel iniciar a partida.');
+    window.alert('Nao foi possivel iniciar a partida de robos.');
   }
 }
 
 async function bootstrap() {
   const [mapPayload, uiPayload] = await Promise.all([
     fetchJson('/api/map/bootstrap'),
-    fetchJson('/api/bootstrap'),
+    fetchJson('/api/robots/bootstrap'),
   ]);
 
   applyMapPayload(mapPayload);
@@ -6186,11 +6471,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   byId('port-draw-button')?.addEventListener('click', startCurrentPortDraw);
   byId('movement-dice-button')?.addEventListener('click', startMovementDiceRoll);
   byId('chance-draw-button')?.addEventListener('click', startChanceDraw);
-  getPermissionChoiceStage()?.addEventListener('click', (event) => {
-    const button = event.target.closest('.permission-choice-card');
-    if (!button?.dataset?.permissionChoiceId) return;
-    closePermissionChoice(button.dataset.permissionChoiceId);
-  });
 
   document.addEventListener('keydown', (event) => {
     const active = document.activeElement;
@@ -6201,6 +6481,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
         event.preventDefault();
         closeSettingsOverlay();
+        return;
+      }
+      if (!getLogOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeLogOverlay();
+        return;
+      }
+      if (!getReportOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeReportOverlay();
         return;
       }
     }
@@ -6218,22 +6508,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     togglePaused();
   });
 
-  byId('game-action-log')?.addEventListener('click', () => {
-    if (currentLogMode() !== 'global') return;
-    state.view.actionFeedExpanded = !state.view.actionFeedExpanded;
-    renderActionFeed();
-  });
-
   byId('preview-settings-button')?.addEventListener('click', () => {
     openSettingsOverlay();
   });
+  byId('preview-report-button')?.addEventListener('click', () => {
+    openReportOverlay();
+  });
+  byId('preview-log-button')?.addEventListener('click', () => {
+    openLogOverlay();
+  });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();
+  });
+  byId('log-close-button')?.addEventListener('click', () => {
+    closeLogOverlay();
+  });
+  byId('report-close-button')?.addEventListener('click', () => {
+    closeReportOverlay();
   });
   getSettingsOverlay()?.addEventListener('click', (event) => {
     if (event.target === getSettingsOverlay()) {
       closeSettingsOverlay();
     }
+  });
+  getLogOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getLogOverlay()) {
+      closeLogOverlay();
+    }
+  });
+  getReportOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getReportOverlay()) {
+      closeReportOverlay();
+    }
+  });
+  getReportTabs()?.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-report-key]');
+    if (!tab?.dataset?.reportKey) return;
+    state.report.activeKey = tab.dataset.reportKey;
+    renderReportOverlay();
+  });
+  getReportBody()?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-report-window-key]');
+    if (!button?.dataset?.reportWindowKey || !button?.dataset?.reportWindowMode) return;
+    const reportKey = button.dataset.reportWindowKey;
+    const mode = button.dataset.reportWindowMode === 'full' ? 'full' : 'recent';
+    state.report.windowModes = {
+      ...(state.report.windowModes || {}),
+      [reportKey]: mode,
+    };
+    renderReportOverlay();
   });
   [getSettingsLogModeGlobalInput(), getSettingsLogModePlayerInput()].forEach((input) => {
     input?.addEventListener('change', (event) => {
@@ -6244,7 +6567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
   getSettingsCpuSpeedInput()?.addEventListener('input', (event) => {
-    state.settings.cpuSpeed = Number(event.target.value || 0.5);
+    state.settings.cpuSpeed = Number(event.target.value || 10);
     renderSettingsOverlay();
   });
   getSettingsLogLifetimeInput()?.addEventListener('input', (event) => {
@@ -6252,6 +6575,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyActionFeedLifetime();
     renderSettingsOverlay();
     renderActionFeed();
+  });
+  [getSettingsBackgroundModeOffInput(), getSettingsBackgroundModeOnInput()].forEach((input) => {
+    input?.addEventListener('change', (event) => {
+      if (!event.target.checked) return;
+      state.settings.runInBackground = event.target.value === 'on';
+      renderSettingsOverlay();
+      if (shouldRunRobotsInBackground() && state.chanceDraw.revealOnly && state.chanceDraw.resolver) {
+        const card = chanceCardById(state.chanceDraw.selectedCardId);
+        closeChanceDraw(card);
+      }
+    });
   });
 
   byId('preview-rival-list')?.addEventListener('click', (event) => {
@@ -6301,6 +6635,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     scheduleMiniHandLayout();
   });
+  document.addEventListener('visibilitychange', () => {
+    if (shouldRunRobotsInBackground()) {
+      if (state.chanceDraw.revealOnly && state.chanceDraw.resolver) {
+        const card = chanceCardById(state.chanceDraw.selectedCardId);
+        closeChanceDraw(card);
+      }
+      return;
+    }
+    flushDeferredUiRefresh();
+  });
 
   try {
     await bootstrap();
@@ -6308,3 +6652,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.alert('Nao foi possivel carregar a tela inicial do jogo.');
   }
 });
+
+
