@@ -1,4 +1,4 @@
-﻿const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
+const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -135,6 +135,41 @@ const state = {
     blockClickUntil: 0,
   },
 };
+
+function aiProfilesLib() {
+  return window.RdMAiProfiles || null;
+}
+
+function aiPolicyEngine() {
+  return window.RdMAiPolicyEngine || null;
+}
+
+function ensureAiProfile(player) {
+  if (!player || player.is_human) return null;
+  const engine = aiPolicyEngine();
+  if (engine?.ensureProfile) return engine.ensureProfile(player);
+  const profiles = aiProfilesLib();
+  return profiles?.assignProfile
+    ? profiles.assignProfile(player, { archetypeId: player.ai_archetype_id || 'legacy_open' })
+    : null;
+}
+
+function aiDecisionContext(player, extra = {}) {
+  const engine = aiPolicyEngine();
+  if (engine?.buildDecisionContext) {
+    return engine.buildDecisionContext(player, {
+      rules: state.rules,
+      session: state.session,
+      ...extra,
+    });
+  }
+  return {
+    player,
+    rules: state.rules,
+    session: state.session,
+    ...extra,
+  };
+}
 
 function byId(id) {
   return document.getElementById(id);
@@ -766,8 +801,22 @@ async function maybeSpendCoupon(player, kind, {
       cardCode,
     });
     if (choice !== 'primary') return null;
-  } else if (!autoUse) {
-    return null;
+  } else {
+    const couponDecision = aiPolicyEngine()?.decideCouponUsage
+      ? aiPolicyEngine().decideCouponUsage({
+          player,
+          kind,
+          autoUse,
+          context: aiDecisionContext(player, {
+            reason: 'coupon_usage',
+            action,
+            cardCode,
+          }),
+        })
+      : null;
+    if (!(couponDecision ? couponDecision.shouldUse : autoUse)) {
+      return null;
+    }
   }
 
   const detailText = typeof detail === 'function' ? detail(coupon) : detail;
@@ -1128,7 +1177,14 @@ function bestContractPermissionChoiceForOrigin(player, originCode = null) {
 
 function applyBestContractPermissionForRobot(player, originCode = null) {
   const selection = contractPermissionChoicesForOrigin(player, originCode);
-  const bestChoice = selection.choices.reduce((best, entry) => {
+  const bestPermissionDecision = aiPolicyEngine()?.chooseBestPermission
+    ? aiPolicyEngine().chooseBestPermission({
+        player,
+        selection,
+        originCode,
+      })
+    : null;
+  const bestChoice = bestPermissionDecision?.choice || selection.choices.reduce((best, entry) => {
     if (!best) return entry;
     if (entry.comparisonValue > best.comparisonValue) return entry;
     if (entry.comparisonValue < best.comparisonValue) return best;
@@ -3008,7 +3064,7 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
     return false;
   }
 
-  if (owner.id !== player.id && player.cash >= negotiationPrice && transferProperty(owner, player, card.code, negotiationPrice)) {
+  if (owner.id !== player.id && cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card) && transferProperty(owner, player, card.code, negotiationPrice)) {
     pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
     pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
     renderHud();
@@ -3064,7 +3120,19 @@ async function maybeHandleExtraPermissionAfterDelivery(player) {
     return true;
   }
 
-  if ((player.purchase_policy || 'always') === 'never') return false;
+  const extraPermissionDecision = aiPolicyEngine()?.decideExtraPermissionPurchase
+    ? aiPolicyEngine().decideExtraPermissionPurchase({
+        player,
+        extraCost,
+        availableCount: availablePermissionCards.length,
+        context: aiDecisionContext(player, {
+          reason: 'extra_permission_after_delivery',
+        }),
+      })
+    : null;
+  if (!(extraPermissionDecision ? extraPermissionDecision.shouldBuy : (player.purchase_policy || 'always') !== 'never')) {
+    return false;
+  }
   updatePlayerCash(player, -extraCost);
   const permissionCard = randomChoice(availablePermissionCards);
   if (permissionCard) {
@@ -5030,7 +5098,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
     if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
       pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
@@ -5265,7 +5333,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
     if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
       pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
@@ -5820,7 +5888,10 @@ function applyBootstrapPayload(payload) {
         }
       : player.active_contract,
   }));
-  state.players.forEach((player) => syncActivePermissionAfterEconomyChange(player));
+  state.players.forEach((player) => {
+    syncActivePermissionAfterEconomyChange(player);
+    ensureAiProfile(player);
+  });
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
@@ -5915,7 +5986,18 @@ function populateSetupFromPayload(payload) {
   updateSetupStartButton();
 }
 
-function cpuShouldBuyPropertyAtPrice(player, price) {
+function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'property_purchase') {
+  const engine = aiPolicyEngine();
+  if (engine?.decideBuyBankProperty) {
+    const decision = engine.decideBuyBankProperty({
+      player,
+      card,
+      price,
+      context: aiDecisionContext(player, { reason }),
+    });
+    return Boolean(decision?.shouldBuy);
+  }
+
   const policy = player?.purchase_policy || 'always';
   const normalizedPrice = Math.max(0, Number(price || 0));
   if (player?.bankrupt) return false;
@@ -5926,11 +6008,22 @@ function cpuShouldBuyPropertyAtPrice(player, price) {
 
 function cpuShouldBuyOrigin(player, card) {
   if (!card) return false;
-  return cpuShouldBuyPropertyAtPrice(player, card.price);
+  return cpuShouldBuyPropertyAtPrice(player, card.price, card, 'origin_purchase');
 }
 
-function cpuShouldNegotiateOwnedProperty(player, negotiationPrice) {
-  return cpuShouldBuyPropertyAtPrice(player, negotiationPrice);
+function cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner = null, card = null) {
+  const engine = aiPolicyEngine();
+  if (engine?.decideOwnedPropertyNegotiation) {
+    const decision = engine.decideOwnedPropertyNegotiation({
+      player,
+      owner,
+      card,
+      price: negotiationPrice,
+      context: aiDecisionContext(player, { reason: 'owned_property_negotiation' }),
+    });
+    return Boolean(decision?.shouldBuy);
+  }
+  return cpuShouldBuyPropertyAtPrice(player, negotiationPrice, card, 'owned_property_negotiation');
 }
 
 function preparationDelayFor(player, longDelay = false) {
@@ -6237,7 +6330,7 @@ async function submitSetupSelection(event) {
   updateSetupStartButton();
 
   try {
-    const payload = await fetchJson('/api/game/setup', {
+    const payload = await fetchJson('/api/game-ai/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -6281,7 +6374,7 @@ async function submitSetupSelection(event) {
 async function bootstrap() {
   const [mapPayload, uiPayload] = await Promise.all([
     fetchJson('/api/map/bootstrap'),
-    fetchJson('/api/bootstrap'),
+    fetchJson('/api/game-ai/bootstrap'),
   ]);
 
   applyMapPayload(mapPayload);

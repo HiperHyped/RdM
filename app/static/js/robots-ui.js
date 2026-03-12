@@ -14,6 +14,8 @@ const CPU_MOVE_DELAY_MS = 240;
 const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
 const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
 
+const REPORT_MILESTONE_TURNS = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 350];
+
 const state = {
   nodes: [],
   projectedNodes: [],
@@ -94,18 +96,19 @@ const state = {
   },
   actionFeed: [],
   settings: {
-    cpuSpeed: 10,
+    cpuSpeed: 50,
     logLifetimeMs: 12000,
     logMode: 'player',
-    runInBackground: false,
+    runInBackground: true,
   },
   report: {
     activeKey: 'cash-by-turn',
     cashHistory: [],
     snapshotKeys: [],
     windowModes: {
-      'cash-by-turn': 'recent',
-      'patrimony-by-turn': 'recent',
+      'cash-by-turn': 'full',
+      'patrimony-by-turn': 'full',
+      'holdings-by-turn': 'full',
     },
   },
   pause: {
@@ -333,6 +336,21 @@ function formatSignedCurrency(value) {
   return `${sign}${formatCurrency(Math.abs(amount))}`;
 }
 
+function formatCompactCurrencyValue(value) {
+  const amount = Number(value || 0);
+  const absoluteAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (absoluteAmount >= 1000000) {
+    const digits = absoluteAmount >= 10000000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000000).toFixed(digits).replace(/\.0$/, '')}M`;
+  }
+  if (absoluteAmount >= 1000) {
+    const digits = absoluteAmount >= 100000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000).toFixed(digits).replace(/\.0$/, '')}k`;
+  }
+  return `${sign}${Math.round(absoluteAmount)}`;
+}
+
 function cpuSpeedFactor() {
   return Math.max(0.1, Number(state.settings?.cpuSpeed || 1));
 }
@@ -483,13 +501,14 @@ function setReportVisible(visible) {
 function reportTurnLabel(snapshot) {
   const normalizedTurn = Number(snapshot?.turnNumber || 0);
   const label = String(snapshot?.label || '').trim();
-  if (label) return label;
-  return normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio';
+  if (normalizedTurn <= 0) return label || 'Inicio';
+  return label || `Turno ${String(normalizedTurn).padStart(2, '0')}`;
 }
 
 function compactReportTurnLabel(snapshot) {
   const normalizedTurn = Number(snapshot?.turnNumber || 0);
-  return normalizedTurn > 0 ? `T${String(normalizedTurn).padStart(2, '0')}` : 'INI';
+  if (normalizedTurn <= 0) return 'T0';
+  return `T${normalizedTurn}`;
 }
 
 function reportEmptyMarkup(message = 'O historico do relatorio vai aparecer conforme os turnos avancarem.') {
@@ -501,7 +520,7 @@ function reportWindowModeFor(reportKey) {
 }
 
 function reportVisibleSnapshots(snapshots, reportKey) {
-  return reportWindowModeFor(reportKey) === 'full' ? snapshots : snapshots.slice(-30);
+  return reportWindowModeFor(reportKey) === 'full' ? snapshots : snapshots.slice(-100);
 }
 
 function reportCountLabel(snapshots, visibleSnapshots) {
@@ -515,24 +534,132 @@ function reportWindowToggleMarkup(reportKey) {
   return `
     <div class="report-range-toggle" role="group" aria-label="Janela do grafico">
       <button type="button" class="report-range-button${mode === 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="full">Desde o inicio</button>
-      <button type="button" class="report-range-button${mode !== 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="recent">Ultimos 30</button>
+      <button type="button" class="report-range-button${mode !== 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="recent">Ultimos 100</button>
     </div>
   `;
 }
 
+function reportPlayerSnapshotEntry(snapshot, playerId) {
+  return (snapshot?.players || []).find((player) => player.id === playerId) || null;
+}
+
 function cashSnapshotValue(snapshot, playerId) {
-  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
-  return Number(entry?.cash || 0);
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.cash || 0);
 }
 
 function assetSnapshotValue(snapshot, playerId) {
-  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
-  return Number(entry?.asset_total || 0);
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.asset_total || 0);
 }
 
 function patrimonySnapshotValue(snapshot, playerId) {
-  const entry = (snapshot?.players || []).find((player) => player.id === playerId);
-  return Number(entry?.patrimony_total || 0);
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.patrimony_total || 0);
+}
+
+function titleCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.title_count || 0);
+}
+
+function tollCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.toll_count || 0);
+}
+
+function permissionCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.permission_count || 0);
+}
+
+function reportCountMetricValue(snapshot, playerId, metricKey) {
+  if (metricKey === 'toll_count') return tollCountSnapshotValue(snapshot, playerId);
+  if (metricKey === 'permission_count') return permissionCountSnapshotValue(snapshot, playerId);
+  return titleCountSnapshotValue(snapshot, playerId);
+}
+
+function reportHeatmapLabelStride(total) {
+  if (total <= 8) return 1;
+  if (total <= 16) return 2;
+  if (total <= 30) return 3;
+  if (total <= 60) return 5;
+  return Math.max(6, Math.ceil(total / 12));
+}
+
+function reportCountHeatmapMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar este mapa de calor.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const maxValue = Math.max(1, ...values);
+  const width = 960;
+  const frame = { top: 14, right: 18, bottom: 34, left: 120 };
+  const rowHeight = 34;
+  const rowGap = 6;
+  const innerHeight = (players.length * rowHeight) + (Math.max(0, players.length - 1) * rowGap);
+  const height = frame.top + innerHeight + frame.bottom;
+  const innerWidth = width - frame.left - frame.right;
+  const cellWidth = innerWidth / Math.max(1, visibleSnapshots.length);
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
+  const showValues = visibleSnapshots.length <= 40 && cellWidth >= 15;
+
+  const dividerMarkup = players.slice(1).map((_, index) => {
+    const y = frame.top + (index * (rowHeight + rowGap)) + rowHeight + (rowGap / 2);
+    return `<line class="report-heatmap-divider" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+
+  const rowsMarkup = players.map((player, rowIndex) => {
+    const rowY = frame.top + (rowIndex * (rowHeight + rowGap));
+    const labelY = rowY + (rowHeight / 2) + 4;
+    const rowLabel = `
+      <circle cx="${frame.left - 102}" cy="${(rowY + (rowHeight / 2)).toFixed(2)}" r="5.5" fill="${player.color_hex || '#8fd7ff'}"></circle>
+      <text class="report-heatmap-row-label" x="${frame.left - 90}" y="${labelY.toFixed(2)}">${player.name}</text>
+    `;
+
+    const cells = visibleSnapshots.map((snapshot, columnIndex) => {
+      const x = frame.left + (columnIndex * cellWidth);
+      const value = reportCountMetricValue(snapshot, player.id, metricKey);
+      const intensity = value <= 0 ? 0.08 : (0.18 + ((value / maxValue) * 0.78));
+      const textFill = value >= (maxValue * 0.58) ? '#06121f' : '#edf6ff';
+      return `
+        <rect class="report-heatmap-cell" x="${x.toFixed(2)}" y="${rowY.toFixed(2)}" width="${Math.max(1, cellWidth - 1).toFixed(2)}" height="${rowHeight}" rx="6" fill="${player.color_hex || '#8fd7ff'}" fill-opacity="${intensity.toFixed(3)}"></rect>
+        ${showValues ? `<text class="report-heatmap-value" x="${(x + (cellWidth / 2)).toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="middle" fill="${textFill}">${Math.round(value)}</text>` : ''}
+      `;
+    }).join('');
+
+    return `<g>${rowLabel}${cells}</g>`;
+  }).join('');
+
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
+    const x = frame.left + (index * cellWidth) + (cellWidth / 2);
+    return `<text class="report-heatmap-xlabel" x="${x.toFixed(2)}" y="${height - 10}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  return `
+    <div class="report-heatmap-shell">
+      <svg class="report-heatmap" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+        ${dividerMarkup}
+        ${rowsMarkup}
+        ${xLabelsMarkup}
+      </svg>
+    </div>
+  `;
+}
+
+function reportHeatmapCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountHeatmapMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
 }
 
 function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn', metric, ariaLabel = 'Grafico do relatorio' } = {}) {
@@ -581,7 +708,9 @@ function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn
     `;
   }).join('');
 
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
   const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== 0 && index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
     const x = xFor(index);
     return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 12}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
   }).join('');
@@ -626,6 +755,185 @@ function patrimonyByTurnChartMarkup(snapshots, players) {
     metric: 'patrimony',
     ariaLabel: 'Grafico de patrimonio por turno',
   });
+}
+
+function reportCountTickValues(maxValue) {
+  const safeMax = Math.max(1, Math.round(maxValue));
+  const step = Math.max(1, Math.ceil(safeMax / 6));
+  const ticks = [0];
+  for (let value = step; value <= (safeMax + step); value += step) {
+    ticks.push(value);
+  }
+  return Array.from(new Set(ticks.map((value) => Math.round(value)))).sort((left, right) => left - right);
+}
+
+function reportStepPolylinePoints(visibleSnapshots, playerId, metricKey, xFor, yFor) {
+  const points = [];
+  let previousY = 0;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  return points.join(' ');
+}
+
+function reportCountLegendMarkup(visibleSnapshots, players, metricKey) {
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const sortedPlayers = players
+    .map((player) => ({
+      ...player,
+      metricValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.metricValue !== left.metricValue) return right.metricValue - left.metricValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return sortedPlayers.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+      <strong class="report-legend-value">${Math.round(player.metricValue)}</strong>
+    </span>
+  `).join('');
+}
+
+function reportTrafficLightTone(value, maxValue) {
+  const safeValue = Math.max(0, Number(value || 0));
+  const safeMax = Math.max(1, Number(maxValue || 0));
+  if (safeValue <= 0) return 'tone-zero';
+  const ratio = safeValue / safeMax;
+  if (ratio < 0.34) return 'tone-low';
+  if (ratio < 0.67) return 'tone-mid';
+  return 'tone-high';
+}
+
+function reportStepAreaPoints(visibleSnapshots, playerId, metricKey, xFor, yFor, baselineY) {
+  if (!visibleSnapshots.length) return '';
+  const points = [];
+  let previousY = baselineY;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${baselineY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  const lastX = xFor(visibleSnapshots.length - 1);
+  points.push(`${lastX.toFixed(2)},${baselineY.toFixed(2)}`);
+  return points.join(' ');
+}
+
+function reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey = 'title_count', metricMax = 1, ariaLabel = 'Grafico de jogador' } = {}) {
+  const width = 250;
+  const height = 118;
+  const frame = { top: 12, right: 8, bottom: 20, left: 8 };
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((metricMax - value) / Math.max(1, metricMax)) * innerHeight);
+  const baselineY = yFor(0);
+  const startSnapshot = visibleSnapshots[0] || null;
+  const endSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const startValue = reportCountMetricValue(startSnapshot, player.id, metricKey);
+  const endValue = reportCountMetricValue(endSnapshot, player.id, metricKey);
+  const delta = endValue - startValue;
+  const deltaLabel = `${delta > 0 ? '+' : ''}${delta}`;
+  const gridValues = Array.from(new Set([0, Math.round(metricMax / 2), metricMax].filter((value) => value >= 0))).sort((left, right) => left - right);
+  const gridMarkup = gridValues.map((value) => {
+    const y = yFor(value);
+    return `<line class="report-player-spark-gridline" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+  const areaPoints = reportStepAreaPoints(visibleSnapshots, player.id, metricKey, xFor, yFor, baselineY);
+  const linePoints = reportStepPolylinePoints(visibleSnapshots, player.id, metricKey, xFor, yFor);
+  return `
+    <article class="report-player-spark-card" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <div class="report-player-spark-head">
+        <span class="report-player-head">
+          <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+          <span>${player.name}</span>
+        </span>
+        <div class="report-player-spark-badges">
+          <strong class="report-player-spark-value">${Math.round(endValue)}</strong>
+          <span class="report-player-spark-delta${delta > 0 ? ' is-positive' : delta < 0 ? ' is-negative' : ''}">${deltaLabel}</span>
+        </div>
+      </div>
+      <svg class="report-player-spark-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}: ${player.name}">
+        ${gridMarkup}
+        <polygon class="report-player-spark-area" fill="${player.color_hex || '#8fd7ff'}" points="${areaPoints}"></polygon>
+        <polyline class="report-player-spark-line" stroke="${player.color_hex || '#8fd7ff'}" points="${linePoints}"></polyline>
+      </svg>
+      <div class="report-player-spark-foot">
+        <span>${compactReportTurnLabel(startSnapshot)}</span>
+        <span>escala 0-${Math.round(metricMax)}</span>
+        <span>${compactReportTurnLabel(endSnapshot)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const metricMax = Math.max(1, ...values);
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const rankedPlayers = players
+    .map((player) => ({
+      ...player,
+      latestValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.latestValue !== left.latestValue) return right.latestValue - left.latestValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return `
+    <div class="report-count-spark-shell">
+      <div class="report-count-scale-note">Ordenado pelo valor final. Escala comum: 0-${Math.round(metricMax)}.</div>
+      <div class="report-player-spark-grid">
+        ${rankedPlayers.map((player) => reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey, metricMax, ariaLabel })).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function reportCountTrendCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card report-trend-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountTrendChartMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
 }
 
 function reportPlayers() {
@@ -686,6 +994,189 @@ function patrimonyByTurnReportMarkup() {
   `;
 }
 
+function holdingsByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'holdings-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Ativos por turno</strong>
+          <span>Graficos de degrau para comparar aquisicoes, paradas e arrancadas de cada jogador ao longo da mesa.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('holdings-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      <div class="report-metric-grid report-holdings-grid">
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'title_count',
+          title: 'Titulos',
+          subtitle: 'Portos conquistados por turno.',
+          ariaLabel: 'Grafico de titulos por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'toll_count',
+          title: 'Pedagios',
+          subtitle: 'Pedagios conquistados por turno.',
+          ariaLabel: 'Grafico de pedagios por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'permission_count',
+          title: 'Permissoes',
+          subtitle: 'Permissoes ativas por turno.',
+          ariaLabel: 'Grafico de permissoes por turno',
+        })}
+      </div>
+    </section>
+  `;
+}
+
+function reportMilestoneTurns(snapshots) {
+  const maxTurn = Math.max(0, ...snapshots.map((snapshot) => Number(snapshot?.turnNumber || 0)));
+  if (maxTurn <= 0) return [];
+  const turns = [...REPORT_MILESTONE_TURNS].filter((turn) => turn <= maxTurn);
+  let nextTurn = REPORT_MILESTONE_TURNS[REPORT_MILESTONE_TURNS.length - 1] + 50;
+  while (nextTurn <= maxTurn) {
+    turns.push(nextTurn);
+    nextTurn += 50;
+  }
+  return turns;
+}
+
+function milestoneTableReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const milestoneTurns = reportMilestoneTurns(snapshots);
+  if (!milestoneTurns.length) {
+    return reportEmptyMarkup('Os milestones vao aparecer quando a simulacao ultrapassar o turno 5.');
+  }
+
+  const snapshotByTurn = new Map(snapshots.map((snapshot) => [Number(snapshot?.turnNumber || 0), snapshot]));
+  const rowsMarkup = milestoneTurns.map((turnNumber) => {
+    const snapshot = snapshotByTurn.get(turnNumber);
+    if (!snapshot) return '';
+
+    const entries = players.map((player) => ({
+      player,
+      entry: reportPlayerSnapshotEntry(snapshot, player.id) || {
+        cash: 0,
+        patrimony_total: 0,
+        title_count: 0,
+        toll_count: 0,
+        permission_count: 0,
+      },
+    }));
+
+    const leaderByMetric = {
+      cash: Math.max(0, ...entries.map(({ entry }) => Number(entry.cash || 0))),
+      patrimony_total: Math.max(0, ...entries.map(({ entry }) => Number(entry.patrimony_total || 0))),
+      title_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.title_count || 0))),
+      toll_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.toll_count || 0))),
+    };
+
+    const playerCellsMarkup = entries.map(({ player, entry }) => {
+      const accent = player.color_hex || '#8fd7ff';
+      const cash = Number(entry.cash || 0);
+      const patrimony = Number(entry.patrimony_total || 0);
+      const titleCount = Math.round(Number(entry.title_count || 0));
+      const tollCount = Math.round(Number(entry.toll_count || 0));
+      const permissionCount = Math.round(Number(entry.permission_count || 0));
+      return `
+        <td class="report-milestone-player-col" style="--report-player-accent:${accent}">
+          <div class="report-milestone-cell">
+            <div class="report-milestone-primary">
+              <span class="report-milestone-stat${cash === leaderByMetric.cash && leaderByMetric.cash > 0 ? ' is-leading' : ''}">
+                <small>Caixa</small>
+                <strong>${formatCompactCurrencyValue(cash)}</strong>
+              </span>
+              <span class="report-milestone-stat${patrimony === leaderByMetric.patrimony_total && leaderByMetric.patrimony_total > 0 ? ' is-leading' : ''}">
+                <small>Patr.</small>
+                <strong>${formatCompactCurrencyValue(patrimony)}</strong>
+              </span>
+            </div>
+            <div class="report-milestone-secondary">
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(titleCount, leaderByMetric.title_count)}">
+                <small>PO</small>
+                <strong>${titleCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(tollCount, leaderByMetric.toll_count)}">
+                <small>PE</small>
+                <strong>${tollCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(permissionCount, 6)}">
+                <small>NA</small>
+                <strong>${permissionCount}</strong>
+              </span>
+            </div>
+          </div>
+        </td>
+      `;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="report-turn-pivot-cell">
+          <div class="report-turn-cell">
+            <strong>${compactReportTurnLabel(snapshot)}</strong>
+            <span>${reportTurnLabel(snapshot)}</span>
+          </div>
+        </td>
+        ${playerCellsMarkup}
+      </tr>
+    `;
+  }).join('');
+
+  const headerMarkup = players.map((player) => `
+    <th class="report-milestone-player-head" scope="col" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <span class="report-player-head">
+        <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+        <span>${player.name}</span>
+      </span>
+    </th>
+  `).join('');
+
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Milestones da simulacao</strong>
+          <span>Uma linha por marco e uma coluna por jogador, com PO, PE e NA em escala semaforica.</span>
+        </div>
+        <div class="report-summary-actions">
+          <span class="report-count-badge">${milestoneTurns.length} marco(s)</span>
+        </div>
+      </div>
+      <div class="report-table-wrap">
+        <table class="report-table report-milestone-table">
+          <thead>
+            <tr>
+              <th scope="col">Marco</th>
+              ${headerMarkup}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsMarkup}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderReportOverlay() {
   const tabs = getReportTabs();
   const body = getReportBody();
@@ -695,10 +1186,20 @@ function renderReportOverlay() {
   tabs.innerHTML = `
     <button type="button" class="report-tab${activeKey === 'cash-by-turn' ? ' is-active' : ''}" data-report-key="cash-by-turn" role="tab" aria-selected="${activeKey === 'cash-by-turn' ? 'true' : 'false'}">Dinheiro por turno</button>
     <button type="button" class="report-tab${activeKey === 'patrimony-by-turn' ? ' is-active' : ''}" data-report-key="patrimony-by-turn" role="tab" aria-selected="${activeKey === 'patrimony-by-turn' ? 'true' : 'false'}">Patrimonio por turno</button>
+    <button type="button" class="report-tab${activeKey === 'holdings-by-turn' ? ' is-active' : ''}" data-report-key="holdings-by-turn" role="tab" aria-selected="${activeKey === 'holdings-by-turn' ? 'true' : 'false'}">Ativos por turno</button>
+    <button type="button" class="report-tab${activeKey === 'milestones-table' ? ' is-active' : ''}" data-report-key="milestones-table" role="tab" aria-selected="${activeKey === 'milestones-table' ? 'true' : 'false'}">Tabela por marco</button>
   `;
 
   if (activeKey === 'patrimony-by-turn') {
     body.innerHTML = patrimonyByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'holdings-by-turn') {
+    body.innerHTML = holdingsByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'milestones-table') {
+    body.innerHTML = milestoneTableReportMarkup();
     return;
   }
 
@@ -736,6 +1237,18 @@ function playerAssetBookValue(player) {
   return propertiesValue + permissionsValue;
 }
 
+function playerTitleCount(player) {
+  return Math.max(0, Number(player?.ports_owned || 0));
+}
+
+function playerTollCount(player) {
+  return Math.max(0, Number(player?.tolls_owned || 0));
+}
+
+function playerPermissionCount(player) {
+  return Array.isArray(player?.permissions) ? player.permissions.length : 0;
+}
+
 function captureCashSnapshot({
   label = state.session?.turn_label || 'Turno --',
   turnNumber = Number(state.session?.turn_number || 0),
@@ -755,12 +1268,19 @@ function captureCashSnapshot({
     players: (state.players || []).map((player) => {
       const cash = Number(player.cash || 0);
       const assetTotal = playerAssetBookValue(player);
+      const titleCount = playerTitleCount(player);
+      const tollCount = playerTollCount(player);
+      const permissionCount = playerPermissionCount(player);
       return {
         id: player.id,
         name: player.name,
         cash,
         asset_total: assetTotal,
         patrimony_total: cash + assetTotal,
+        title_count: titleCount,
+        toll_count: tollCount,
+        permission_count: permissionCount,
+        property_count: titleCount + tollCount,
         color: player.color_hex || '#8fd7ff',
       };
     }),
@@ -5255,6 +5775,18 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
+      player.status_label = `comprou ${card.code}`;
+      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
+      pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
+      renderHud();
+      return {
+        note: `${playerActionName(player)} negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
     const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.ownerCharge, owner);
     if (freeStay) {
       return {
@@ -5478,6 +6010,18 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
+      player.status_label = `comprou ${card.code}`;
+      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
+      pushActionLog(owner, 'Vendeu pedagio', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
+      renderHud();
+      return {
+        note: `${playerActionName(player)} negociou e comprou o pedagio ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
+        statusLabel: player.status_label,
+      };
+    }
+
     const freeToll = await maybeUseFreeTollCoupon(player, card, stop.ownerCharge, owner);
     if (freeToll) {
       return {
@@ -5642,19 +6186,6 @@ function contractHighlightCodes() {
   return new Set([contract.origin, contract.mandatory_toll, contract.destination].filter(Boolean));
 }
 
-function appendLine(overlay, x1, y1, x2, y2, color, width) {
-  const svgNs = 'http://www.w3.org/2000/svg';
-  const segment = document.createElementNS(svgNs, 'line');
-  segment.setAttribute('x1', x1);
-  segment.setAttribute('y1', y1);
-  segment.setAttribute('x2', x2);
-  segment.setAttribute('y2', y2);
-  segment.setAttribute('stroke', color);
-  segment.setAttribute('stroke-width', width);
-  segment.setAttribute('stroke-linecap', 'round');
-  overlay.appendChild(segment);
-}
-
 function renderRouteOverlay() {
   const overlay = getRouteOverlay();
   const plot = getPlotDiv();
@@ -5663,32 +6194,33 @@ function renderRouteOverlay() {
   const rect = plot.getBoundingClientRect();
   overlay.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
   overlay.innerHTML = '';
+  const projection = activeProjection();
+  if (!projection || typeof projection !== 'function') return;
+
+  const pathBuilder = d3.geoPath(projection);
+  const svgNs = 'http://www.w3.org/2000/svg';
 
   state.edges.forEach((edge) => {
     const left = state.nodesById[edge.from_node_id];
     const right = state.nodesById[edge.to_node_id];
     if (!left || !right || left.lat === null || right.lat === null || left.lon === null || right.lon === null) return;
 
-    const a = projectLonLat(left.lon, left.lat);
-    const b = projectLonLat(right.lon, right.lat);
-    if (!a || !b) return;
+    const routePath = pathBuilder({
+      type: 'LineString',
+      coordinates: [
+        [left.lon, left.lat],
+        [right.lon, right.lat],
+      ],
+    });
+    if (!routePath) return;
 
-    const [x1, y1] = a;
-    const [x2, y2] = b;
-    const color = 'rgba(6, 17, 26, 0.84)';
-    const width = 2.35;
-
-    if (Math.abs(x1 - x2) > (rect.width / 2)) {
-      if (x1 < x2) {
-        appendLine(overlay, x1 + rect.width, y1, x2, y2, color, width);
-        appendLine(overlay, x1, y1, x2 - rect.width, y2, color, width);
-      } else {
-        appendLine(overlay, x1 - rect.width, y1, x2, y2, color, width);
-        appendLine(overlay, x1, y1, x2 + rect.width, y2, color, width);
-      }
-      return;
-    }
-    appendLine(overlay, x1, y1, x2, y2, color, width);
+    const segment = document.createElementNS(svgNs, 'path');
+    segment.setAttribute('d', routePath);
+    segment.setAttribute('fill', 'none');
+    segment.setAttribute('stroke', 'rgba(6, 17, 26, 0.84)');
+    segment.setAttribute('stroke-width', 2.35);
+    segment.setAttribute('stroke-linecap', 'round');
+    overlay.appendChild(segment);
   });
 }
 
@@ -5871,12 +6403,12 @@ function renderShipOverlay({ force = false } = {}) {
         : (state.assets.ship_sprites?.[player.ship_type]?.[player.color_id] || '');
       token.style.left = `${projected[0] + dx}px`;
       token.style.top = `${projected[1] + dy}px`;
-      token.style.width = '34px';
-      token.style.height = '18px';
+      token.style.width = '39px';
+      token.style.height = '21px';
       token.style.marginLeft = '0';
       token.style.marginTop = '0';
       token.style.transform = 'translate(-50%, -50%)';
-      token.innerHTML = sprite ? `<img class="game-ship-image" alt="" src="${sprite}" style="display:block;width:41px;height:22px;object-fit:contain;">` : '';
+      token.innerHTML = sprite ? `<img class="game-ship-image" alt="" src="${sprite}" style="display:block;width:47px;height:25px;object-fit:contain;">` : '';
       overlay.appendChild(token);
     });
   });
@@ -5948,8 +6480,8 @@ function moveDrag(event) {
   }
   if (!state.drag.dragging) return;
   const layer = getHitLayer();
-  const sensitivity = 180 / Math.max(720, layer.clientWidth);
-  state.view.rotationLon = normalizeLon(state.drag.startRotationLon + (deltaX * sensitivity));
+  const sensitivity = 360 / Math.max(600, layer?.clientWidth || 0);
+  state.view.rotationLon = normalizeLon(state.drag.startRotationLon - (deltaX * sensitivity));
   buildFallbackProjection();
   renderRouteOverlay();
   renderNodeOverlay();
@@ -6120,12 +6652,22 @@ function populateSetupFromPayload(payload) {
   updateSetupStartButton();
 }
 
-function cpuShouldBuyOrigin(player, card) {
+function cpuShouldBuyPropertyAtPrice(player, price) {
   const policy = player?.purchase_policy || 'always';
-  if (!card || player?.bankrupt) return false;
+  const normalizedPrice = Math.max(0, Number(price || 0));
+  if (player?.bankrupt) return false;
   if (policy === 'never') return false;
-  if (policy === 'random') return player.cash >= card.price && Math.random() >= 0.5;
-  return player.cash >= card.price;
+  if (policy === 'random') return player.cash >= normalizedPrice && Math.random() >= 0.5;
+  return player.cash >= normalizedPrice;
+}
+
+function cpuShouldBuyOrigin(player, card) {
+  if (!card) return false;
+  return cpuShouldBuyPropertyAtPrice(player, card.price);
+}
+
+function cpuShouldNegotiateOwnedProperty(player, negotiationPrice) {
+  return cpuShouldBuyPropertyAtPrice(player, negotiationPrice);
 }
 
 function preparationDelayFor(player, longDelay = false) {
@@ -6567,7 +7109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
   getSettingsCpuSpeedInput()?.addEventListener('input', (event) => {
-    state.settings.cpuSpeed = Number(event.target.value || 10);
+    state.settings.cpuSpeed = Number(event.target.value || 50);
     renderSettingsOverlay();
   });
   getSettingsLogLifetimeInput()?.addEventListener('input', (event) => {

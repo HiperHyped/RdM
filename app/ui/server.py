@@ -214,6 +214,14 @@ def create_app() -> FastAPI:
             context={'page_title': 'Preview do Jogo'},
         )
 
+    @app.get('/preview/game-ai-ui', response_class=HTMLResponse)
+    async def game_ai_preview(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='game_ai_ui.html',
+            context={'page_title': 'Preview do Jogo AI'},
+        )
+
 
     @app.get('/preview/robots-ui', response_class=HTMLResponse)
     async def robots_ui_preview(request: Request) -> HTMLResponse:
@@ -221,6 +229,14 @@ def create_app() -> FastAPI:
             request=request,
             name='robots_ui.html',
             context={'page_title': 'Preview dos Robos'},
+        )
+
+    @app.get('/preview/robots-ai-ui', response_class=HTMLResponse)
+    async def robots_ai_ui_preview(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='robots_ai_ui.html',
+            context={'page_title': 'Preview dos Robos AI'},
         )
 
     @app.get('/preview/port-titles', response_class=HTMLResponse)
@@ -337,8 +353,20 @@ def create_app() -> FastAPI:
     async def bootstrap() -> dict[str, Any]:
         return build_ui_bootstrap()
 
+    @app.get('/api/game-ai/bootstrap')
+    async def game_ai_bootstrap() -> dict[str, Any]:
+        return build_ui_bootstrap()
+
     @app.post('/api/game/setup')
     async def game_setup(payload: GameSetupRequest) -> dict[str, Any]:
+        return build_ui_bootstrap(
+            company_name=payload.company_name,
+            human_color_id=payload.color_id,
+            rival_count=payload.rival_count,
+        )
+
+    @app.post('/api/game-ai/setup')
+    async def game_ai_setup(payload: GameSetupRequest) -> dict[str, Any]:
         return build_ui_bootstrap(
             company_name=payload.company_name,
             human_color_id=payload.color_id,
@@ -350,8 +378,16 @@ def create_app() -> FastAPI:
     async def robots_bootstrap() -> dict[str, Any]:
         return build_robots_ui_bootstrap()
 
+    @app.get('/api/robots-ai/bootstrap')
+    async def robots_ai_bootstrap() -> dict[str, Any]:
+        return build_robots_ui_bootstrap()
+
     @app.post('/api/robots/setup')
     async def robots_setup(payload: RobotsSetupRequest) -> dict[str, Any]:
+        return build_robots_ui_bootstrap(robot_count=payload.robot_count)
+
+    @app.post('/api/robots-ai/setup')
+    async def robots_ai_setup(payload: RobotsSetupRequest) -> dict[str, Any]:
         return build_robots_ui_bootstrap(robot_count=payload.robot_count)
 
     @app.get('/api/map/bootstrap')

@@ -1,4 +1,4 @@
-﻿const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
+const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -13,6 +13,8 @@ const CPU_STEP_DELAY_MS = 520;
 const CPU_MOVE_DELAY_MS = 240;
 const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
 const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
+
+const REPORT_MILESTONE_TURNS = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 350];
 
 const state = {
   nodes: [],
@@ -42,7 +44,7 @@ const state = {
     started: false,
     companyName: '',
     selectedColorId: '',
-    rivalCount: 5,
+    rivalCount: 6,
     submitting: false,
   },
   permissionDraw: {
@@ -80,13 +82,6 @@ const state = {
   decision: {
     resolver: null,
   },
-  permissionChoice: {
-    resolver: null,
-    playerId: '',
-    originCode: '',
-    ownsOrigin: false,
-    choices: [],
-  },
   chanceDraw: {
     drawing: false,
     selectedCardId: '',
@@ -101,10 +96,20 @@ const state = {
   },
   actionFeed: [],
   settings: {
-    cpuSpeed: 5,
+    cpuSpeed: 50,
     logLifetimeMs: 12000,
     logMode: 'player',
     runInBackground: true,
+  },
+  report: {
+    activeKey: 'cash-by-turn',
+    cashHistory: [],
+    snapshotKeys: [],
+    windowModes: {
+      'cash-by-turn': 'full',
+      'patrimony-by-turn': 'full',
+      'holdings-by-turn': 'full',
+    },
   },
   pause: {
     waiters: [],
@@ -136,6 +141,41 @@ const state = {
   },
 };
 
+function aiProfilesLib() {
+  return window.RdMAiProfiles || null;
+}
+
+function aiPolicyEngine() {
+  return window.RdMAiPolicyEngine || null;
+}
+
+function ensureAiProfile(player) {
+  if (!player || player.is_human) return null;
+  const engine = aiPolicyEngine();
+  if (engine?.ensureProfile) return engine.ensureProfile(player);
+  const profiles = aiProfilesLib();
+  return profiles?.assignProfile
+    ? profiles.assignProfile(player, { archetypeId: player.ai_archetype_id || 'legacy_open' })
+    : null;
+}
+
+function aiDecisionContext(player, extra = {}) {
+  const engine = aiPolicyEngine();
+  if (engine?.buildDecisionContext) {
+    return engine.buildDecisionContext(player, {
+      rules: state.rules,
+      session: state.session,
+      ...extra,
+    });
+  }
+  return {
+    player,
+    rules: state.rules,
+    session: state.session,
+    ...extra,
+  };
+}
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -157,6 +197,10 @@ function getPauseIndicator() {
 
 function getPropertyInspectorOverlay() { return byId('property-inspector-overlay'); }
 function getPropertyInspectorStage() { return byId('property-inspector-stage'); }
+function getLogOverlay() { return byId('game-log-overlay'); }
+function getReportOverlay() { return byId('game-report-overlay'); }
+function getReportTabs() { return byId('report-tabs'); }
+function getReportBody() { return byId('report-body'); }
 
 function hasCentralOverlayOpen() {
   const ids = [
@@ -166,9 +210,10 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
-    'permission-choice-overlay',
     'property-inspector-overlay',
     'game-settings-overlay',
+    'game-log-overlay',
+    'game-report-overlay',
   ];
   return ids.some((id) => {
     const node = byId(id);
@@ -326,6 +371,21 @@ function formatSignedCurrency(value) {
   return `${sign}${formatCurrency(Math.abs(amount))}`;
 }
 
+function formatCompactCurrencyValue(value) {
+  const amount = Number(value || 0);
+  const absoluteAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (absoluteAmount >= 1000000) {
+    const digits = absoluteAmount >= 10000000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000000).toFixed(digits).replace(/\.0$/, '')}M`;
+  }
+  if (absoluteAmount >= 1000) {
+    const digits = absoluteAmount >= 100000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000).toFixed(digits).replace(/\.0$/, '')}k`;
+  }
+  return `${sign}${Math.round(absoluteAmount)}`;
+}
+
 function cpuSpeedFactor() {
   return Math.max(0.1, Number(state.settings?.cpuSpeed || 1));
 }
@@ -335,15 +395,15 @@ function scaledCpuDelay(baseMs, minMs = 80) {
 }
 
 function currentCpuMoveDelay() {
-  return scaledCpuDelay(CPU_MOVE_DELAY_MS, 60);
+  return scaledCpuDelay(CPU_MOVE_DELAY_MS, 4);
 }
 
 function currentCpuStepDelay() {
-  return scaledCpuDelay(CPU_STEP_DELAY_MS, 90);
+  return scaledCpuDelay(CPU_STEP_DELAY_MS, 6);
 }
 
 function currentCpuRevealDelay(baseMs = 650) {
-  return scaledCpuDelay(baseMs, 120);
+  return scaledCpuDelay(baseMs, 10);
 }
 
 function currentLogLifetimeMs() {
@@ -398,6 +458,9 @@ function flushDeferredUiRefresh() {
   renderNodeOverlay({ force: true });
   renderShipOverlay({ force: true });
   renderPropertyInspector({ force: true });
+  if (!getReportOverlay()?.classList.contains('is-hidden')) {
+    renderReportOverlay();
+  }
 }
 
 function pruneActionFeed() {
@@ -454,6 +517,830 @@ function openSettingsOverlay() {
 
 function closeSettingsOverlay() {
   setSettingsVisible(false);
+}
+
+function setLogVisible(visible) {
+  const overlay = getLogOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function setReportVisible(visible) {
+  const overlay = getReportOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function reportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  const label = String(snapshot?.label || '').trim();
+  if (normalizedTurn <= 0) return label || 'Inicio';
+  return label || `Turno ${String(normalizedTurn).padStart(2, '0')}`;
+}
+
+function compactReportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  if (normalizedTurn <= 0) return 'T0';
+  return `T${normalizedTurn}`;
+}
+
+function reportEmptyMarkup(message = 'O historico do relatorio vai aparecer conforme os turnos avancarem.') {
+  return `<div class="report-empty">${message}</div>`;
+}
+
+function reportWindowModeFor(reportKey) {
+  return state.report?.windowModes?.[reportKey] === 'full' ? 'full' : 'recent';
+}
+
+function reportVisibleSnapshots(snapshots, reportKey) {
+  return reportWindowModeFor(reportKey) === 'full' ? snapshots : snapshots.slice(-100);
+}
+
+function reportCountLabel(snapshots, visibleSnapshots) {
+  if (!snapshots.length) return '0 marco(s)';
+  if (visibleSnapshots.length === snapshots.length) return `${snapshots.length} marco(s)`;
+  return `${visibleSnapshots.length} de ${snapshots.length} marco(s)`;
+}
+
+function reportWindowToggleMarkup(reportKey) {
+  const mode = reportWindowModeFor(reportKey);
+  return `
+    <div class="report-range-toggle" role="group" aria-label="Janela do grafico">
+      <button type="button" class="report-range-button${mode === 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="full">Desde o inicio</button>
+      <button type="button" class="report-range-button${mode !== 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="recent">Ultimos 100</button>
+    </div>
+  `;
+}
+
+function reportPlayerSnapshotEntry(snapshot, playerId) {
+  return (snapshot?.players || []).find((player) => player.id === playerId) || null;
+}
+
+function cashSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.cash || 0);
+}
+
+function assetSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.asset_total || 0);
+}
+
+function patrimonySnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.patrimony_total || 0);
+}
+
+function titleCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.title_count || 0);
+}
+
+function tollCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.toll_count || 0);
+}
+
+function permissionCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.permission_count || 0);
+}
+
+function reportCountMetricValue(snapshot, playerId, metricKey) {
+  if (metricKey === 'toll_count') return tollCountSnapshotValue(snapshot, playerId);
+  if (metricKey === 'permission_count') return permissionCountSnapshotValue(snapshot, playerId);
+  return titleCountSnapshotValue(snapshot, playerId);
+}
+
+function reportHeatmapLabelStride(total) {
+  if (total <= 8) return 1;
+  if (total <= 16) return 2;
+  if (total <= 30) return 3;
+  if (total <= 60) return 5;
+  return Math.max(6, Math.ceil(total / 12));
+}
+
+function reportCountHeatmapMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar este mapa de calor.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const maxValue = Math.max(1, ...values);
+  const width = 960;
+  const frame = { top: 14, right: 18, bottom: 34, left: 120 };
+  const rowHeight = 34;
+  const rowGap = 6;
+  const innerHeight = (players.length * rowHeight) + (Math.max(0, players.length - 1) * rowGap);
+  const height = frame.top + innerHeight + frame.bottom;
+  const innerWidth = width - frame.left - frame.right;
+  const cellWidth = innerWidth / Math.max(1, visibleSnapshots.length);
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
+  const showValues = visibleSnapshots.length <= 40 && cellWidth >= 15;
+
+  const dividerMarkup = players.slice(1).map((_, index) => {
+    const y = frame.top + (index * (rowHeight + rowGap)) + rowHeight + (rowGap / 2);
+    return `<line class="report-heatmap-divider" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+
+  const rowsMarkup = players.map((player, rowIndex) => {
+    const rowY = frame.top + (rowIndex * (rowHeight + rowGap));
+    const labelY = rowY + (rowHeight / 2) + 4;
+    const rowLabel = `
+      <circle cx="${frame.left - 102}" cy="${(rowY + (rowHeight / 2)).toFixed(2)}" r="5.5" fill="${player.color_hex || '#8fd7ff'}"></circle>
+      <text class="report-heatmap-row-label" x="${frame.left - 90}" y="${labelY.toFixed(2)}">${player.name}</text>
+    `;
+
+    const cells = visibleSnapshots.map((snapshot, columnIndex) => {
+      const x = frame.left + (columnIndex * cellWidth);
+      const value = reportCountMetricValue(snapshot, player.id, metricKey);
+      const intensity = value <= 0 ? 0.08 : (0.18 + ((value / maxValue) * 0.78));
+      const textFill = value >= (maxValue * 0.58) ? '#06121f' : '#edf6ff';
+      return `
+        <rect class="report-heatmap-cell" x="${x.toFixed(2)}" y="${rowY.toFixed(2)}" width="${Math.max(1, cellWidth - 1).toFixed(2)}" height="${rowHeight}" rx="6" fill="${player.color_hex || '#8fd7ff'}" fill-opacity="${intensity.toFixed(3)}"></rect>
+        ${showValues ? `<text class="report-heatmap-value" x="${(x + (cellWidth / 2)).toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="middle" fill="${textFill}">${Math.round(value)}</text>` : ''}
+      `;
+    }).join('');
+
+    return `<g>${rowLabel}${cells}</g>`;
+  }).join('');
+
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
+    const x = frame.left + (index * cellWidth) + (cellWidth / 2);
+    return `<text class="report-heatmap-xlabel" x="${x.toFixed(2)}" y="${height - 10}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  return `
+    <div class="report-heatmap-shell">
+      <svg class="report-heatmap" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+        ${dividerMarkup}
+        ${rowsMarkup}
+        ${xLabelsMarkup}
+      </svg>
+    </div>
+  `;
+}
+
+function reportHeatmapCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountHeatmapMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
+}
+
+function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn', metric, ariaLabel = 'Grafico do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const valueGetter = metric === 'patrimony'
+    ? patrimonySnapshotValue
+    : cashSnapshotValue;
+
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(valueGetter(snapshot, player.id));
+    });
+  });
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const rawRange = Math.max(1, maxValue - minValue);
+  const padding = Math.max(180, Math.round(rawRange * 0.16));
+  const domainMin = Math.max(0, minValue - padding);
+  const domainMax = maxValue + padding;
+  const domainRange = Math.max(1, domainMax - domainMin);
+  const height = 460;
+  const frame = { top: 22, right: 22, bottom: 56, left: 96 };
+  const width = Math.max(860, Math.min(980, frame.left + frame.right + (visibleSnapshots.length * 28)));
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((domainMax - value) / domainRange) * innerHeight);
+  const ticks = Array.from({ length: 5 }, (_, index) => domainMin + ((domainRange / 4) * index));
+
+  const gridMarkup = ticks.map((value) => {
+    const y = yFor(value);
+    return `
+      <g>
+        <line class="report-grid-line" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>
+        <text class="report-axis-label" x="${frame.left - 10}" y="${(y + 4).toFixed(2)}" text-anchor="end">${formatCurrency(Math.round(value))}</text>
+      </g>
+    `;
+  }).join('');
+
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== 0 && index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
+    const x = xFor(index);
+    return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 12}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  const seriesMarkup = players.map((player) => {
+    const points = visibleSnapshots.map((snapshot, index) => `${xFor(index).toFixed(2)},${yFor(valueGetter(snapshot, player.id)).toFixed(2)}`).join(' ');
+    return `<g><polyline class="report-series-line" stroke="${player.color_hex || '#8fd7ff'}" points="${points}"></polyline></g>`;
+  }).join('');
+
+  const legendMarkup = players.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+    </span>
+  `).join('');
+
+  return `
+    <div class="report-chart-shell">
+      <div class="report-legend">${legendMarkup}</div>
+      <div class="report-chart-scroll">
+        <svg class="report-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+          ${gridMarkup}
+          ${seriesMarkup}
+          ${xLabelsMarkup}
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+function cashByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'cash-by-turn',
+    metric: 'cash',
+    ariaLabel: 'Grafico de dinheiro por turno',
+  });
+}
+
+function patrimonyByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'patrimony-by-turn',
+    metric: 'patrimony',
+    ariaLabel: 'Grafico de patrimonio por turno',
+  });
+}
+
+function reportCountTickValues(maxValue) {
+  const safeMax = Math.max(1, Math.round(maxValue));
+  const step = Math.max(1, Math.ceil(safeMax / 6));
+  const ticks = [0];
+  for (let value = step; value <= (safeMax + step); value += step) {
+    ticks.push(value);
+  }
+  return Array.from(new Set(ticks.map((value) => Math.round(value)))).sort((left, right) => left - right);
+}
+
+function reportStepPolylinePoints(visibleSnapshots, playerId, metricKey, xFor, yFor) {
+  const points = [];
+  let previousY = 0;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  return points.join(' ');
+}
+
+function reportCountLegendMarkup(visibleSnapshots, players, metricKey) {
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const sortedPlayers = players
+    .map((player) => ({
+      ...player,
+      metricValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.metricValue !== left.metricValue) return right.metricValue - left.metricValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return sortedPlayers.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+      <strong class="report-legend-value">${Math.round(player.metricValue)}</strong>
+    </span>
+  `).join('');
+}
+
+function reportTrafficLightTone(value, maxValue) {
+  const safeValue = Math.max(0, Number(value || 0));
+  const safeMax = Math.max(1, Number(maxValue || 0));
+  if (safeValue <= 0) return 'tone-zero';
+  const ratio = safeValue / safeMax;
+  if (ratio < 0.34) return 'tone-low';
+  if (ratio < 0.67) return 'tone-mid';
+  return 'tone-high';
+}
+
+function reportStepAreaPoints(visibleSnapshots, playerId, metricKey, xFor, yFor, baselineY) {
+  if (!visibleSnapshots.length) return '';
+  const points = [];
+  let previousY = baselineY;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${baselineY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  const lastX = xFor(visibleSnapshots.length - 1);
+  points.push(`${lastX.toFixed(2)},${baselineY.toFixed(2)}`);
+  return points.join(' ');
+}
+
+function reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey = 'title_count', metricMax = 1, ariaLabel = 'Grafico de jogador' } = {}) {
+  const width = 250;
+  const height = 118;
+  const frame = { top: 12, right: 8, bottom: 20, left: 8 };
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((metricMax - value) / Math.max(1, metricMax)) * innerHeight);
+  const baselineY = yFor(0);
+  const startSnapshot = visibleSnapshots[0] || null;
+  const endSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const startValue = reportCountMetricValue(startSnapshot, player.id, metricKey);
+  const endValue = reportCountMetricValue(endSnapshot, player.id, metricKey);
+  const delta = endValue - startValue;
+  const deltaLabel = `${delta > 0 ? '+' : ''}${delta}`;
+  const gridValues = Array.from(new Set([0, Math.round(metricMax / 2), metricMax].filter((value) => value >= 0))).sort((left, right) => left - right);
+  const gridMarkup = gridValues.map((value) => {
+    const y = yFor(value);
+    return `<line class="report-player-spark-gridline" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+  const areaPoints = reportStepAreaPoints(visibleSnapshots, player.id, metricKey, xFor, yFor, baselineY);
+  const linePoints = reportStepPolylinePoints(visibleSnapshots, player.id, metricKey, xFor, yFor);
+  return `
+    <article class="report-player-spark-card" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <div class="report-player-spark-head">
+        <span class="report-player-head">
+          <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+          <span>${player.name}</span>
+        </span>
+        <div class="report-player-spark-badges">
+          <strong class="report-player-spark-value">${Math.round(endValue)}</strong>
+          <span class="report-player-spark-delta${delta > 0 ? ' is-positive' : delta < 0 ? ' is-negative' : ''}">${deltaLabel}</span>
+        </div>
+      </div>
+      <svg class="report-player-spark-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}: ${player.name}">
+        ${gridMarkup}
+        <polygon class="report-player-spark-area" fill="${player.color_hex || '#8fd7ff'}" points="${areaPoints}"></polygon>
+        <polyline class="report-player-spark-line" stroke="${player.color_hex || '#8fd7ff'}" points="${linePoints}"></polyline>
+      </svg>
+      <div class="report-player-spark-foot">
+        <span>${compactReportTurnLabel(startSnapshot)}</span>
+        <span>escala 0-${Math.round(metricMax)}</span>
+        <span>${compactReportTurnLabel(endSnapshot)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const metricMax = Math.max(1, ...values);
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const rankedPlayers = players
+    .map((player) => ({
+      ...player,
+      latestValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.latestValue !== left.latestValue) return right.latestValue - left.latestValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return `
+    <div class="report-count-spark-shell">
+      <div class="report-count-scale-note">Ordenado pelo valor final. Escala comum: 0-${Math.round(metricMax)}.</div>
+      <div class="report-player-spark-grid">
+        ${rankedPlayers.map((player) => reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey, metricMax, ariaLabel })).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function reportCountTrendCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card report-trend-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountTrendChartMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
+}
+
+function reportPlayers() {
+  return (state.players || []).map((player) => ({
+    id: player.id,
+    name: player.name,
+    color_hex: player.color_hex || '#8fd7ff',
+  }));
+}
+
+function cashByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'cash-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Dinheiro de jogador por turno</strong>
+          <span>Historico de caixa fechado no fim de cada turno global da simulacao.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('cash-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${cashByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function patrimonyByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'patrimony-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Patrimonio de jogador por turno</strong>
+          <span>Dinheiro somado ao valor-base dos ativos de cada jogador em cada fechamento.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('patrimony-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${patrimonyByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function holdingsByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'holdings-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Ativos por turno</strong>
+          <span>Graficos de degrau para comparar aquisicoes, paradas e arrancadas de cada jogador ao longo da mesa.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('holdings-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      <div class="report-metric-grid report-holdings-grid">
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'title_count',
+          title: 'Titulos',
+          subtitle: 'Portos conquistados por turno.',
+          ariaLabel: 'Grafico de titulos por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'toll_count',
+          title: 'Pedagios',
+          subtitle: 'Pedagios conquistados por turno.',
+          ariaLabel: 'Grafico de pedagios por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'permission_count',
+          title: 'Permissoes',
+          subtitle: 'Permissoes ativas por turno.',
+          ariaLabel: 'Grafico de permissoes por turno',
+        })}
+      </div>
+    </section>
+  `;
+}
+
+function reportMilestoneTurns(snapshots) {
+  const maxTurn = Math.max(0, ...snapshots.map((snapshot) => Number(snapshot?.turnNumber || 0)));
+  if (maxTurn <= 0) return [];
+  const turns = [...REPORT_MILESTONE_TURNS].filter((turn) => turn <= maxTurn);
+  let nextTurn = REPORT_MILESTONE_TURNS[REPORT_MILESTONE_TURNS.length - 1] + 50;
+  while (nextTurn <= maxTurn) {
+    turns.push(nextTurn);
+    nextTurn += 50;
+  }
+  return turns;
+}
+
+function milestoneTableReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const milestoneTurns = reportMilestoneTurns(snapshots);
+  if (!milestoneTurns.length) {
+    return reportEmptyMarkup('Os milestones vao aparecer quando a simulacao ultrapassar o turno 5.');
+  }
+
+  const snapshotByTurn = new Map(snapshots.map((snapshot) => [Number(snapshot?.turnNumber || 0), snapshot]));
+  const rowsMarkup = milestoneTurns.map((turnNumber) => {
+    const snapshot = snapshotByTurn.get(turnNumber);
+    if (!snapshot) return '';
+
+    const entries = players.map((player) => ({
+      player,
+      entry: reportPlayerSnapshotEntry(snapshot, player.id) || {
+        cash: 0,
+        patrimony_total: 0,
+        title_count: 0,
+        toll_count: 0,
+        permission_count: 0,
+      },
+    }));
+
+    const leaderByMetric = {
+      cash: Math.max(0, ...entries.map(({ entry }) => Number(entry.cash || 0))),
+      patrimony_total: Math.max(0, ...entries.map(({ entry }) => Number(entry.patrimony_total || 0))),
+      title_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.title_count || 0))),
+      toll_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.toll_count || 0))),
+    };
+
+    const playerCellsMarkup = entries.map(({ player, entry }) => {
+      const accent = player.color_hex || '#8fd7ff';
+      const cash = Number(entry.cash || 0);
+      const patrimony = Number(entry.patrimony_total || 0);
+      const titleCount = Math.round(Number(entry.title_count || 0));
+      const tollCount = Math.round(Number(entry.toll_count || 0));
+      const permissionCount = Math.round(Number(entry.permission_count || 0));
+      return `
+        <td class="report-milestone-player-col" style="--report-player-accent:${accent}">
+          <div class="report-milestone-cell">
+            <div class="report-milestone-primary">
+              <span class="report-milestone-stat${cash === leaderByMetric.cash && leaderByMetric.cash > 0 ? ' is-leading' : ''}">
+                <small>Caixa</small>
+                <strong>${formatCompactCurrencyValue(cash)}</strong>
+              </span>
+              <span class="report-milestone-stat${patrimony === leaderByMetric.patrimony_total && leaderByMetric.patrimony_total > 0 ? ' is-leading' : ''}">
+                <small>Patr.</small>
+                <strong>${formatCompactCurrencyValue(patrimony)}</strong>
+              </span>
+            </div>
+            <div class="report-milestone-secondary">
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(titleCount, leaderByMetric.title_count)}">
+                <small>PO</small>
+                <strong>${titleCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(tollCount, leaderByMetric.toll_count)}">
+                <small>PE</small>
+                <strong>${tollCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(permissionCount, 6)}">
+                <small>NA</small>
+                <strong>${permissionCount}</strong>
+              </span>
+            </div>
+          </div>
+        </td>
+      `;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="report-turn-pivot-cell">
+          <div class="report-turn-cell">
+            <strong>${compactReportTurnLabel(snapshot)}</strong>
+            <span>${reportTurnLabel(snapshot)}</span>
+          </div>
+        </td>
+        ${playerCellsMarkup}
+      </tr>
+    `;
+  }).join('');
+
+  const headerMarkup = players.map((player) => `
+    <th class="report-milestone-player-head" scope="col" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <span class="report-player-head">
+        <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+        <span>${player.name}</span>
+      </span>
+    </th>
+  `).join('');
+
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Milestones da simulacao</strong>
+          <span>Uma linha por marco e uma coluna por jogador, com PO, PE e NA em escala semaforica.</span>
+        </div>
+        <div class="report-summary-actions">
+          <span class="report-count-badge">${milestoneTurns.length} marco(s)</span>
+        </div>
+      </div>
+      <div class="report-table-wrap">
+        <table class="report-table report-milestone-table">
+          <thead>
+            <tr>
+              <th scope="col">Marco</th>
+              ${headerMarkup}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsMarkup}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderReportOverlay() {
+  const tabs = getReportTabs();
+  const body = getReportBody();
+  if (!tabs || !body) return;
+
+  const activeKey = state.report?.activeKey || 'cash-by-turn';
+  tabs.innerHTML = `
+    <button type="button" class="report-tab${activeKey === 'cash-by-turn' ? ' is-active' : ''}" data-report-key="cash-by-turn" role="tab" aria-selected="${activeKey === 'cash-by-turn' ? 'true' : 'false'}">Dinheiro por turno</button>
+    <button type="button" class="report-tab${activeKey === 'patrimony-by-turn' ? ' is-active' : ''}" data-report-key="patrimony-by-turn" role="tab" aria-selected="${activeKey === 'patrimony-by-turn' ? 'true' : 'false'}">Patrimonio por turno</button>
+    <button type="button" class="report-tab${activeKey === 'holdings-by-turn' ? ' is-active' : ''}" data-report-key="holdings-by-turn" role="tab" aria-selected="${activeKey === 'holdings-by-turn' ? 'true' : 'false'}">Ativos por turno</button>
+    <button type="button" class="report-tab${activeKey === 'milestones-table' ? ' is-active' : ''}" data-report-key="milestones-table" role="tab" aria-selected="${activeKey === 'milestones-table' ? 'true' : 'false'}">Tabela por marco</button>
+  `;
+
+  if (activeKey === 'patrimony-by-turn') {
+    body.innerHTML = patrimonyByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'holdings-by-turn') {
+    body.innerHTML = holdingsByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'milestones-table') {
+    body.innerHTML = milestoneTableReportMarkup();
+    return;
+  }
+
+  body.innerHTML = activeKey === 'cash-by-turn'
+    ? cashByTurnReportMarkup()
+    : reportEmptyMarkup('Esse relatorio ainda nao foi implementado.');
+}
+
+function openLogOverlay() {
+  renderActionFeed();
+  setLogVisible(true);
+}
+
+function closeLogOverlay() {
+  setLogVisible(false);
+}
+
+function openReportOverlay() {
+  renderReportOverlay();
+  setReportVisible(true);
+}
+
+function closeReportOverlay() {
+  setReportVisible(false);
+}
+
+function playerAssetBookValue(player) {
+  if (!player) return 0;
+  const propertiesValue = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter(Boolean)
+    .reduce((total, card) => total + Math.max(0, Number(card.price || 0)), 0);
+  const permissionsValue = (player.permissions || [])
+    .reduce((total, permission) => total + permissionPurchasePrice(permission), 0);
+  return propertiesValue + permissionsValue;
+}
+
+function playerTitleCount(player) {
+  return Math.max(0, Number(player?.ports_owned || 0));
+}
+
+function playerTollCount(player) {
+  return Math.max(0, Number(player?.tolls_owned || 0));
+}
+
+function playerPermissionCount(player) {
+  return Array.isArray(player?.permissions) ? player.permissions.length : 0;
+}
+
+function captureCashSnapshot({
+  label = state.session?.turn_label || 'Turno --',
+  turnNumber = Number(state.session?.turn_number || 0),
+  phase = state.session?.phase || '',
+  force = false,
+} = {}) {
+  if (!(state.players || []).length) return;
+
+  const normalizedTurn = Number(turnNumber || 0);
+  const normalizedLabel = String(label || '').trim() || (normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio');
+  const key = `${normalizedTurn}|${normalizedLabel}`;
+  const snapshot = {
+    key,
+    turnNumber: normalizedTurn,
+    label: normalizedLabel,
+    phase: String(phase || ''),
+    players: (state.players || []).map((player) => {
+      const cash = Number(player.cash || 0);
+      const assetTotal = playerAssetBookValue(player);
+      const titleCount = playerTitleCount(player);
+      const tollCount = playerTollCount(player);
+      const permissionCount = playerPermissionCount(player);
+      return {
+        id: player.id,
+        name: player.name,
+        cash,
+        asset_total: assetTotal,
+        patrimony_total: cash + assetTotal,
+        title_count: titleCount,
+        toll_count: tollCount,
+        permission_count: permissionCount,
+        property_count: titleCount + tollCount,
+        color: player.color_hex || '#8fd7ff',
+      };
+    }),
+  };
+
+  const existingIndex = (state.report?.snapshotKeys || []).indexOf(key);
+  if (existingIndex >= 0) {
+    if (!force) return;
+    state.report.cashHistory[existingIndex] = snapshot;
+  } else {
+    state.report.snapshotKeys.push(key);
+    state.report.cashHistory.push(snapshot);
+  }
+  renderReportOverlay();
+}
+
+function resetReportData() {
+  state.report.cashHistory = [];
+  state.report.snapshotKeys = [];
+  captureCashSnapshot({
+    label: 'Inicio',
+    turnNumber: 0,
+    phase: 'Mesa inicial',
+    force: true,
+  });
 }
 
 function playerActionLogEntries(playerId) {
@@ -523,6 +1410,7 @@ function getSettingsLogLifetimeValue() { return byId('settings-log-lifetime-valu
 function getSettingsBackgroundModeValue() { return byId('settings-background-mode-value'); }
 function getSettingsBackgroundModeOffInput() { return byId('settings-background-mode-off'); }
 function getSettingsBackgroundModeOnInput() { return byId('settings-background-mode-on'); }
+function reportSnapshots() { return state.report?.cashHistory || []; }
 
 function humanPlayer() {
   return state.players.find((player) => player.id === 'human') || null;
@@ -537,7 +1425,15 @@ function playerById(id) {
 }
 
 function activePlayer() {
-  return playerById(state.session?.active_player_id) || humanPlayer() || state.players[0] || null;
+  return playerById(state.session?.active_player_id) || humanPlayer() || alivePlayers()[0] || state.players[0] || null;
+}
+
+function defaultSessionPlayerId() {
+  return alivePlayers()[0]?.id || state.players[0]?.id || '';
+}
+
+function focusPlayer() {
+  return humanPlayer() || activePlayer() || state.players[0] || null;
 }
 
 function getPropertyCard(code) {
@@ -588,7 +1484,7 @@ function buildCardIndexes() {
 function syncDerivedState() {
   state.humanCompany = humanPlayer();
   state.rivals = rivalPlayers();
-  state.activeContract = state.humanCompany?.active_contract || null;
+  state.activeContract = state.humanCompany?.active_contract || focusPlayer()?.active_contract || null;
 }
 
 function brightenHex(hex, mix = 0.28) {
@@ -605,7 +1501,7 @@ function playerActionName(player) {
 }
 
 function globalActionFeedMarkup(entries) {
-  const visibleEntries = (entries || []).slice(0, 8);
+  const visibleEntries = (entries || []).slice(0, 18);
   if (!visibleEntries.length) {
     return `
       <article class="game-action-entry is-empty">
@@ -637,14 +1533,8 @@ function renderActionFeed({ force = false } = {}) {
     return;
   }
   const entries = pruneActionFeed();
-  const panel = byId('game-action-log');
   const target = byId('game-action-feed');
-  const globalMode = currentLogMode() === 'global';
-  if (panel) {
-    panel.classList.toggle('is-hidden', !globalMode);
-    panel.classList.toggle('is-collapsed', globalMode && !state.view.actionFeedExpanded);
-  }
-  if (target) target.innerHTML = globalMode ? globalActionFeedMarkup(entries) : '';
+  if (target) target.innerHTML = globalActionFeedMarkup(entries);
   renderRivals({ force });
 }
 
@@ -766,8 +1656,22 @@ async function maybeSpendCoupon(player, kind, {
       cardCode,
     });
     if (choice !== 'primary') return null;
-  } else if (!autoUse) {
-    return null;
+  } else {
+    const couponDecision = aiPolicyEngine()?.decideCouponUsage
+      ? aiPolicyEngine().decideCouponUsage({
+          player,
+          kind,
+          autoUse,
+          context: aiDecisionContext(player, {
+            reason: 'coupon_usage',
+            action,
+            cardCode,
+          }),
+        })
+      : null;
+    if (!(couponDecision ? couponDecision.shouldUse : autoUse)) {
+      return null;
+    }
   }
 
   const detailText = typeof detail === 'function' ? detail(coupon) : detail;
@@ -1104,7 +2008,6 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
       fee,
       multiplier,
       comparisonValue: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
-      projectedFreight: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
       isCurrent: String(permission.id) === currentPermissionId,
     };
   });
@@ -1115,20 +2018,16 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
   };
 }
 
-function bestContractPermissionChoiceForOrigin(player, originCode = null) {
-  const selection = contractPermissionChoicesForOrigin(player, originCode);
-  return selection.choices.reduce((best, entry) => {
-    if (!best) return entry;
-    if (entry.comparisonValue > best.comparisonValue) return entry;
-    if (entry.comparisonValue < best.comparisonValue) return best;
-    if (entry.isCurrent) return entry;
-    return best;
-  }, null);
-}
-
 function applyBestContractPermissionForRobot(player, originCode = null) {
   const selection = contractPermissionChoicesForOrigin(player, originCode);
-  const bestChoice = selection.choices.reduce((best, entry) => {
+  const bestPermissionDecision = aiPolicyEngine()?.chooseBestPermission
+    ? aiPolicyEngine().chooseBestPermission({
+        player,
+        selection,
+        originCode,
+      })
+    : null;
+  const bestChoice = bestPermissionDecision?.choice || selection.choices.reduce((best, entry) => {
     if (!best) return entry;
     if (entry.comparisonValue > best.comparisonValue) return entry;
     if (entry.comparisonValue < best.comparisonValue) return best;
@@ -2065,16 +2964,13 @@ function renderHud({ force = false } = {}) {
     return;
   }
 
-  const human = humanPlayer();
-  const contract = human?.active_contract || null;
+  const focus = focusPlayer();
   setText('preview-turn', state.session?.turn_label || 'Turno 01');
-  const active = activePlayer();
-  const activeContract = active?.active_contract || null;
-  setText('preview-human-name', human?.name || 'Minha Companhia');
-  setText('preview-human-port', human?.location_label || '--');
-  setText('preview-cash', human?.cash_display || formatCurrency(state.rules.initial_cash || 0));
+  setText('preview-human-name', focus?.name || 'Mesa de Robos');
+  setText('preview-human-port', focus?.location_label || '--');
+  setText('preview-cash', focus?.cash_display || formatCurrency(state.rules.initial_cash || 0));
 
-  renderCompanyList(human);
+  renderCompanyList(focus);
   renderRivals({ force });
 }
 
@@ -3008,7 +3904,7 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
     return false;
   }
 
-  if (owner.id !== player.id && player.cash >= negotiationPrice && transferProperty(owner, player, card.code, negotiationPrice)) {
+  if (owner.id !== player.id && cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card) && transferProperty(owner, player, card.code, negotiationPrice)) {
     pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
     pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
     renderHud();
@@ -3064,7 +3960,19 @@ async function maybeHandleExtraPermissionAfterDelivery(player) {
     return true;
   }
 
-  if ((player.purchase_policy || 'always') === 'never') return false;
+  const extraPermissionDecision = aiPolicyEngine()?.decideExtraPermissionPurchase
+    ? aiPolicyEngine().decideExtraPermissionPurchase({
+        player,
+        extraCost,
+        availableCount: availablePermissionCards.length,
+        context: aiDecisionContext(player, {
+          reason: 'extra_permission_after_delivery',
+        }),
+      })
+    : null;
+  if (!(extraPermissionDecision ? extraPermissionDecision.shouldBuy : (player.purchase_policy || 'always') !== 'never')) {
+    return false;
+  }
   updatePlayerCash(player, -extraCost);
   const permissionCard = randomChoice(availablePermissionCards);
   if (permissionCard) {
@@ -3401,6 +4309,10 @@ function triggerEnterOnOverlay() {
     const button = byId('settings-close-button');
     if (button && !button.disabled) { button.click(); return true; }
   }
+  if (!getReportOverlay()?.classList.contains('is-hidden')) {
+    const button = byId('report-close-button');
+    if (button && !button.disabled) { button.click(); return true; }
+  }
   if (!getPermissionDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getPermissionDrawButton();
     if (button && !button.disabled) { button.click(); return true; }
@@ -3422,10 +4334,6 @@ function triggerEnterOnOverlay() {
   if (!getChanceDrawOverlay()?.classList.contains('is-hidden')) {
     const button = getChanceDrawButton();
     if (button && !button.disabled && !state.chanceDraw.revealOnly) { button.click(); return true; }
-  }
-  if (!getPermissionChoiceOverlay()?.classList.contains('is-hidden')) {
-    const button = getPermissionChoiceStage()?.querySelector('.permission-choice-card.is-current, .permission-choice-card');
-    if (button && !button.disabled) { button.click(); return true; }
   }
   if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
     const button = getDecisionPrimary();
@@ -4142,101 +5050,6 @@ function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryL
   setDecisionVisible(true);
   return new Promise((resolve) => {
     state.decision.resolver = resolve;
-  });
-}
-
-
-function getPermissionChoiceOverlay() {
-  return byId('permission-choice-overlay');
-}
-
-function getPermissionChoiceTitle() {
-  return byId('permission-choice-title');
-}
-
-function getPermissionChoiceOrigin() {
-  return byId('permission-choice-origin');
-}
-
-function getPermissionChoiceCopy() {
-  return byId('permission-choice-copy');
-}
-
-function getPermissionChoiceStage() {
-  return byId('permission-choice-stage');
-}
-
-function setPermissionChoiceVisible(visible) {
-  const overlay = getPermissionChoiceOverlay();
-  if (!overlay) return;
-  overlay.classList.toggle('is-hidden', !visible);
-}
-
-function closePermissionChoice(permissionId = '') {
-  setPermissionChoiceVisible(false);
-  const resolver = state.permissionChoice.resolver;
-  state.permissionChoice.resolver = null;
-  state.permissionChoice.playerId = '';
-  state.permissionChoice.originCode = '';
-  state.permissionChoice.ownsOrigin = false;
-  state.permissionChoice.choices = [];
-  if (resolver) resolver(permissionId);
-}
-
-function renderPermissionChoice() {
-  const titleNode = getPermissionChoiceTitle();
-  const originNode = getPermissionChoiceOrigin();
-  const copyNode = getPermissionChoiceCopy();
-  const stage = getPermissionChoiceStage();
-  if (!titleNode || !originNode || !copyNode || !stage) return;
-
-  const player = playerById(state.permissionChoice.playerId);
-  const selection = {
-    originCode: state.permissionChoice.originCode,
-    ownsOrigin: state.permissionChoice.ownsOrigin,
-    choices: state.permissionChoice.choices || [],
-  };
-
-  titleNode.textContent = 'Escolha a permissao';
-  originNode.textContent = selection.originCode ? `Origem ${selection.originCode}` : 'Origem --';
-  copyNode.textContent = 'Escolha a permissao para o proximo contrato.';
-
-  stage.innerHTML = selection.choices.map((entry) => {
-    const factorLabel = `${Number(entry.multiplier || 1).toFixed(2).replace('.', ',')}x`;
-    const detailLabel = selection.ownsOrigin
-      ? `Frete base ${formatCurrency(entry.fee)} | Multiplicador ${factorLabel}`
-      : `Estadia ${formatCurrency(entry.fee)}`;
-    return `
-      <button type="button" class="permission-choice-card${entry.isCurrent ? ' is-current' : ''}" data-permission-choice-id="${entry.permission.id}">
-        <span class="permission-choice-card-icon">${cargoIconMarkup(entry.permission.kind, 'permission-choice-icon-image')}</span>
-        <span class="permission-choice-card-copy">
-          <strong>${entry.permission.title}</strong>
-          <span class="permission-choice-card-detail">${detailLabel}</span>
-        </span>
-        <span class="permission-choice-card-badge">${entry.isCurrent ? 'Atual' : 'Usar'}</span>
-        <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
-      </button>
-    `;
-  }).join('');
-
-  if (!player || !selection.choices.length) {
-    closePermissionChoice(player?.active_permission_id || '');
-  }
-}
-
-function openHumanPermissionChoice(player, { originCode = null } = {}) {
-  const selection = contractPermissionChoicesForOrigin(player, originCode);
-  if (!player || selection.choices.length <= 1) {
-    return Promise.resolve(selection.choices[0]?.permission?.id || player?.active_permission_id || '');
-  }
-  state.permissionChoice.playerId = player.id;
-  state.permissionChoice.originCode = selection.originCode;
-  state.permissionChoice.ownsOrigin = selection.ownsOrigin;
-  state.permissionChoice.choices = selection.choices;
-  renderPermissionChoice();
-  setPermissionChoiceVisible(true);
-  return new Promise((resolve) => {
-    state.permissionChoice.resolver = resolve;
   });
 }
 
@@ -5030,7 +5843,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
     if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
       pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
@@ -5265,7 +6078,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice);
+    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
     if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
       player.status_label = `comprou ${card.code}`;
       pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
@@ -5820,7 +6633,10 @@ function applyBootstrapPayload(payload) {
         }
       : player.active_contract,
   }));
-  state.players.forEach((player) => syncActivePermissionAfterEconomyChange(player));
+  state.players.forEach((player) => {
+    syncActivePermissionAfterEconomyChange(player);
+    ensureAiProfile(player);
+  });
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
@@ -5836,7 +6652,9 @@ function applyBootstrapPayload(payload) {
   state.actionFeed = [];
   buildCardIndexes();
   syncDerivedState();
+  resetReportData();
   renderSettingsOverlay();
+  renderReportOverlay();
   renderHud();
   renderShipOverlay();
   renderActionFeed();
@@ -5852,7 +6670,7 @@ function setSetupOverlayVisible(visible) {
 function updateSetupStartButton() {
   const button = byId('setup-start-button');
   if (!button) return;
-  button.disabled = state.setup.submitting || !state.setup.companyName.trim() || !state.setup.selectedColorId;
+  button.disabled = state.setup.submitting;
 }
 
 function renderSetupColorGrid() {
@@ -5880,7 +6698,7 @@ function renderSetupRivalCounts() {
   const target = byId('setup-rival-counts');
   if (!target) return;
   target.innerHTML = '';
-  [2, 3, 4, 5].forEach((count) => {
+  [2, 3, 4, 5, 6].forEach((count) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `game-setup-count${state.setup.rivalCount === count ? ' is-active' : ''}`;
@@ -5896,26 +6714,27 @@ function renderSetupRivalCounts() {
 
 function populateSetupFromPayload(payload) {
   const defaults = payload.setup_defaults || {};
-  state.setup.companyName = defaults.company_name || 'Minha Companhia';
-  state.setup.selectedColorId = defaults.human_color_id || state.playerColors[0]?.id || '';
-  state.setup.rivalCount = defaults.rival_count || 5;
+  state.setup.companyName = '';
+  state.setup.selectedColorId = '';
+  state.setup.rivalCount = defaults.robot_count || defaults.rival_count || 6;
   state.setup.submitting = false;
 
-  const nameInput = byId('setup-company-name');
-  if (nameInput) {
-    nameInput.value = state.setup.companyName;
-    nameInput.addEventListener('input', (event) => {
-      state.setup.companyName = event.target.value;
-      updateSetupStartButton();
-    });
-  }
-
-  renderSetupColorGrid();
   renderSetupRivalCounts();
   updateSetupStartButton();
 }
 
-function cpuShouldBuyPropertyAtPrice(player, price) {
+function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'property_purchase') {
+  const engine = aiPolicyEngine();
+  if (engine?.decideBuyBankProperty) {
+    const decision = engine.decideBuyBankProperty({
+      player,
+      card,
+      price,
+      context: aiDecisionContext(player, { reason }),
+    });
+    return Boolean(decision?.shouldBuy);
+  }
+
   const policy = player?.purchase_policy || 'always';
   const normalizedPrice = Math.max(0, Number(price || 0));
   if (player?.bankrupt) return false;
@@ -5926,11 +6745,22 @@ function cpuShouldBuyPropertyAtPrice(player, price) {
 
 function cpuShouldBuyOrigin(player, card) {
   if (!card) return false;
-  return cpuShouldBuyPropertyAtPrice(player, card.price);
+  return cpuShouldBuyPropertyAtPrice(player, card.price, card, 'origin_purchase');
 }
 
-function cpuShouldNegotiateOwnedProperty(player, negotiationPrice) {
-  return cpuShouldBuyPropertyAtPrice(player, negotiationPrice);
+function cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner = null, card = null) {
+  const engine = aiPolicyEngine();
+  if (engine?.decideOwnedPropertyNegotiation) {
+    const decision = engine.decideOwnedPropertyNegotiation({
+      player,
+      owner,
+      card,
+      price: negotiationPrice,
+      context: aiDecisionContext(player, { reason: 'owned_property_negotiation' }),
+    });
+    return Boolean(decision?.shouldBuy);
+  }
+  return cpuShouldBuyPropertyAtPrice(player, negotiationPrice, card, 'owned_property_negotiation');
 }
 
 function preparationDelayFor(player, longDelay = false) {
@@ -6016,30 +6846,8 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
 
   const originCode = player.location_code || ensurePlayerContractDraft(player)?.origin || '';
 
-  if (!needsPermission) {
-    if (player.is_human) {
-      const selection = contractPermissionChoicesForOrigin(player, originCode);
-      if (selection.choices.length > 1) {
-        setSession({
-          active_player_id: player.id,
-          phase: phaseLabel,
-          action_label: 'Escolher permissao',
-          note: 'Escolha a permissao para o proximo contrato.',
-        });
-        renderHud();
-        const selectedPermissionId = await openHumanPermissionChoice(player, { originCode: selection.originCode });
-        if (selectedPermissionId) {
-          const result = setActivePermissionForPlayer(player, selectedPermissionId, { statusLabel: 'permissao escolhida' });
-          if (result.changed && result.permission) {
-            pushActionLog(player, 'Permissao escolhida', result.permission.title);
-            renderHud();
-          }
-        }
-        await delay(shortDelay);
-      }
-    } else {
-      applyBestContractPermissionForRobot(player, originCode);
-    }
+  if (!needsPermission && !player.is_human) {
+    applyBestContractPermissionForRobot(player, originCode);
   }
 
   if (player.is_human) {
@@ -6088,7 +6896,6 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
 async function runCpuOpeningTurn(player) {
   if (!player) return;
 
-  state.view.openRivalDrawerId = player.id;
   await runContractOpeningForPlayer(player, {
     phaseLabel: `Primeiro turno - ${player.name}`,
     needsPermission: true,
@@ -6106,13 +6913,7 @@ async function runPlayerSubsequentTurn(player, turnNumber) {
   if (!player || player.bankrupt) return;
 
   const phaseLabel = `Turno ${String(turnNumber).padStart(2, '0')}`;
-  if (!player.is_human) {
-    state.view.openRivalDrawerId = player.id;
-    renderHud();
-  } else {
-    state.view.openRivalDrawerId = null;
-    renderHud();
-  }
+  renderHud();
 
   if ((player.skip_turns || 0) > 0) {
     player.skip_turns = Math.max(0, (player.skip_turns || 0) - 1);
@@ -6188,7 +6989,7 @@ async function runSubsequentTurnCycle() {
         turn_number: nextTurn,
         turn_label: `Turno ${String(nextTurn).padStart(2, '0')}`,
         phase: `Turno ${String(nextTurn).padStart(2, '0')}`,
-        active_player_id: 'human',
+        active_player_id: defaultSessionPlayerId(),
         action_label: 'Nova rodada',
         note: `A rodada ${String(nextTurn).padStart(2, '0')} vai comecar.`,
         dice: [0, 0],
@@ -6199,6 +7000,13 @@ async function runSubsequentTurnCycle() {
       for (const player of alivePlayers()) {
         await runPlayerSubsequentTurn(player, nextTurn);
       }
+
+      captureCashSnapshot({
+        label: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        turnNumber: nextTurn,
+        phase: 'Fechamento da rodada',
+        force: true,
+      });
     }
   } finally {
     state.flow.turnCycleRunning = false;
@@ -6214,12 +7022,18 @@ async function runCpuOpeningRound() {
       await runCpuOpeningTurn(player);
     }
 
-    state.view.openRivalDrawerId = null;
+    state.view.openSystemDrawerId = null;
     setSession({
-      active_player_id: 'human',
+      active_player_id: defaultSessionPlayerId(),
       phase: 'Primeiro turno concluido',
       action_label: 'Todos os jogadores preparados',
       note: 'Todos os jogadores concluiram o primeiro turno inicial.',
+    });
+    captureCashSnapshot({
+      label: 'Turno 01',
+      turnNumber: 1,
+      phase: 'Fechamento do primeiro turno',
+      force: true,
     });
     renderHud();
     renderNodeOverlay();
@@ -6237,13 +7051,11 @@ async function submitSetupSelection(event) {
   updateSetupStartButton();
 
   try {
-    const payload = await fetchJson('/api/game/setup', {
+    const payload = await fetchJson('/api/robots-ai/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        company_name: state.setup.companyName.trim() || 'Minha Companhia',
-        color_id: state.setup.selectedColorId,
-        rival_count: state.setup.rivalCount,
+        robot_count: state.setup.rivalCount,
       }),
     });
 
@@ -6251,20 +7063,7 @@ async function submitSetupSelection(event) {
     state.setup.started = true;
     setSetupOverlayVisible(false);
     await renderMap();
-    await delay(140);
-    await runContractOpeningForPlayer(humanPlayer(), {
-      phaseLabel: 'Primeiro turno',
-      needsPermission: true,
-      originMode: 'draw',
-    });
-    await delay(PREP_STEP_DELAY_MS);
-    await runTurnExecutionForPlayer(humanPlayer(), {
-      phaseLabel: 'Primeiro turno',
-      humanActionLabel: 'Rolar 2 dados',
-      humanNote: 'Agora o usuario deve jogar os dois dados de movimentacao.',
-    });
-
-    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_LONG_MS));
+    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_MS));
     await runCpuOpeningRound();
     state.setup.submitting = false;
     updateSetupStartButton();
@@ -6274,14 +7073,14 @@ async function submitSetupSelection(event) {
   } catch (_error) {
     state.setup.submitting = false;
     updateSetupStartButton();
-    window.alert('Nao foi possivel iniciar a partida.');
+    window.alert('Nao foi possivel iniciar a partida de robos.');
   }
 }
 
 async function bootstrap() {
   const [mapPayload, uiPayload] = await Promise.all([
     fetchJson('/api/map/bootstrap'),
-    fetchJson('/api/bootstrap'),
+    fetchJson('/api/robots-ai/bootstrap'),
   ]);
 
   applyMapPayload(mapPayload);
@@ -6307,11 +7106,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   byId('port-draw-button')?.addEventListener('click', startCurrentPortDraw);
   byId('movement-dice-button')?.addEventListener('click', startMovementDiceRoll);
   byId('chance-draw-button')?.addEventListener('click', startChanceDraw);
-  getPermissionChoiceStage()?.addEventListener('click', (event) => {
-    const button = event.target.closest('.permission-choice-card');
-    if (!button?.dataset?.permissionChoiceId) return;
-    closePermissionChoice(button.dataset.permissionChoiceId);
-  });
 
   document.addEventListener('keydown', (event) => {
     const active = document.activeElement;
@@ -6322,6 +7116,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
         event.preventDefault();
         closeSettingsOverlay();
+        return;
+      }
+      if (!getLogOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeLogOverlay();
+        return;
+      }
+      if (!getReportOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeReportOverlay();
         return;
       }
     }
@@ -6339,22 +7143,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     togglePaused();
   });
 
-  byId('game-action-log')?.addEventListener('click', () => {
-    if (currentLogMode() !== 'global') return;
-    state.view.actionFeedExpanded = !state.view.actionFeedExpanded;
-    renderActionFeed();
-  });
-
   byId('preview-settings-button')?.addEventListener('click', () => {
     openSettingsOverlay();
   });
+  byId('preview-report-button')?.addEventListener('click', () => {
+    openReportOverlay();
+  });
+  byId('preview-log-button')?.addEventListener('click', () => {
+    openLogOverlay();
+  });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();
+  });
+  byId('log-close-button')?.addEventListener('click', () => {
+    closeLogOverlay();
+  });
+  byId('report-close-button')?.addEventListener('click', () => {
+    closeReportOverlay();
   });
   getSettingsOverlay()?.addEventListener('click', (event) => {
     if (event.target === getSettingsOverlay()) {
       closeSettingsOverlay();
     }
+  });
+  getLogOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getLogOverlay()) {
+      closeLogOverlay();
+    }
+  });
+  getReportOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getReportOverlay()) {
+      closeReportOverlay();
+    }
+  });
+  getReportTabs()?.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-report-key]');
+    if (!tab?.dataset?.reportKey) return;
+    state.report.activeKey = tab.dataset.reportKey;
+    renderReportOverlay();
+  });
+  getReportBody()?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-report-window-key]');
+    if (!button?.dataset?.reportWindowKey || !button?.dataset?.reportWindowMode) return;
+    const reportKey = button.dataset.reportWindowKey;
+    const mode = button.dataset.reportWindowMode === 'full' ? 'full' : 'recent';
+    state.report.windowModes = {
+      ...(state.report.windowModes || {}),
+      [reportKey]: mode,
+    };
+    renderReportOverlay();
   });
   [getSettingsLogModeGlobalInput(), getSettingsLogModePlayerInput()].forEach((input) => {
     input?.addEventListener('change', (event) => {
@@ -6365,7 +7202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
   getSettingsCpuSpeedInput()?.addEventListener('input', (event) => {
-    state.settings.cpuSpeed = Number(event.target.value || 5);
+    state.settings.cpuSpeed = Number(event.target.value || 50);
     renderSettingsOverlay();
   });
   getSettingsLogLifetimeInput()?.addEventListener('input', (event) => {
@@ -6450,3 +7287,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.alert('Nao foi possivel carregar a tela inicial do jogo.');
   }
 });
+
+

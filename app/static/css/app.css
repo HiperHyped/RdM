@@ -4805,7 +4805,7 @@ kbd {
 
 .report-body {
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   display: grid;
   gap: 14px;
 }
@@ -5053,6 +5053,82 @@ kbd {
   color: rgba(214, 229, 245, 0.76);
   font-size: 0.82rem;
   text-align: center;
+}
+
+.report-metric-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.report-metric-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(215, 230, 245, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.report-metric-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.report-metric-card-head strong {
+  color: #edf6ff;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.report-metric-card-head span {
+  color: rgba(214, 229, 245, 0.68);
+  font-size: 0.74rem;
+}
+
+.report-heatmap-shell {
+  border-radius: 16px;
+  background: rgba(5, 18, 31, 0.28);
+  overflow: hidden;
+}
+
+.report-heatmap {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.report-heatmap-divider {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.report-heatmap-row-label {
+  fill: #edf6ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.report-heatmap-xlabel {
+  fill: rgba(214, 229, 245, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.report-heatmap-cell {
+  stroke: rgba(5, 18, 31, 0.52);
+  stroke-width: 1;
+}
+
+.report-heatmap-value {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.report-metric-number {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 900px) {
