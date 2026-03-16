@@ -14,6 +14,164 @@ const CPU_MOVE_DELAY_MS = 240;
 const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
 const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
 
+const AI_DIFFICULTY_OPTIONS = [
+  { id: 'easy', label: 'Facil', skillPresetId: 'ai_easy' },
+  { id: 'normal', label: 'Normal', skillPresetId: 'ai_normal' },
+  { id: 'hard', label: 'Dificil', skillPresetId: 'ai_hard' },
+  { id: 'expert', label: 'Expert', skillPresetId: 'ai_expert' },
+];
+
+const AI_PROFILE_MODE_OPTIONS = [
+  { id: 'balanced', label: 'Balanceados', description: 'Todos os robos usam o perfil equilibrado.' },
+  { id: 'random', label: 'Mistura aleatoria', description: 'A mesa embaralha focos diferentes de investimento.' },
+  { id: 'closed_market', label: 'Mercado fechado', description: 'Ninguem vende ativos para ninguem.' },
+  { id: 'liquid_market', label: 'Mercado aberto', description: 'Os ativos circulam com extrema facilidade.' },
+];
+
+const AI_BASE_ARCHETYPE_ORDER = ['balanced_trader', 'port_sprinter', 'cargo_planner', 'toll_broker', 'monopoly_hunter'];
+
+const AI_PROFILE_PARAMETER_GROUPS = [
+  {
+    key: 'negotiation',
+    label: 'Negociacao',
+    description: 'Como compra, vende e protege ativos.',
+    fields: [
+      { key: 'buy_openness', label: 'Compra', min: 0, max: 1, step: 0.01 },
+      { key: 'sell_openness', label: 'Venda', min: 0, max: 1, step: 0.01 },
+      { key: 'premium_tolerance', label: 'Agio', min: 0, max: 1, step: 0.01 },
+      { key: 'discount_tolerance', label: 'Desagio', min: 0, max: 1, step: 0.01 },
+      { key: 'strategic_lock', label: 'Apego estrategico', min: 0, max: 1, step: 0.01 },
+      { key: 'desperation_discount', label: 'Desespero por caixa', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+  {
+    key: 'vision',
+    label: 'Visao',
+    description: 'O que a companhia valoriza ao investir.',
+    fields: [
+      { key: 'weight_port', label: 'Portos', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_permission', label: 'Permissoes', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_toll', label: 'Pedagios', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_monopoly', label: 'Monopolio', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_origin_bonus', label: 'Origem', min: 0, max: 1, step: 0.01 },
+      { key: 'planning_horizon_turns', label: 'Horizonte', min: 0, max: 12, step: 1 },
+    ],
+  },
+  {
+    key: 'personality',
+    label: 'Personalidade',
+    description: 'Risco, reserva e impulso do robo.',
+    fields: [
+      { key: 'cash_reserve_ratio', label: 'Reserva de caixa', min: 0, max: 0.8, step: 0.01 },
+      { key: 'risk_tolerance', label: 'Risco', min: 0, max: 1, step: 0.01 },
+      { key: 'impulsiveness', label: 'Impulso', min: 0, max: 1, step: 0.01 },
+      { key: 'coupon_patience', label: 'Paciencia com cupom', min: 0, max: 1, step: 0.01 },
+      { key: 'asset_attachment', label: 'Apego a ativo', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+  {
+    key: 'skill',
+    label: 'Skill',
+    description: 'Qualidade da leitura e da execucao.',
+    fields: [
+      { key: 'foresight', label: 'Previsao', min: 0, max: 1, step: 0.01 },
+      { key: 'evaluation_noise', label: 'Ruido', min: 0, max: 0.3, step: 0.01 },
+      { key: 'liquidity_discipline', label: 'Disciplina de caixa', min: 0, max: 1, step: 0.01 },
+      { key: 'combo_awareness', label: 'Leitura de combo', min: 0, max: 1, step: 0.01 },
+      { key: 'timing_quality', label: 'Timing', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+];
+
+const AI_PARAMETER_FIELD_MAP = Object.fromEntries(
+  AI_PROFILE_PARAMETER_GROUPS.flatMap((group) => group.fields.map((field) => [`${group.key}.${field.key}`, { ...field, groupKey: group.key }]))
+);
+
+const AI_SETUP_FIELD_HELP = {
+  'negotiation.buy_openness': 'Quanto o robo tenta comprar ativos que pertencem a outros jogadores.',
+  'negotiation.sell_openness': 'Quanto o robo aceita abrir mao dos ativos que ja controla.',
+  'negotiation.premium_tolerance': 'Quanto aceita pagar acima do preco-base para fechar negocio.',
+  'negotiation.discount_tolerance': 'Quanto aceita vender abaixo do ideal para liberar caixa.',
+  'negotiation.strategic_lock': 'Quanto protege ativos importantes para rota, renda ou monopolio.',
+  'negotiation.desperation_discount': 'Quanto afrouxa a venda quando o caixa aperta.',
+  'vision.weight_port': 'Peso dado a portos como fonte de frete e origem valiosa.',
+  'vision.weight_permission': 'Peso dado a permissoes para ampliar fretes possiveis.',
+  'vision.weight_toll': 'Peso dado a pedagios como renda de longo prazo.',
+  'vision.weight_monopoly': 'Peso dado a fechar uma regiao inteira sob controle.',
+  'vision.weight_origin_bonus': 'Peso dado a controlar a origem dos contratos.',
+  'vision.planning_horizon_turns': 'Quantos turnos a frente o robo tenta imaginar antes de investir.',
+  'personality.cash_reserve_ratio': 'Quanto caixa o robo quer guardar antes de se expor.',
+  'personality.risk_tolerance': 'Quanto aceita assumir risco para crescer mais rapido.',
+  'personality.impulsiveness': 'Quanto reage rapido a oportunidades sem esperar muito.',
+  'personality.coupon_patience': 'Quanto tende a guardar cupons para momentos melhores.',
+  'personality.asset_attachment': 'Quanto evita vender ou trocar ativos que ja possui.',
+  'skill.foresight': 'Qualidade da leitura de retorno futuro e impacto das compras.',
+  'skill.evaluation_noise': 'Nivel de erro ou imprecisao na avaliacao das opcoes.',
+  'skill.liquidity_discipline': 'Capacidade de preservar caixa e evitar sufoco financeiro.',
+  'skill.combo_awareness': 'Capacidade de perceber sinergias entre porto, permissao, pedagio e monopolio.',
+  'skill.timing_quality': 'Qualidade do momento escolhido para comprar, vender, usar cupom ou resgatar.',
+};
+
+function normalizeAiProfileModeId(mode = 'balanced') {
+  const resolved = String(mode || 'balanced').trim();
+  if (resolved === 'varied') return 'random';
+  if (resolved === 'sell_nothing') return 'closed_market';
+  if (resolved === 'sell_everything') return 'liquid_market';
+  return AI_PROFILE_MODE_OPTIONS.some((entry) => entry.id === resolved) ? resolved : 'balanced';
+}
+
+const AI_MARKET_CASE_OPTIONS = [
+  { id: 'balanced_market', label: 'Mercado equilibrado', presetId: 'balanced_market', description: 'Mistura compra, defesa e negociacao sem extremos.' },
+  {
+    id: 'flex_sellers_market',
+    label: 'Vendedores flexiveis',
+    values: {
+      buy_openness: 0.52,
+      sell_openness: 0.84,
+      premium_tolerance: 0.42,
+      discount_tolerance: 0.74,
+      strategic_lock: 0.18,
+      desperation_discount: 0.34,
+    },
+    description: 'Os donos vendem com mais facilidade, mas sem chegar ao giro total do mercado aberto.',
+  },
+  { id: 'selective_market', label: 'Negociacao seletiva', presetId: 'selective_market', description: 'Cada venda passa por uma analise mais fria e menos impulsiva.' },
+  { id: 'acquisitive_market', label: 'Compradores ofensivos', presetId: 'acquisitive_market', description: 'Os robos buscam ativos com forca, mas relutam mais em vender.' },
+  {
+    id: 'sell_nothing',
+    label: 'Mercado fechado',
+    values: {
+      buy_openness: 0.08,
+      sell_openness: 0.02,
+      premium_tolerance: 0.18,
+      discount_tolerance: 0.02,
+      strategic_lock: 1,
+      desperation_discount: 0,
+      buy_blocked: 1,
+      sell_blocked: 1,
+      trade_locked: 1,
+    },
+    description: 'Ninguem vende ativos: cada companhia fecha a guarda sobre o que conquista.',
+  },
+  {
+    id: 'sell_everything',
+    label: 'Mercado aberto',
+    values: {
+      buy_openness: 1,
+      sell_openness: 1,
+      premium_tolerance: 0.82,
+      discount_tolerance: 1,
+      strategic_lock: 0,
+      desperation_discount: 0.92,
+      force_buy: 1,
+      force_sell: 1,
+      trade_forced: 1,
+    },
+    description: 'Os ativos circulam com extrema facilidade sempre que houver caixa na mesa.',
+  },
+];
+
+
 const REPORT_MILESTONE_TURNS = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 350];
 
 const state = {
@@ -45,6 +203,14 @@ const state = {
     companyName: '',
     selectedColorId: '',
     rivalCount: 6,
+    aiDifficulty: 'normal',
+    aiProfileMode: 'balanced',
+    aiProfileOrder: [...AI_BASE_ARCHETYPE_ORDER],
+    aiAdvancedProfiles: false,
+    manualRobotProfiles: {},
+    manualRobotConfigs: {},
+    aiEditorOpen: false,
+    aiEditorRobotIndex: 0,
     submitting: false,
   },
   permissionDraw: {
@@ -149,20 +315,417 @@ function aiPolicyEngine() {
   return window.RdMAiPolicyEngine || null;
 }
 
+function aiSetupDefaults(setupDefaults = {}) {
+  const slotCount = Math.max(0, Number(setupDefaults.robot_count || setupDefaults.rival_count || state?.setup?.rivalCount || 0));
+  const resolvedMode = normalizeAiProfileModeId(setupDefaults.ai_profile_mode || 'balanced');
+  const manualConfigs = normalizeManualRobotConfigs(setupDefaults.ai_manual_robot_configs || {}, slotCount);
+  const manualProfiles = normalizeManualRobotProfiles(
+    setupDefaults.ai_manual_profiles || manualProfileIdsFromConfigs(manualConfigs),
+    slotCount,
+  );
+  return {
+    aiDifficulty: String(setupDefaults.ai_difficulty || 'normal'),
+    aiProfileMode: resolvedMode,
+    aiProfileOrder: buildSetupProfileOrder(resolvedMode, setupDefaults.ai_profile_order || []),
+    aiAdvancedProfiles: Boolean(setupDefaults.ai_advanced_profiles),
+    aiManualProfiles: manualProfiles,
+    aiManualRobotConfigs: manualConfigs,
+  };
+}
+
+function buildAiSetupDefaults(setupDefaults = {}, overrides = {}) {
+  const merged = { ...setupDefaults, ...overrides };
+  const resolved = aiSetupDefaults(merged);
+  const slotCount = Math.max(0, Number(merged.robot_count || merged.rival_count || state?.setup?.rivalCount || 0));
+  return {
+    ...merged,
+    ai_difficulty: resolved.aiDifficulty,
+    ai_profile_mode: resolved.aiProfileMode,
+    ai_profile_order: resolved.aiProfileOrder,
+    ai_advanced_profiles: resolved.aiAdvancedProfiles,
+    ai_manual_profiles: resolved.aiAdvancedProfiles
+      ? serializeManualRobotProfiles(resolved.aiManualProfiles, slotCount)
+      : [],
+    ai_manual_robot_configs: resolved.aiAdvancedProfiles
+      ? serializeManualRobotConfigs(resolved.aiManualRobotConfigs, slotCount)
+      : [],
+  };
+}
+
+function aiDifficultyOption(id = 'normal') {
+  return AI_DIFFICULTY_OPTIONS.find((entry) => entry.id === id) || AI_DIFFICULTY_OPTIONS[1];
+}
+
+function aiProfileModeOption(id = 'balanced') {
+  const resolvedId = normalizeAiProfileModeId(id);
+  return AI_PROFILE_MODE_OPTIONS.find((entry) => entry.id === resolvedId) || AI_PROFILE_MODE_OPTIONS[0];
+}
+
+function aiProfileOrderForMode(mode = 'balanced') {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'balanced') return ['balanced_trader'];
+  if (resolvedMode === 'random') return shuffleArray(AI_BASE_ARCHETYPE_ORDER);
+  return [...AI_BASE_ARCHETYPE_ORDER];
+}
+
+function normalizeAiProfileOrder(rawOrder = null) {
+  if (!Array.isArray(rawOrder)) return [];
+  const allowed = new Set(AI_BASE_ARCHETYPE_ORDER);
+  return rawOrder
+    .map((entry) => String(entry || '').trim())
+    .filter((entry) => allowed.has(entry));
+}
+
+function buildSetupProfileOrder(mode = 'balanced', rawOrder = null) {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'random') {
+    const normalized = normalizeAiProfileOrder(rawOrder);
+    return normalized.length ? normalized : shuffleArray(AI_BASE_ARCHETYPE_ORDER);
+  }
+  return aiProfileOrderForMode(resolvedMode);
+}
+
+function aiProfileModeMarketCaseId(mode = 'balanced') {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'closed_market') return 'sell_nothing';
+  if (resolvedMode === 'liquid_market') return 'sell_everything';
+  return '';
+}
+
+function syncSetupProfileOrder(mode = state.setup.aiProfileMode, rawOrder = null) {
+  const order = buildSetupProfileOrder(mode, rawOrder);
+  state.setup.aiProfileOrder = order;
+  return order;
+}
+
+function clampAiSetting(value, min, max, step = 0.01) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return min;
+  const safeStep = step > 0 ? step : 0.01;
+  const rounded = Math.round(numericValue / safeStep) * safeStep;
+  const decimals = String(safeStep).includes('.') ? String(safeStep).split('.')[1].length : 0;
+  return Math.min(max, Math.max(min, Number(rounded.toFixed(decimals))));
+}
+
+function normalizeManualRobotProfiles(rawProfiles = null, slotCount = 0) {
+  const normalized = {};
+  if (Array.isArray(rawProfiles)) {
+    rawProfiles.forEach((value, index) => {
+      if (index >= slotCount) return;
+      const resolved = String(value || '').trim();
+      if (resolved) normalized[index] = resolved;
+    });
+    return normalized;
+  }
+  if (rawProfiles && typeof rawProfiles === 'object') {
+    Object.entries(rawProfiles).forEach(([key, value]) => {
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0 || index >= slotCount) return;
+      const resolved = String(value || '').trim();
+      if (resolved) normalized[index] = resolved;
+    });
+  }
+  return normalized;
+}
+
+function serializeManualRobotProfiles(rawProfiles = state.setup.manualRobotProfiles, slotCount = 0) {
+  const normalized = normalizeManualRobotProfiles(rawProfiles, slotCount);
+  return Array.from({ length: slotCount }, (_, index) => String(normalized[index] || ''));
+}
+
+function aiArchetypeById(id = '') {
+  return aiProfilesLib()?.archetypes?.[String(id || '').trim()] || null;
+}
+
+function aiSkillPresetForDifficulty(difficultyId = state.setup.aiDifficulty) {
+  const option = aiDifficultyOption(difficultyId);
+  return cloneAiData(aiProfilesLib()?.skillPresets?.[option.skillPresetId] || null);
+}
+
+function buildManualRobotConfig(archetypeId = 'balanced_trader', { difficultyId = state.setup.aiDifficulty } = {}) {
+  const resolvedArchetype = aiArchetypeById(archetypeId) ? archetypeId : 'balanced_trader';
+  const baseProfile = aiProfilesLib()?.buildProfile
+    ? aiProfilesLib().buildProfile({ archetypeId: resolvedArchetype })
+    : null;
+  const seededSkill = aiSkillPresetForDifficulty(difficultyId) || cloneAiData(baseProfile?.skill || {});
+  return {
+    archetypeId: resolvedArchetype,
+    overrides: {
+      negotiation: cloneAiData(baseProfile?.negotiation || {}),
+      vision: cloneAiData(baseProfile?.vision || {}),
+      personality: cloneAiData(baseProfile?.personality || {}),
+      skill: seededSkill,
+      metadata: {
+        ...(cloneAiData(baseProfile?.metadata || {}) || {}),
+        setup_customized: true,
+        setup_archetype_id: resolvedArchetype,
+      },
+    },
+  };
+}
+
+function normalizeManualRobotConfig(rawConfig = null, slotIndex = 0) {
+  if (!rawConfig || typeof rawConfig !== 'object') return null;
+  const archetypeId = aiArchetypeById(rawConfig.archetypeId || rawConfig.profileId || rawConfig.id || defaultSetupArchetypeIdForSlot(slotIndex))
+    ? String(rawConfig.archetypeId || rawConfig.profileId || rawConfig.id || defaultSetupArchetypeIdForSlot(slotIndex))
+    : defaultSetupArchetypeIdForSlot(slotIndex);
+  const seeded = buildManualRobotConfig(archetypeId);
+  const source = rawConfig.overrides && typeof rawConfig.overrides === 'object'
+    ? rawConfig.overrides
+    : rawConfig;
+  AI_PROFILE_PARAMETER_GROUPS.forEach((group) => {
+    const sourceGroup = source[group.key] && typeof source[group.key] === 'object' ? source[group.key] : {};
+    group.fields.forEach((field) => {
+      if (sourceGroup[field.key] === undefined) return;
+      seeded.overrides[group.key][field.key] = clampAiSetting(sourceGroup[field.key], field.min, field.max, field.step);
+    });
+  });
+  seeded.overrides.metadata = {
+    ...(seeded.overrides.metadata || {}),
+    ...(source.metadata && typeof source.metadata === 'object' ? cloneAiData(source.metadata) : {}),
+    setup_customized: true,
+    setup_archetype_id: archetypeId,
+  };
+  return seeded;
+}
+
+function normalizeManualRobotConfigs(rawConfigs = null, slotCount = 0) {
+  const normalized = {};
+  if (Array.isArray(rawConfigs)) {
+    rawConfigs.forEach((value, index) => {
+      if (index >= slotCount) return;
+      const config = normalizeManualRobotConfig(value, index);
+      if (config) normalized[index] = config;
+    });
+    return normalized;
+  }
+  if (rawConfigs && typeof rawConfigs === 'object') {
+    Object.entries(rawConfigs).forEach(([key, value]) => {
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0 || index >= slotCount) return;
+      const config = normalizeManualRobotConfig(value, index);
+      if (config) normalized[index] = config;
+    });
+  }
+  return normalized;
+}
+
+function serializeManualRobotConfigs(rawConfigs = state.setup.manualRobotConfigs, slotCount = 0) {
+  const normalized = normalizeManualRobotConfigs(rawConfigs, slotCount);
+  return Array.from({ length: slotCount }, (_, index) => normalized[index] ? cloneAiData(normalized[index]) : null);
+}
+
+function manualProfileIdsFromConfigs(configs = {}) {
+  const resolved = {};
+  Object.entries(configs || {}).forEach(([key, config]) => {
+    if (config?.archetypeId) resolved[key] = config.archetypeId;
+  });
+  return resolved;
+}
+
+function aiArchetypeSetupOptions() {
+  return Object.values(aiProfilesLib()?.archetypes || {})
+    .map((entry) => ({ id: entry.id, label: entry.label, description: entry.description || '' }))
+    .filter((entry) => entry && entry.id && entry.id !== 'legacy_open');
+}
+
+function setupRobotSlotCount() {
+  return Math.max(0, Number(state.setup.rivalCount || 0));
+}
+
+function pruneManualRobotProfiles(slotCount = setupRobotSlotCount()) {
+  state.setup.manualRobotProfiles = normalizeManualRobotProfiles(state.setup.manualRobotProfiles, slotCount);
+  state.setup.manualRobotConfigs = normalizeManualRobotConfigs(state.setup.manualRobotConfigs, slotCount);
+  return state.setup.manualRobotProfiles;
+}
+
+function defaultSetupArchetypeIdForSlot(slotIndex = 0) {
+  const order = Array.isArray(state.setup.aiProfileOrder) && state.setup.aiProfileOrder.length
+    ? state.setup.aiProfileOrder
+    : syncSetupProfileOrder(state.setup.aiProfileMode);
+  return order[Math.max(0, slotIndex) % order.length] || 'balanced_trader';
+}
+
+function persistSetupRobotConfig(slotIndex = 0, config = null) {
+  if (!Number.isInteger(slotIndex) || slotIndex < 0) return null;
+  const normalized = normalizeManualRobotConfig(config, slotIndex);
+  if (!normalized) {
+    delete state.setup.manualRobotConfigs[slotIndex];
+    delete state.setup.manualRobotProfiles[slotIndex];
+    return null;
+  }
+  state.setup.manualRobotConfigs[slotIndex] = normalized;
+  state.setup.manualRobotProfiles[slotIndex] = normalized.archetypeId;
+  return normalized;
+}
+
+function ensureSetupRobotConfig(slotIndex = 0) {
+  const existing = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[slotIndex], slotIndex);
+  if (existing) {
+    state.setup.manualRobotConfigs[slotIndex] = existing;
+    state.setup.manualRobotProfiles[slotIndex] = existing.archetypeId;
+    return existing;
+  }
+  return persistSetupRobotConfig(slotIndex, buildManualRobotConfig(defaultSetupArchetypeIdForSlot(slotIndex)));
+}
+
+function resetSetupRobotConfig(slotIndex = 0) {
+  delete state.setup.manualRobotConfigs[slotIndex];
+  delete state.setup.manualRobotProfiles[slotIndex];
+}
+
+function applyManualProfilesToPlayers(players = [], setupDefaults = {}) {
+  const robots = (players || []).filter((player) => !player?.is_human);
+  const incomingManualConfigs = normalizeManualRobotConfigs(
+    setupDefaults.ai_manual_robot_configs || state.setup.manualRobotConfigs,
+    robots.length,
+  );
+  const profileSource = setupDefaults.ai_manual_profiles !== undefined
+    ? setupDefaults.ai_manual_profiles
+    : (Object.keys(incomingManualConfigs).length ? manualProfileIdsFromConfigs(incomingManualConfigs) : state.setup.manualRobotProfiles);
+  const incomingManualProfiles = normalizeManualRobotProfiles(profileSource, robots.length);
+  const useManualProfiles = Boolean(setupDefaults.ai_advanced_profiles);
+  const effectiveConfigs = {};
+  const effectiveProfiles = {};
+
+  robots.forEach((player, index) => {
+    const fallbackProfileId = String(incomingManualProfiles[index] || '').trim();
+    const resolvedConfig = normalizeManualRobotConfig(
+      incomingManualConfigs[index] || (fallbackProfileId ? { archetypeId: fallbackProfileId } : null),
+      index,
+    );
+    if (useManualProfiles && resolvedConfig) {
+      effectiveConfigs[index] = resolvedConfig;
+      effectiveProfiles[index] = resolvedConfig.archetypeId;
+      player.ai_manual_profile = true;
+      player.ai_archetype_id = resolvedConfig.archetypeId;
+      player.ai_profile_overrides = cloneAiData(resolvedConfig.overrides || {});
+      player.ai_profile = null;
+      player.ai_profile_id = '';
+      player.ai_profile_label = '';
+      return;
+    }
+    player.ai_manual_profile = false;
+    player.ai_archetype_id = '';
+    player.ai_profile_overrides = null;
+    player.ai_profile = null;
+    player.ai_profile_id = '';
+    player.ai_profile_label = '';
+  });
+
+  state.setup.manualRobotConfigs = effectiveConfigs;
+  state.setup.manualRobotProfiles = effectiveProfiles;
+  state.setup.aiAdvancedProfiles = useManualProfiles;
+}
+
 function ensureAiProfile(player) {
   if (!player || player.is_human) return null;
+  const defaultArchetypeId = player.ai_archetype_id || state.ai?.tableConfig?.defaultRobotProfileId || 'legacy_open';
   const engine = aiPolicyEngine();
-  if (engine?.ensureProfile) return engine.ensureProfile(player);
+  if (engine?.ensureProfile) return engine.ensureProfile(player, state.ai?.tableConfig || null);
   const profiles = aiProfilesLib();
   return profiles?.assignProfile
-    ? profiles.assignProfile(player, { archetypeId: player.ai_archetype_id || 'legacy_open' })
+    ? profiles.assignProfile(player, { archetypeId: defaultArchetypeId })
     : null;
 }
 
+
+function applyAiStageConfiguration(payload = {}) {
+  const engine = aiPolicyEngine();
+  const profiles = aiProfilesLib();
+  const setupDefaults = buildAiSetupDefaults(payload.setup_defaults || {});
+  const selectedAiSetup = aiSetupDefaults(setupDefaults);
+  const difficulty = aiDifficultyOption(selectedAiSetup.aiDifficulty);
+  const profileMode = aiProfileModeOption(selectedAiSetup.aiProfileMode);
+  const profileModeMarketCaseId = selectedAiSetup.aiAdvancedProfiles ? '' : aiProfileModeMarketCaseId(selectedAiSetup.aiProfileMode);
+  const tableNegotiationOverride = profileModeMarketCaseId ? aiMarketCaseNegotiationValues(profileModeMarketCaseId) : null;
+  const robotArchetypeOrder = selectedAiSetup.aiProfileOrder.length
+    ? [...selectedAiSetup.aiProfileOrder]
+    : aiProfileOrderForMode(selectedAiSetup.aiProfileMode);
+  const baselineConfig = engine?.buildLegacyBaseline
+    ? engine.buildLegacyBaseline({ setupDefaults })
+    : {
+        id: 'legacy_open_table',
+        label: 'Mesa Legacy Aberto',
+        marketRegime: { id: 'legacy_open_market', dynamic_pricing: false },
+        defaultRobotProfileId: 'legacy_open',
+        defaultSkillPresetId: 'legacy_normal',
+        baselineLocked: true,
+        setupDefaults,
+      };
+  const tableConfig = engine?.buildStageTableConfig
+    ? engine.buildStageTableConfig({
+        presetId: 'stage6_profile_table',
+        overrides: {
+          label: `Mesa AI ${difficulty.label} / ${profileMode.label}`,
+          setupDefaults,
+          baselineReferenceId: baselineConfig.id || 'legacy_open_table',
+          defaultRobotProfileId: robotArchetypeOrder[0] || 'balanced_trader',
+          defaultSkillPresetId: difficulty.skillPresetId,
+          forcedSkillPresetId: difficulty.skillPresetId,
+          defaultProfileOverrides: tableNegotiationOverride ? { negotiation: tableNegotiationOverride } : null,
+          robotArchetypeOrder,
+        },
+      })
+    : (profiles?.buildTableConfig
+      ? profiles.buildTableConfig({
+          presetId: 'stage6_profile_table',
+          overrides: {
+            label: `Mesa AI ${difficulty.label} / ${profileMode.label}`,
+            setupDefaults,
+            baselineReferenceId: baselineConfig.id || 'legacy_open_table',
+            defaultRobotProfileId: robotArchetypeOrder[0] || 'balanced_trader',
+            defaultSkillPresetId: difficulty.skillPresetId,
+            forcedSkillPresetId: difficulty.skillPresetId,
+            defaultProfileOverrides: tableNegotiationOverride ? { negotiation: tableNegotiationOverride } : null,
+            robotArchetypeOrder,
+          },
+        })
+      : baselineConfig);
+  applyManualProfilesToPlayers(state.players, setupDefaults);
+  state.ai = {
+    enabled: true,
+    stageId: 'stage8_profile_setup',
+    stageLabel: 'Perfis, cupons e caixa',
+    baselineConfig,
+    tableConfig,
+    tableConfigId: tableConfig.id || 'stage6_profile_table',
+    baselineLocked: baselineConfig.baselineLocked !== false,
+    aiDifficultyId: selectedAiSetup.aiDifficulty,
+    aiProfileModeId: selectedAiSetup.aiProfileMode,
+    baselineSummary: {
+      label: baselineConfig.label || 'Mesa Legacy Aberto',
+      marketRegimeId: baselineConfig.marketRegime?.id || 'legacy_open_market',
+      defaultRobotProfileId: baselineConfig.defaultRobotProfileId || 'legacy_open',
+      defaultSkillPresetId: baselineConfig.defaultSkillPresetId || 'legacy_normal',
+    },
+    activeSummary: {
+      label: tableConfig.label || 'Mesa AI Stage 8',
+      marketRegimeId: tableConfig.marketRegime?.id || 'stage6_profile_market',
+      defaultRobotProfileId: tableConfig.defaultRobotProfileId || 'balanced_trader',
+      defaultSkillPresetId: difficulty.skillPresetId,
+      difficultyLabel: difficulty.label,
+      profileModeLabel: profileMode.label,
+    },
+  };
+  if (engine?.applyTableConfigToPlayers) {
+    engine.applyTableConfigToPlayers(state.players, tableConfig);
+    return tableConfig;
+  }
+  if (engine?.applyBaselineToPlayers) {
+    engine.applyBaselineToPlayers(state.players, tableConfig);
+    return tableConfig;
+  }
+  state.players.forEach((player) => ensureAiProfile(player));
+  return tableConfig;
+}
+
 function aiDecisionContext(player, extra = {}) {
+  const tableConfig = extra.tableConfig || state.ai?.tableConfig || null;
   const engine = aiPolicyEngine();
   if (engine?.buildDecisionContext) {
     return engine.buildDecisionContext(player, {
+      tableConfig,
       rules: state.rules,
       session: state.session,
       ...extra,
@@ -170,6 +733,8 @@ function aiDecisionContext(player, extra = {}) {
   }
   return {
     player,
+    tableConfig,
+    marketRegime: tableConfig?.marketRegime || null,
     rules: state.rules,
     session: state.session,
     ...extra,
@@ -179,6 +744,20 @@ function aiDecisionContext(player, extra = {}) {
 function byId(id) {
   return document.getElementById(id);
 }
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function cloneAiData(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
 
 function nextMacrotask() {
   if (typeof MessageChannel === 'function') {
@@ -197,6 +776,7 @@ function getPauseIndicator() {
 
 function getPropertyInspectorOverlay() { return byId('property-inspector-overlay'); }
 function getPropertyInspectorStage() { return byId('property-inspector-stage'); }
+function getSetupAiEditorOverlay() { return byId('setup-ai-editor-overlay'); }
 function getLogOverlay() { return byId('game-log-overlay'); }
 function getReportOverlay() { return byId('game-report-overlay'); }
 function getReportTabs() { return byId('report-tabs'); }
@@ -1642,6 +2222,7 @@ async function maybeSpendCoupon(player, kind, {
   secondaryLabel = 'Nao usar',
   hideSecondary = false,
   autoUse = true,
+  couponSignals = {},
 } = {}) {
   const coupon = firstCouponOfKind(player, kind);
   if (!coupon) return null;
@@ -1666,6 +2247,7 @@ async function maybeSpendCoupon(player, kind, {
             reason: 'coupon_usage',
             action,
             cardCode,
+            couponSignals,
           }),
         })
       : null;
@@ -1711,6 +2293,11 @@ async function maybeUseFreePortStayCoupon(player, card, charge, owner = null) {
       ? `Zerou a estadia de ${card.code} que seria paga a ${owner.name}.`
       : `Zerou a estadia de ${card.code} que seria paga ao banco.`,
     statusLabel: `porto livre ${card.code}`,
+    couponSignals: {
+      charge,
+      ownerPresent: Boolean(owner),
+      propertyKind: 'port',
+    },
   });
 }
 
@@ -1728,6 +2315,12 @@ async function maybeUseFreeTollCoupon(player, card, charge, owner = null) {
       ? `Zerou o pedagio de ${card.code} que seria pago a ${owner.name}.`
       : `Zerou o pedagio de ${card.code} que seria pago ao banco.`,
     statusLabel: `pedagio livre ${card.code}`,
+    couponSignals: {
+      charge,
+      ownerPresent: Boolean(owner),
+      propertyKind: 'toll',
+      mandatoryToll: player?.active_contract?.mandatory_toll === card.code,
+    },
   });
   if (spent && player?.active_contract?.mandatory_toll === card.code) {
     player.active_contract.toll_passed = true;
@@ -1786,6 +2379,10 @@ async function resolveFuelStopForPlayer(player, node) {
     secondaryLabel: 'Pagar normalmente',
     detail: `Abastecimento em ${player.location_label} sem custo.`,
     statusLabel: 'abastecimento gratis',
+    couponSignals: {
+      charge: amount,
+      propertyKind: 'fuel',
+    },
   });
   if (couponUse) {
     return {
@@ -1909,7 +2506,7 @@ function activePermissionRecord(player) {
 }
 
 function availablePermissionRecords(player) {
-  return (player?.permissions || []).filter((permission) => !permission?.mortgaged);
+  return (player?.permissions || []).filter(Boolean);
 }
 
 function permissionPurchasePrice(permission) {
@@ -1946,18 +2543,18 @@ function propertyRedeemCost(card) {
 }
 
 function permissionMortgageCredit(permission) {
-  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(permissionPurchasePrice(permission), normalizedGameRules()) : Math.floor(permissionPurchasePrice(permission) * 0.5);
+  return 0;
 }
 
 function permissionRedeemCost(permission) {
-  return economyLib()?.redeemCost ? economyLib().redeemCost(permissionPurchasePrice(permission), normalizedGameRules()) : Math.round(permissionMortgageCredit(permission) * 1.5);
+  return 0;
 }
 
 function syncActivePermissionAfterEconomyChange(player) {
   if (!player) return;
   const available = availablePermissionRecords(player);
   const active = activePermissionRecord(player);
-  if (active && !active.mortgaged) return;
+  if (active) return;
   if (available.length) {
     const next = available[0];
     player.active_permission_id = next.id;
@@ -1975,7 +2572,7 @@ function syncActivePermissionAfterEconomyChange(player) {
 
 function setActivePermissionForPlayer(player, permissionId, { statusLabel = null } = {}) {
   const permission = findPermissionRecord(player, permissionId);
-  if (!player || !permission || permission.mortgaged) return { permission: null, changed: false };
+  if (!player || !permission) return { permission: null, changed: false };
   const changed = String(player.active_permission_id || '') !== String(permission.id);
   player.active_permission_id = permission.id;
   player.active_permission_label = permission.title;
@@ -2039,7 +2636,7 @@ function applyBestContractPermissionForRobot(player, originCode = null) {
     statusLabel: 'permissao ativa definida',
   });
   if (result.changed && result.permission) {
-    pushActionLog(player, 'Permissao escolhida', `${result.permission.title} (${selection.ownsOrigin ? `melhor frete no porto inicial ${selection.originCode}` : 'maior estadia'}).`);
+    pushActionLog(player, 'Permissao escolhida', `${result.permission.title} (${bestPermissionDecision?.explanation || (selection.ownsOrigin ? `melhor frete no porto inicial ${selection.originCode}` : 'melhor combinacao atual')}).`);
     renderHud();
   }
   return { ...bestChoice, changed: result.changed, ownsOrigin: selection.ownsOrigin, originCode: selection.originCode };
@@ -2061,25 +2658,11 @@ function canRedeemProperty(player, code) {
 }
 
 function canMortgagePermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission) return false;
-  if (permission.mortgaged) return false;
-  const activePermissionId = String(player.active_permission_id || '');
-  const contractInProgress = Boolean(
-    player.active_contract
-    && !player.active_contract.completed
-    && player.active_contract.destination
-    && player.active_contract.destination !== '--'
-    && !player.needs_new_contract
-  );
-  if (String(permission.id) === activePermissionId && contractInProgress) return false;
-  return true;
+  return false;
 }
 
 function canRedeemPermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission || !permission.mortgaged) return false;
-  return player.cash >= permissionRedeemCost(permission);
+  return false;
 }
 
 function mortgagePropertyForPlayer(player, code, { auto = false, reason = 'hipoteca' } = {}) {
@@ -2110,37 +2693,16 @@ function redeemPropertyForPlayer(player, code, { auto = false } = {}) {
 }
 
 function mortgagePermissionForPlayer(player, permissionId, { auto = false, reason = 'hipoteca' } = {}) {
-  if (!canMortgagePermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const credit = permissionMortgageCredit(permission);
-  permission.mortgaged = true;
-  updatePlayerCash(player, credit);
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `hipotecou ${permission.title}`;
-  pushActionLog(player, auto ? 'Hipoteca automatica' : 'Hipoteca', `${permission.title}: recebeu ${formatCurrency(credit)} (${reason}).`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function redeemPermissionForPlayer(player, permissionId, { auto = false } = {}) {
-  if (!canRedeemPermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const cost = permissionRedeemCost(permission);
-  updatePlayerCash(player, -cost);
-  permission.mortgaged = false;
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `resgatou ${permission.title}`;
-  pushActionLog(player, auto ? 'Resgate automatico' : 'Resgate', `${permission.title}: pagou ${formatCurrency(cost)} ao banco.`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function mortgageCandidatesForPlayer(player) {
   if (!player || player.bankrupt) return [];
+  const activePermissionCount = availablePermissionRecords(player).length;
   const propertyCandidates = (player.property_codes || [])
     .map((code) => getPropertyCard(code))
     .filter((card) => card && !card.mortgaged)
@@ -2149,27 +2711,67 @@ function mortgageCandidatesForPlayer(player) {
       key: card.code,
       label: card.code,
       credit: propertyMortgageCredit(card),
-      priority: playerHasRegionMonopoly(player, card.continent) ? 2 : 1,
+      propertyKind: card.is_toll ? 'toll' : 'port',
+      continent: card.continent || '',
+      monopolyProtected: !card.is_toll && playerHasRegionMonopoly(player, card.continent),
+      remainingPermissionCount: activePermissionCount,
     }));
-  const permissionCandidates = (player.permissions || [])
-    .filter((permission) => canMortgagePermission(player, permission.id))
-    .map((permission) => ({
-      type: 'permission',
-      key: permission.id,
-      label: permission.title,
-      credit: permissionMortgageCredit(permission),
-      priority: 3,
+  return [...propertyCandidates]
+    .filter((entry) => entry.credit > 0);
+}
+
+function redeemCandidatesForPlayer(player) {
+  if (!player || player.bankrupt) return [];
+  const activePermissionCount = availablePermissionRecords(player).length;
+  const propertyCandidates = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card && card.mortgaged)
+    .map((card) => ({
+      type: 'property',
+      key: card.code,
+      label: card.code,
+      cost: propertyRedeemCost(card),
+      propertyKind: card.is_toll ? 'toll' : 'port',
+      continent: card.continent || '',
+      monopolyProtected: !card.is_toll && regionPortCards(card.continent).every((entry) => player.property_codes?.includes(entry.code)),
+      remainingPermissionCount: activePermissionCount,
     }));
-  return [...propertyCandidates, ...permissionCandidates]
-    .filter((entry) => entry.credit > 0)
-    .sort((left, right) => (left.priority - right.priority) || (left.credit - right.credit) || String(left.label).localeCompare(String(right.label)));
+  return [...propertyCandidates]
+    .filter((entry) => entry.cost > 0);
 }
 
 function performMortgageCandidate(player, candidate, reason) {
   if (!player || !candidate) return false;
   if (candidate.type === 'property') return mortgagePropertyForPlayer(player, candidate.key, { auto: true, reason });
-  if (candidate.type === 'permission') return mortgagePermissionForPlayer(player, candidate.key, { auto: true, reason });
   return false;
+}
+
+function performRedeemCandidate(player, candidate) {
+  if (!player || !candidate) return false;
+  if (candidate.type === 'property') return redeemPropertyForPlayer(player, candidate.key, { auto: true });
+  return false;
+}
+
+async function maybeAutoRedeemForRobot(player) {
+  if (!player || player.is_human || player.bankrupt) return false;
+  let redeemedAny = false;
+  let loops = 0;
+  while (loops < 2) {
+    const candidates = redeemCandidatesForPlayer(player);
+    if (!candidates.length) break;
+    const decision = aiPolicyEngine()?.decideRedeemCandidate
+      ? aiPolicyEngine().decideRedeemCandidate({
+          player,
+          candidates,
+          context: aiDecisionContext(player, { reason: 'auto_redeem' }),
+        })
+      : null;
+    if (!(decision?.shouldRedeem) || !decision?.candidate) break;
+    if (!performRedeemCandidate(player, decision.candidate)) break;
+    redeemedAny = true;
+    loops += 1;
+  }
+  return redeemedAny;
 }
 
 function releaseCouponsOnBankruptcy(player) {
@@ -2277,10 +2879,19 @@ async function ensurePlayerLiquidity(player, amount, { reason = 'pagamento obrig
     return promptHumanMortgageForLiquidity(player, due, { reason, creditor });
   }
 
-  const candidates = mortgageCandidatesForPlayer(player);
-  for (const candidate of candidates) {
-    if (player.cash >= due) break;
-    performMortgageCandidate(player, candidate, reason);
+  while (player.cash < due) {
+    const candidates = mortgageCandidatesForPlayer(player);
+    if (!candidates.length) break;
+    const decision = aiPolicyEngine()?.decideMortgageCandidate
+      ? aiPolicyEngine().decideMortgageCandidate({
+          player,
+          candidates,
+          due,
+          context: aiDecisionContext(player, { reason: 'auto_mortgage' }),
+        })
+      : null;
+    const candidate = decision?.candidate || candidates[0];
+    if (!candidate || !performMortgageCandidate(player, candidate, reason)) break;
   }
   if (player.cash >= due) return true;
   bankruptPlayer(player, { creditor, reason, detail: `faltavam ${formatCurrency(Math.max(0, due - player.cash))}` });
@@ -2386,6 +2997,208 @@ function stopChargeBreakdown(player, card) {
     mortgaged: isPropertyMortgaged(card?.code || ''),
   };
 }
+
+function playerRegionPortCount(player, continent) {
+  if (!player || player.bankrupt || !continent) return 0;
+  return regionPortCards(continent)
+    .filter((card) => player.property_codes?.includes(card.code) && !isPropertyMortgaged(card.code))
+    .length;
+}
+
+
+function buildAiBankPurchaseSignals(player, card, { reason = 'property_purchase' } = {}) {
+  const propertyKind = card?.kind || 'port';
+  const regionSize = propertyKind === 'port' ? (regionPortCards(card?.continent || '').length || 0) : 0;
+  const regionOwned = regionSize ? playerRegionPortCount(player, card?.continent || '') : 0;
+  const { fee, multiplier } = getPropertyStopRate(player, card);
+  return {
+    propertyKind,
+    propertyCode: card?.code || '',
+    propertyContinent: card?.continent || '',
+    regionSize,
+    regionOwnedRatio: regionSize ? (regionOwned / regionSize) : 0,
+    wouldCompleteMonopoly: Boolean(propertyKind === 'port' && regionSize && regionOwned + 1 >= regionSize),
+    rateFee: fee,
+    rateMultiplier: multiplier,
+    freightPotential: fee * Math.max(1, multiplier),
+    mortgageFloor: propertyMortgageCredit(card),
+    portsOwned: Math.max(0, Number(player?.ports_owned || 0)),
+    tollsOwned: Math.max(0, Number(player?.tolls_owned || 0)),
+    permissionCount: availablePermissionRecords(player).length,
+    availablePermissionCount: availablePermissionCardsForPlayer(player, { excludeOwned: true }).length,
+    reason,
+  };
+}
+
+function buildAiPermissionSignals(player, availableCards = [], extraCost = 0, { reason = 'extra_permission_after_delivery' } = {}) {
+  const livePermissions = availablePermissionRecords(player);
+  const ownedPortCards = (player?.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card?.kind === 'port' && !isPropertyMortgaged(card.code));
+  let bestCurrentFreight = 0;
+  let bestNewPermissionFreight = 0;
+
+  ownedPortCards.forEach((card) => {
+    livePermissions.forEach((permission) => {
+      const row = getRate(card, permission.kind || permission.id) || { fee: 0, multiplier: 1 };
+      bestCurrentFreight = Math.max(bestCurrentFreight, Number(row.fee || 0) * Math.max(1, Number(row.multiplier || 1)));
+    });
+    availableCards.forEach((permissionCard) => {
+      const row = getRate(card, permissionCard.kind || permissionCard.id) || { fee: 0, multiplier: 1 };
+      bestNewPermissionFreight = Math.max(bestNewPermissionFreight, Number(row.fee || 0) * Math.max(1, Number(row.multiplier || 1)));
+    });
+  });
+
+  return {
+    ownedPortCount: Math.max(0, Number(player?.ports_owned || 0)),
+    ownedTollCount: Math.max(0, Number(player?.tolls_owned || 0)),
+    permissionCount: livePermissions.length,
+    availableCount: availableCards.length,
+    extraCost,
+    bestCurrentFreight,
+    bestNewPermissionFreight,
+    reason,
+  };
+}
+
+function buildAiNegotiationSignals(buyer, seller, card, { reason = 'owned_property_negotiation', stop = null, listPrice = 0 } = {}) {
+  const propertyKind = card?.kind || 'port';
+  const regionSize = propertyKind === 'port' ? (regionPortCards(card?.continent || '').length || 0) : 0;
+  const buyerRegionOwned = regionSize ? playerRegionPortCount(buyer, card?.continent || '') : 0;
+  const sellerRegionOwned = regionSize ? playerRegionPortCount(seller, card?.continent || '') : 0;
+  const { fee, multiplier } = getPropertyStopRate(buyer, card);
+  return {
+    propertyKind,
+    propertyCode: card?.code || '',
+    propertyContinent: card?.continent || '',
+    listPrice,
+    ownerCharge: stop?.ownerCharge || 0,
+    bankFee: stop?.bankFee || 0,
+    rateFee: fee,
+    rateMultiplier: multiplier,
+    freightPotential: fee * Math.max(1, multiplier),
+    mortgageFloor: propertyMortgageCredit(card),
+    regionSize,
+    buyerRegionBeforeRatio: regionSize ? (buyerRegionOwned / regionSize) : 0,
+    buyerRegionAfterRatio: regionSize ? (Math.min(regionSize, buyerRegionOwned + 1) / regionSize) : 0,
+    sellerRegionBeforeRatio: regionSize ? (sellerRegionOwned / regionSize) : 0,
+    sellerRegionAfterRatio: regionSize ? (Math.max(0, sellerRegionOwned - 1) / regionSize) : 0,
+    buyerWouldCompleteMonopoly: Boolean(propertyKind === 'port' && regionSize && buyerRegionOwned + 1 >= regionSize),
+    sellerWouldLoseMonopoly: Boolean(propertyKind === 'port' && regionSize && sellerRegionOwned >= regionSize),
+    buyerPortsOwned: buyer?.ports_owned || 0,
+    buyerTollsOwned: buyer?.tolls_owned || 0,
+    sellerPortsOwned: seller?.ports_owned || 0,
+    sellerTollsOwned: seller?.tolls_owned || 0,
+    reason,
+  };
+}
+
+function logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction = 'Vendeu porto' } = {}) {
+  if (!buyer || !seller || !card || !decision) return;
+  const opening = (decision.transcript || []).find((entry) => entry.phase === 'opening_offer' && entry.amount > 0);
+  const counter = (decision.transcript || []).find((entry) => entry.phase === 'counter_offer' && entry.amount > 0);
+
+  if (decision.mode === 'dynamic') {
+    if (opening?.amount) {
+      pushActionLog(buyer, 'Oferta enviada', `${card.code} para ${seller.name}: ${formatCurrency(opening.amount)}.`);
+    }
+    if (counter?.amount) {
+      pushActionLog(seller, 'Contraoferta', `${card.code} para ${buyer.name}: ${formatCurrency(counter.amount)}.`);
+    }
+    if (!decision.accepted) {
+      const rejectionDetail = decision.rejectionReason === 'no_overlap'
+        ? `sem faixa em comum. Maximo ${formatCurrency(decision.buyerMax || 0)}.`
+        : decision.rejectionReason === 'spread_too_small'
+          ? `sem margem para fechar ${card.code}.`
+          : `sem caixa suficiente para fechar ${card.code}.`;
+      pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: ${rejectionDetail}`);
+      pushActionLog(seller, 'Negociacao recusada', `${card.code} ficou com ${seller.name}. Minimo ${formatCurrency(decision.sellerMin || 0)}.`);
+      return;
+    }
+  }
+
+  if (decision.accepted) {
+    const detailSuffix = opening?.amount && counter?.amount
+      ? ` Oferta ${formatCurrency(opening.amount)} | contraoferta ${formatCurrency(counter.amount)}.`
+      : '';
+    pushActionLog(buyer, 'Negociacao aceita', `${card.code} por ${formatCurrency(decision.finalPrice || 0)}.${detailSuffix}`.trim());
+    pushActionLog(seller, saleAction, `${card.code} por ${formatCurrency(decision.finalPrice || 0)} para ${buyer.name}.`);
+  }
+}
+
+function executeCpuOwnedPropertyNegotiation(buyer, seller, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+} = {}) {
+  if (!buyer || !seller || !card || buyer.bankrupt || seller.bankrupt || seller.id === buyer.id) {
+    return { accepted: false, finalPrice: 0, decision: null, statusLabel: buyer?.status_label || '--' };
+  }
+
+  const signals = buildAiNegotiationSignals(buyer, seller, card, { reason, stop, listPrice });
+  const legacyFallbackAccepted = cpuShouldNegotiateOwnedProperty(buyer, listPrice, seller, card);
+  const decision = aiPolicyEngine()?.decideOwnedPropertyNegotiation
+    ? aiPolicyEngine().decideOwnedPropertyNegotiation({
+        player: buyer,
+        owner: seller,
+        card,
+        price: listPrice,
+        context: aiDecisionContext(buyer, {
+          reason,
+          negotiationSignals: signals,
+        }),
+      })
+    : {
+        accepted: legacyFallbackAccepted,
+        shouldBuy: legacyFallbackAccepted,
+        finalPrice: listPrice,
+        mode: 'legacy',
+        transcript: [],
+      };
+
+  if (!decision?.accepted || !(decision.finalPrice > 0)) {
+    if (decision?.mode === 'dynamic') {
+      logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction });
+      renderHud();
+    }
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision,
+      statusLabel: buyer.status_label || '--',
+    };
+  }
+
+  const finalPrice = Math.round(Number(decision.finalPrice || 0));
+  if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+    if (decision?.mode === 'dynamic') {
+      pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: nao conseguiu fechar por ${formatCurrency(finalPrice)}.`);
+      pushActionLog(seller, 'Negociacao recusada', `${card.code} permaneceu com ${seller.name}.`);
+      renderHud();
+    }
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision,
+      statusLabel: buyer.status_label || '--',
+    };
+  }
+
+  buyer.status_label = `comprou ${card.code}`;
+  logCpuNegotiationTranscript(buyer, seller, card, {
+    ...decision,
+    accepted: true,
+    finalPrice,
+  }, { saleAction });
+  renderHud();
+  return {
+    accepted: true,
+    finalPrice,
+    decision,
+    statusLabel: buyer.status_label,
+  };
+}
 // ===== Advanced Economy Integration END =====
 
 function getRate(card, shipType) {
@@ -2445,13 +3258,13 @@ function permissionMiniMarkup(permission) {
   const mortgaged = Boolean(permission?.mortgaged);
   return `
     <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-permission-mini-head">${permission.title}</header>
       <div class="preview-permission-mini-row top">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
       </div>
-      <div class="preview-permission-mini-body">${mortgaged ? 'Hipotecada' : 'Permissao'}</div>
+      <div class="preview-permission-mini-body">Permissao</div>
       <div class="preview-permission-mini-row bottom">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
@@ -2479,7 +3292,7 @@ function propertyMiniMarkup(card) {
   const mortgaged = Boolean(card?.mortgaged);
   return `
     <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}${mortgaged ? ' is-mortgaged' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-property-mini-head${tollHeadClass}">
         ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
@@ -2594,10 +3407,32 @@ function readableTextColor(backgroundHex, light = '#edf6ff', dark = '#06111a') {
   return luminance >= 0.62 ? dark : light;
 }
 
+const REGION_LABELS = {
+  AF: 'Africa',
+  AS: 'Asia',
+  EU: 'Europa',
+  NA: 'America do Norte',
+  OC: 'Oceania',
+  OM: 'Oriente Medio',
+  SA: 'America do Sul',
+};
+
+function monopolyRegionStyle(regionCode) {
+  const card = regionPortCards(regionCode)?.[0] || null;
+  const background = card?.fill || '#8fd7ff';
+  const text = card?.text || readableTextColor(background);
+  return { background, text };
+}
+
+function monopolyRegionLabel(regionCode) {
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  return REGION_LABELS[normalized] || normalized;
+}
+
 function monopolyChipMarkup(player, regionCode) {
-  const background = player?.color_hex || '#8fd7ff';
-  const text = readableTextColor(background);
-  return `<span class="preview-monopoly-chip" style="background:${background}; color:${text}; border-color:${background};">${regionCode}</span>`;
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  const style = monopolyRegionStyle(normalized);
+  return `<span class="preview-monopoly-chip" style="background:${style.background}; color:${style.text}; border-color:${style.background};">${monopolyRegionLabel(normalized)}</span>`;
 }
 
 function contractDeadlineTone(contract) {
@@ -2629,6 +3464,11 @@ function playerCashFlashMarkup(player) {
   const elapsedMs = Math.max(0, Math.min(PLAYER_CASH_FLASH_ANIMATION_MS, PLAYER_CASH_FLASH_ANIMATION_MS - remainingMs));
   const style = `animation-delay:-${elapsedMs}ms; animation-duration:${PLAYER_CASH_FLASH_ANIMATION_MS}ms;`;
   return `<span class="preview-rival-cash-flash ${value > 0 ? 'is-positive' : 'is-negative'}" style="${style}">${formatSignedCurrency(value)}</span>`;
+}
+
+function playerProfileBadgeMarkup(player) {
+  if (!player || player.is_human || !player.ai_profile_label) return '';
+  return `<span class="preview-rival-profile">${player.ai_profile_label}</span>`;
 }
 
 function playerActionLogMarkup(player) {
@@ -2946,7 +3786,10 @@ function renderRivals({ force = false } = {}) {
       ${playerActionLogMarkup(player)}
       <div class="preview-rival-top">
         <span class="preview-rival-dot" style="background:${player.color_hex}"></span>
-        <strong>${isHuman ? player.name : `&#129302; ${player.name}`}${player.bankrupt ? ' (falido)' : ''}</strong>
+        <div class="preview-rival-name-stack">
+          <strong>${isHuman ? player.name : `&#129302; ${player.name}`}${player.bankrupt ? ' (falido)' : ''}</strong>
+          ${playerProfileBadgeMarkup(player)}
+        </div>
         <span class="preview-rival-cash-wrap">${playerCashFlashMarkup(player)}<span class="preview-rival-cash">${player.cash_display}</span></span>
       </div>
       ${contractSummaryMarkup(player, contract)}
@@ -3725,6 +4568,10 @@ async function maybeUseShortcutIgnoreTollCoupon(player) {
     secondaryLabel: 'Manter rota',
     detail: `Dispensou a passagem obrigatoria por ${contract.mandatory_toll}.`,
     statusLabel: 'atalho ativado',
+    couponSignals: {
+      mandatoryToll: true,
+      tollCode: contract.mandatory_toll,
+    },
   });
   if (!spent) return null;
 
@@ -3764,6 +4611,22 @@ async function maybeUseRerouteCoupon(player) {
       }
     }
   } else {
+    const couponDecision = aiPolicyEngine()?.decideCouponUsage
+      ? aiPolicyEngine().decideCouponUsage({
+          player,
+          kind: 'reroute_same_value',
+          autoUse: true,
+          context: aiDecisionContext(player, {
+            reason: 'coupon_usage',
+            couponSignals: {
+              candidateCount: candidates.length,
+            },
+          }),
+        })
+      : null;
+    if (!(couponDecision ? couponDecision.shouldUse : true)) {
+      return null;
+    }
     [selected] = candidates;
   }
 
@@ -3896,7 +4759,7 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
   }
 
   if (!owner) {
-    if (cpuShouldBuyOrigin(player, card) && buyProperty(player, card.code)) {
+    if (cpuShouldBuyOrigin(player, card, 'post_delivery_port_purchase') && buyProperty(player, card.code)) {
       pushActionLog(player, 'Porto comprado no destino', `${card.code} por ${formatCurrency(card.price)}.`);
       renderHud();
       return true;
@@ -3904,11 +4767,15 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
     return false;
   }
 
-  if (owner.id !== player.id && cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card) && transferProperty(owner, player, card.code, negotiationPrice)) {
-    pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-    pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-    renderHud();
-    return true;
+  if (owner.id !== player.id) {
+    const negotiation = executeCpuOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'post_delivery_port_negotiation',
+      saleAction: 'Vendeu porto',
+    });
+    if (negotiation.accepted) {
+      return true;
+    }
   }
   return false;
 }
@@ -3967,6 +4834,9 @@ async function maybeHandleExtraPermissionAfterDelivery(player) {
         availableCount: availablePermissionCards.length,
         context: aiDecisionContext(player, {
           reason: 'extra_permission_after_delivery',
+          permissionSignals: buildAiPermissionSignals(player, availablePermissionCards, extraCost, {
+            reason: 'extra_permission_after_delivery',
+          }),
         }),
       })
     : null;
@@ -4030,6 +4900,8 @@ async function runPostContractForPlayer(player, {
     await maybeHandleCurrentPortAfterDelivery(player);
     await delay(preparationDelayFor(player, false));
     await maybeHandleExtraPermissionAfterDelivery(player);
+    await delay(preparationDelayFor(player, false));
+    await maybeAutoRedeemForRobot(player);
     await delay(preparationDelayFor(player, false));
 
     const contract = await runContractOpeningForPlayer(player, {
@@ -5720,7 +6592,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
 
   if (!owner) {
     if (!player.is_human) {
-      const shouldBuy = cpuShouldBuyOrigin(player, card);
+      const shouldBuy = cpuShouldBuyOrigin(player, card, 'stop_port_purchase');
       if (shouldBuy && buyProperty(player, card.code)) {
         player.status_label = `comprou ${card.code}`;
         pushActionLog(player, 'Porto comprado', `${card.code} por ${formatCurrency(card.price)}.`);
@@ -5843,15 +6715,16 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
-    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
-      player.status_label = `comprou ${card.code}`;
-      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-      renderHud();
+    const negotiation = executeCpuOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'stop_port_negotiation',
+      stop,
+      saleAction: 'Vendeu porto',
+    });
+    if (negotiation.accepted) {
       return {
-        note: `${playerActionName(player)} negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-        statusLabel: player.status_label,
+        note: `${playerActionName(player)} negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiation.finalPrice)}.`,
+        statusLabel: negotiation.statusLabel,
       };
     }
 
@@ -5955,7 +6828,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
 
   if (!owner) {
     if (!player.is_human) {
-      const shouldBuy = cpuShouldBuyOrigin(player, card);
+      const shouldBuy = cpuShouldBuyOrigin(player, card, 'stop_toll_purchase');
       if (shouldBuy && buyProperty(player, card.code)) {
         player.status_label = `comprou ${card.code}`;
         pushActionLog(player, 'Pedagio comprado', `${card.code} por ${formatCurrency(card.price)}.`);
@@ -6078,15 +6951,16 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
-    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
-      player.status_label = `comprou ${card.code}`;
-      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu pedagio', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-      renderHud();
+    const negotiation = executeCpuOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'stop_toll_negotiation',
+      stop,
+      saleAction: 'Vendeu pedagio',
+    });
+    if (negotiation.accepted) {
       return {
-        note: `${playerActionName(player)} negociou e comprou o pedagio ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-        statusLabel: player.status_label,
+        note: `${playerActionName(player)} negociou e comprou o pedagio ${card.code} de ${owner.name} por ${formatCurrency(negotiation.finalPrice)}.`,
+        statusLabel: negotiation.statusLabel,
       };
     }
 
@@ -6615,7 +7489,7 @@ function applyBootstrapPayload(payload) {
     permissions: (player.permissions || []).map((permission) => ({
       ...permission,
       purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
-      mortgaged: Boolean(permission.mortgaged),
+      mortgaged: false,
     })),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
@@ -6635,12 +7509,12 @@ function applyBootstrapPayload(payload) {
   }));
   state.players.forEach((player) => {
     syncActivePermissionAfterEconomyChange(player);
-    ensureAiProfile(player);
   });
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
   state.activeContract = payload.active_contract || null;
+  applyAiStageConfiguration(payload);
   state.view.openSystemDrawerId = null;
   state.view.humanDrawerOpen = true;
   state.view.actionFeedExpanded = false;
@@ -6665,6 +7539,10 @@ function setSetupOverlayVisible(visible) {
   const overlay = getSetupOverlay();
   if (!overlay) return;
   overlay.classList.toggle('is-hidden', !visible);
+  if (!visible) {
+    state.setup.aiEditorOpen = false;
+    setSetupAiEditorVisible(false);
+  }
 }
 
 function updateSetupStartButton() {
@@ -6705,21 +7583,416 @@ function renderSetupRivalCounts() {
     button.textContent = String(count);
     button.addEventListener('click', () => {
       state.setup.rivalCount = count;
+      pruneManualRobotProfiles(count);
+      state.setup.aiEditorRobotIndex = Math.min(state.setup.aiEditorRobotIndex || 0, Math.max(0, count - 1));
       renderSetupRivalCounts();
+      renderSetupAiProfileGrid();
+      if (state.setup.aiEditorOpen) renderSetupAiEditor();
       updateSetupStartButton();
     });
     target.appendChild(button);
   });
 }
 
+function renderSetupAiDifficulties() {
+  const target = byId('setup-ai-difficulties');
+  if (!target) return;
+  const disabled = Boolean(state.setup.aiAdvancedProfiles);
+  target.innerHTML = '';
+  AI_DIFFICULTY_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${state.setup.aiDifficulty === option.id ? ' is-active' : ''}`;
+    button.textContent = option.label;
+    button.disabled = disabled;
+    button.title = disabled ? 'Desative o modo detalhado para mexer neste controle rapido.' : `Dificuldade ${option.label}.`;
+    button.addEventListener('click', () => {
+      if (disabled) return;
+      state.setup.aiDifficulty = option.id;
+      renderSetupAiDifficulties();
+    });
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiProfileModes() {
+  const target = byId('setup-ai-profile-modes');
+  if (!target) return;
+  const disabled = Boolean(state.setup.aiAdvancedProfiles);
+  target.innerHTML = '';
+  AI_PROFILE_MODE_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${state.setup.aiProfileMode === option.id ? ' is-active' : ''}`;
+    button.textContent = option.label;
+    button.disabled = disabled;
+    button.title = disabled ? 'Desative o modo detalhado para mexer neste controle rapido.' : option.description;
+    button.addEventListener('click', () => {
+      if (disabled) return;
+      state.setup.aiProfileMode = option.id;
+      syncSetupProfileOrder(option.id);
+      renderSetupAiProfileModes();
+      renderSetupAiProfileGrid();
+      if (state.setup.aiEditorOpen) renderSetupAiEditor();
+    });
+    target.appendChild(button);
+  });
+}
+
+function setSetupAiEditorVisible(visible) {
+  const overlay = getSetupAiEditorOverlay?.() || byId('setup-ai-editor-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function activeSetupEditorRobotIndex() {
+  const slotCount = setupRobotSlotCount();
+  if (!slotCount) return 0;
+  return Math.min(Math.max(0, Number(state.setup.aiEditorRobotIndex || 0)), slotCount - 1);
+}
+
+function setupRobotDisplayName(index = 0) {
+  return `Robo ${index + 1}`;
+}
+
+function aiMarketCaseOption(id = '') {
+  return AI_MARKET_CASE_OPTIONS.find((entry) => entry.id === id) || null;
+}
+
+function aiMarketCaseNegotiationValues(caseId = '') {
+  const option = aiMarketCaseOption(caseId);
+  if (!option) return null;
+  if (option.presetId) {
+    return cloneAiData(aiProfilesLib()?.negotiationPresets?.[option.presetId] || null);
+  }
+  return cloneAiData(option.values || null);
+}
+
+function formatAiSetupValue(field, value) {
+  const numericValue = Number(value || 0);
+  if ((field?.step || 0) >= 1) return String(Math.round(numericValue));
+  return numericValue.toFixed(2);
+}
+
+function updateSetupAiSliderFill(input, field, rawValue) {
+  if (!input || !field) return;
+  const min = Number(field.min || 0);
+  const max = Number(field.max || 0);
+  const value = Number(rawValue || 0);
+  const span = max - min;
+  const ratio = span > 0 ? (value - min) / span : 0;
+  const percent = Math.max(0, Math.min(1, ratio)) * 100;
+  input.style.setProperty('--setup-ai-fill', `${percent}%`);
+}
+
+function resolveSetupRobotConfig(index = 0) {
+  const stored = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[index], index);
+  if (stored) return stored;
+  return buildManualRobotConfig(defaultSetupArchetypeIdForSlot(index));
+}
+
+function robotProfileLabelForSetup(index = 0) {
+  const config = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[index], index);
+  const profile = aiArchetypeById(config?.archetypeId || defaultSetupArchetypeIdForSlot(index));
+  return profile?.label || 'Equilibrado';
+}
+
+function renderSetupAiEditorSummary(config, robotIndex) {
+  const target = byId('setup-ai-editor-summary');
+  const descriptionTarget = byId('setup-ai-editor-description');
+  const profile = aiArchetypeById(config?.archetypeId || defaultSetupArchetypeIdForSlot(robotIndex));
+  if (descriptionTarget) {
+    descriptionTarget.textContent = profile?.description || 'Ajuste fino completo do robo atual.';
+  }
+  if (!target) return;
+  const negotiation = config?.overrides?.negotiation || {};
+  const vision = config?.overrides?.vision || {};
+  const personality = config?.overrides?.personality || {};
+  const skill = config?.overrides?.skill || {};
+  target.innerHTML = `
+    <div class="setup-ai-editor-summary-row"><span>Perfil base</span><strong>${escapeHtml(profile?.label || 'Custom')}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Compra / venda</span><strong>${formatAiSetupValue({ step: 0.01 }, negotiation.buy_openness || 0)} / ${formatAiSetupValue({ step: 0.01 }, negotiation.sell_openness || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Portos / pedagios</span><strong>${formatAiSetupValue({ step: 0.01 }, vision.weight_port || 0)} / ${formatAiSetupValue({ step: 0.01 }, vision.weight_toll || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Reserva / risco</span><strong>${formatAiSetupValue({ step: 0.01 }, personality.cash_reserve_ratio || 0)} / ${formatAiSetupValue({ step: 0.01 }, personality.risk_tolerance || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Previsao / timing</span><strong>${formatAiSetupValue({ step: 0.01 }, skill.foresight || 0)} / ${formatAiSetupValue({ step: 0.01 }, skill.timing_quality || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Companhia</span><strong>${setupRobotDisplayName(robotIndex)}</strong></div>
+  `;
+}
+
+function updateSetupAiParameter(groupKey, fieldKey, rawValue) {
+  const robotIndex = activeSetupEditorRobotIndex();
+  const field = AI_PARAMETER_FIELD_MAP[`${groupKey}.${fieldKey}`];
+  if (!field) return;
+  const config = ensureSetupRobotConfig(robotIndex);
+  config.overrides[groupKey][fieldKey] = clampAiSetting(rawValue, field.min, field.max, field.step);
+  persistSetupRobotConfig(robotIndex, config);
+  renderSetupAiEditorSummary(config, robotIndex);
+  renderSetupAiProfileGrid();
+}
+
+function renderSetupAiParameterGrid() {
+  const target = byId('setup-ai-parameter-grid');
+  if (!target) return;
+  const robotIndex = activeSetupEditorRobotIndex();
+  const config = resolveSetupRobotConfig(robotIndex);
+  target.innerHTML = AI_PROFILE_PARAMETER_GROUPS.map((group) => `
+    <section class="setup-ai-parameter-card">
+      <div class="setup-ai-parameter-card-head">
+        <strong>${escapeHtml(group.label)}</strong>
+        <span>${escapeHtml(group.description)}</span>
+      </div>
+      <div class="setup-ai-parameter-list">
+        ${group.fields.map((field) => {
+          const value = Number(config?.overrides?.[group.key]?.[field.key] || 0);
+          const helpText = escapeHtml(AI_SETUP_FIELD_HELP[`${group.key}.${field.key}`] || group.description || '');
+          const listId = `setup-ai-ticks-${group.key}-${field.key}`;
+          const tickStep = (field.step || 0) >= 1 ? 1 : 0.1;
+          const tickValues = [];
+          for (let current = Number(field.min); current <= Number(field.max) + 1e-9; current += tickStep) {
+            tickValues.push((field.step || 0) >= 1 ? String(Math.round(current)) : Number(current.toFixed(1)).toFixed(1));
+          }
+          return `
+            <label class="setup-ai-slider-row">
+              <div class="setup-ai-slider-top">
+                <span class="setup-ai-slider-label">
+                  <span>${escapeHtml(field.label)}</span>
+                  <span class="setup-ai-inline-help" tabindex="0" data-help="${helpText}">?</span>
+                </span>
+                <strong data-setup-ai-slider-value="${group.key}.${field.key}">${formatAiSetupValue(field, value)}</strong>
+              </div>
+              <input
+                class="setup-ai-slider"
+                type="range"
+                min="${field.min}"
+                max="${field.max}"
+                step="${field.step}"
+                value="${value}"
+                list="${listId}"
+                data-setup-ai-group="${group.key}"
+                data-setup-ai-field="${field.key}"
+              />
+              <datalist id="${listId}">${tickValues.map((tick) => `<option value="${tick}"></option>`).join('')}</datalist>
+            </label>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  `).join('');
+
+  target.querySelectorAll('[data-setup-ai-group][data-setup-ai-field]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      const groupKey = String(event.currentTarget.dataset.setupAiGroup || '');
+      const fieldKey = String(event.currentTarget.dataset.setupAiField || '');
+      const field = AI_PARAMETER_FIELD_MAP[`${groupKey}.${fieldKey}`];
+      if (!field) return;
+      const value = clampAiSetting(event.currentTarget.value, field.min, field.max, field.step);
+      event.currentTarget.value = value;
+      const label = target.querySelector(`[data-setup-ai-slider-value="${groupKey}.${fieldKey}"]`);
+      if (label) label.textContent = formatAiSetupValue(field, value);
+      updateSetupAiSliderFill(event.currentTarget, field, value);
+      updateSetupAiParameter(groupKey, fieldKey, value);
+    });
+    const field = AI_PARAMETER_FIELD_MAP[`${input.dataset.setupAiGroup || ''}.${input.dataset.setupAiField || ''}`];
+    if (field) updateSetupAiSliderFill(input, field, input.value);
+  });
+}
+
+function applySetupAiPreset(archetypeId = '') {
+  const robotIndex = activeSetupEditorRobotIndex();
+  if (!archetypeId) {
+    resetSetupRobotConfig(robotIndex);
+    renderSetupAiProfileGrid();
+    renderSetupAiEditor();
+    return;
+  }
+  state.setup.aiAdvancedProfiles = true;
+  persistSetupRobotConfig(robotIndex, buildManualRobotConfig(archetypeId));
+  renderSetupAiProfileGrid();
+  renderSetupAiEditor();
+}
+
+function applySetupAiMarketCase(caseId = '') {
+  const values = aiMarketCaseNegotiationValues(caseId);
+  if (!values) return;
+  state.setup.aiAdvancedProfiles = true;
+  for (let index = 0; index < setupRobotSlotCount(); index += 1) {
+    const config = ensureSetupRobotConfig(index);
+    config.overrides.negotiation = {
+      ...(config.overrides.negotiation || {}),
+      ...cloneAiData(values),
+    };
+    persistSetupRobotConfig(index, config);
+  }
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiEditor();
+}
+
+function renderSetupAiMarketCases() {
+  const target = byId('setup-ai-market-cases');
+  if (!target) return;
+  target.innerHTML = '';
+  AI_MARKET_CASE_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'setup-ai-preset-button setup-ai-market-button';
+    button.setAttribute('aria-label', `${option.label}: ${option.description}`);
+    button.innerHTML = `<span class="setup-ai-button-label">${escapeHtml(option.label)}</span><span class="setup-ai-button-help" aria-hidden="true" data-help="${escapeHtml(option.description || option.label)}">?</span>`;
+    button.addEventListener('click', () => applySetupAiMarketCase(option.id));
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiRobotTabs() {
+  const target = byId('setup-ai-robot-tabs');
+  if (!target) return;
+  const slotCount = setupRobotSlotCount();
+  const activeIndex = activeSetupEditorRobotIndex();
+  target.innerHTML = '';
+  for (let index = 0; index < slotCount; index += 1) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${activeIndex === index ? ' is-active' : ''}`;
+    button.textContent = String(index + 1);
+    button.title = `${setupRobotDisplayName(index)} - ${robotProfileLabelForSetup(index)}`;
+    button.addEventListener('click', () => {
+      state.setup.aiEditorRobotIndex = index;
+      renderSetupAiEditor();
+    });
+    target.appendChild(button);
+  }
+}
+
+function renderSetupAiPresetButtons() {
+  const target = byId('setup-ai-preset-buttons');
+  if (!target) return;
+  const robotIndex = activeSetupEditorRobotIndex();
+  const activeConfig = resolveSetupRobotConfig(robotIndex);
+  const options = aiArchetypeSetupOptions();
+  target.innerHTML = '';
+  options.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `setup-ai-preset-button${activeConfig.archetypeId === option.id ? ' is-active' : ''}`;
+    button.dataset.setupAiPreset = option.id;
+    button.setAttribute('aria-label', `${option.label}: ${option.description || option.label}`);
+    button.innerHTML = `<span class="setup-ai-button-label">${escapeHtml(option.label)}</span><span class="setup-ai-button-help" aria-hidden="true" data-help="${escapeHtml(option.description || option.label)}">?</span>`;
+    button.addEventListener('click', () => applySetupAiPreset(option.id));
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiEditor() {
+  if (!state.setup.aiEditorOpen) return;
+  const slotCount = setupRobotSlotCount();
+  if (!slotCount) {
+    closeSetupAiEditor();
+    return;
+  }
+  state.setup.aiEditorRobotIndex = activeSetupEditorRobotIndex();
+  setSetupAiEditorVisible(true);
+  renderSetupAiMarketCases();
+  renderSetupAiRobotTabs();
+  renderSetupAiPresetButtons();
+  const config = resolveSetupRobotConfig(state.setup.aiEditorRobotIndex);
+  renderSetupAiEditorSummary(config, state.setup.aiEditorRobotIndex);
+  renderSetupAiParameterGrid();
+}
+
+function openSetupAiEditor(robotIndex = 0) {
+  if (!setupRobotSlotCount()) return;
+  state.setup.aiAdvancedProfiles = true;
+  state.setup.aiEditorOpen = true;
+  state.setup.aiEditorRobotIndex = Math.max(0, Math.min(robotIndex, setupRobotSlotCount() - 1));
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiModeVisibility();
+  renderSetupAiEditor();
+}
+
+function deactivateSetupAiAdvanced() {
+  state.setup.aiAdvancedProfiles = false;
+  state.setup.aiEditorOpen = false;
+  setSetupAiEditorVisible(false);
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiModeVisibility();
+}
+
+function closeSetupAiEditor() {
+  state.setup.aiEditorOpen = false;
+  setSetupAiEditorVisible(false);
+}
+
+function renderSetupAiModeVisibility() {
+  const advancedEnabled = Boolean(state.setup.aiAdvancedProfiles);
+  const difficultyField = byId('setup-ai-difficulty-field');
+  const profileField = byId('setup-ai-profile-mode-field');
+  difficultyField?.classList.toggle('is-disabled', advancedEnabled);
+  profileField?.classList.toggle('is-disabled', advancedEnabled);
+  difficultyField?.setAttribute('aria-disabled', advancedEnabled ? 'true' : 'false');
+  profileField?.setAttribute('aria-disabled', advancedEnabled ? 'true' : 'false');
+  renderSetupAiDifficulties();
+  renderSetupAiProfileModes();
+}
+
+function renderSetupAiAdvancedToggle() {
+  const target = byId('setup-ai-advanced-toggle');
+  if (!target) return;
+  target.innerHTML = `
+    <label class="settings-choice" data-setup-ai-mode="basic">
+      <input id="setup-ai-mode-basic" type="radio" name="setup-ai-mode" value="basic" ${state.setup.aiAdvancedProfiles ? '' : 'checked'} />
+      <span>Basico</span>
+    </label>
+    <label class="settings-choice" data-setup-ai-mode="advanced">
+      <input id="setup-ai-mode-advanced" type="radio" name="setup-ai-mode" value="advanced" ${state.setup.aiAdvancedProfiles ? 'checked' : ''} />
+      <span>Detalhado</span>
+    </label>
+  `;
+  target.querySelector('#setup-ai-mode-basic')?.addEventListener('change', () => {
+    if (!state.setup.aiAdvancedProfiles) return;
+    deactivateSetupAiAdvanced();
+  });
+  target.querySelector('#setup-ai-mode-advanced')?.addEventListener('change', () => {
+    openSetupAiEditor(activeSetupEditorRobotIndex());
+  });
+  target.querySelector('[data-setup-ai-mode="advanced"]')?.addEventListener('click', () => {
+    if (state.setup.aiAdvancedProfiles && !state.setup.aiEditorOpen) {
+      openSetupAiEditor(activeSetupEditorRobotIndex());
+    }
+  });
+  renderSetupAiModeVisibility();
+}
+
+function renderSetupAiProfileGrid() {
+  const target = byId('setup-ai-profile-grid');
+  if (!target) return;
+  target.classList.add('is-hidden');
+  target.innerHTML = '';
+}
+
+
 function populateSetupFromPayload(payload) {
-  const defaults = payload.setup_defaults || {};
+  const defaults = buildAiSetupDefaults(payload.setup_defaults || {});
   state.setup.companyName = '';
   state.setup.selectedColorId = '';
   state.setup.rivalCount = defaults.robot_count || defaults.rival_count || 6;
+  state.setup.aiDifficulty = defaults.ai_difficulty || 'normal';
+  state.setup.aiProfileMode = normalizeAiProfileModeId(defaults.ai_profile_mode || 'balanced');
+  state.setup.aiProfileOrder = buildSetupProfileOrder(state.setup.aiProfileMode, defaults.ai_profile_order || []);
+  state.setup.aiAdvancedProfiles = Boolean(defaults.ai_advanced_profiles);
+  state.setup.manualRobotProfiles = normalizeManualRobotProfiles(defaults.ai_manual_profiles || {}, state.setup.rivalCount);
+  state.setup.manualRobotConfigs = normalizeManualRobotConfigs(defaults.ai_manual_robot_configs || {}, state.setup.rivalCount);
+  state.setup.aiEditorOpen = false;
+  state.setup.aiEditorRobotIndex = 0;
   state.setup.submitting = false;
 
   renderSetupRivalCounts();
+  renderSetupAiDifficulties();
+  renderSetupAiProfileModes();
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
   updateSetupStartButton();
 }
 
@@ -6730,7 +8003,10 @@ function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'prope
       player,
       card,
       price,
-      context: aiDecisionContext(player, { reason }),
+      context: aiDecisionContext(player, {
+        reason,
+        purchaseSignals: card ? buildAiBankPurchaseSignals(player, card, { reason }) : { reason },
+      }),
     });
     return Boolean(decision?.shouldBuy);
   }
@@ -6743,9 +8019,9 @@ function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'prope
   return player.cash >= normalizedPrice;
 }
 
-function cpuShouldBuyOrigin(player, card) {
+function cpuShouldBuyOrigin(player, card, reason = 'origin_purchase') {
   if (!card) return false;
-  return cpuShouldBuyPropertyAtPrice(player, card.price, card, 'origin_purchase');
+  return cpuShouldBuyPropertyAtPrice(player, card.price, card, reason);
 }
 
 function cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner = null, card = null) {
@@ -6776,7 +8052,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
   if (!needsPermission && !activePermissionRecord(player)) {
     player.status_label = 'sem permissao ativa';
     pushActionLog(player, 'Sem permissao ativa', player.is_human
-      ? 'Resgate uma permissao hipotecada antes de abrir novo contrato.'
+      ? 'Voce nao tem permissao disponivel para abrir novo contrato.'
       : `${player.name} nao tem permissao disponivel para novo contrato.`);
     renderHud();
     return null;
@@ -6824,7 +8100,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
       originResult = { bought: Boolean(player.property_codes?.includes(player.location_code || '')), note: ensurePlayerContractDraft(player)?.note || '' };
     } else {
       const originCard = randomChoice(state.portCards);
-      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard);
+      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard, 'origin_purchase');
       originResult = applyOriginSelectionForPlayer(player, originCard, shouldBuyOrigin, {
         updateSession: true,
         actionLabel: `${player.name}: porto inicial`,
@@ -7059,11 +8335,22 @@ async function submitSetupSelection(event) {
       }),
     });
 
+    payload.setup_defaults = buildAiSetupDefaults(payload.setup_defaults || {}, {
+      ai_difficulty: state.setup.aiDifficulty,
+      ai_profile_mode: state.setup.aiProfileMode,
+      ai_profile_order: state.setup.aiProfileOrder,
+      ai_advanced_profiles: state.setup.aiAdvancedProfiles,
+      ai_manual_profiles: state.setup.aiAdvancedProfiles
+        ? serializeManualRobotProfiles(state.setup.manualRobotProfiles, state.setup.rivalCount)
+        : [],
+      ai_manual_robot_configs: state.setup.aiAdvancedProfiles
+        ? serializeManualRobotConfigs(state.setup.manualRobotConfigs, state.setup.rivalCount)
+        : [],
+    });
     applyBootstrapPayload(payload);
     state.setup.started = true;
     setSetupOverlayVisible(false);
     await renderMap();
-    await delay(currentCpuRevealDelay(PREP_STEP_DELAY_MS));
     await runCpuOpeningRound();
     state.setup.submitting = false;
     updateSetupStartButton();
@@ -7083,6 +8370,7 @@ async function bootstrap() {
     fetchJson('/api/robots-ai/bootstrap'),
   ]);
 
+  uiPayload.setup_defaults = buildAiSetupDefaults(uiPayload.setup_defaults || {});
   applyMapPayload(mapPayload);
   applyBootstrapPayload(uiPayload);
   populateSetupFromPayload(uiPayload);
@@ -7113,6 +8401,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (active?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
     if (event.code === 'Escape' && !event.repeat) {
+      if (!getSetupAiEditorOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeSetupAiEditor();
+        return;
+      }
       if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
         event.preventDefault();
         closeSettingsOverlay();
@@ -7154,6 +8447,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();
+  });
+  byId('setup-ai-editor-close-button')?.addEventListener('click', () => {
+    closeSetupAiEditor();
+  });
+  byId('setup-ai-editor-disable-button')?.addEventListener('click', () => {
+    deactivateSetupAiAdvanced();
+  });
+  getSetupAiEditorOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getSetupAiEditorOverlay()) {
+      closeSetupAiEditor();
+    }
   });
   byId('log-close-button')?.addEventListener('click', () => {
     closeLogOverlay();

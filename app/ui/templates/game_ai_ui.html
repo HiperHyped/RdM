@@ -3,6 +3,1012 @@
 {% block head_extra %}
 <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+<style>
+  .report-body {
+    overflow: auto;
+  }
+
+  .report-metric-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .report-metric-card {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .report-metric-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .report-metric-card-head strong {
+    color: #edf6ff;
+    font-size: 0.88rem;
+    font-weight: 800;
+  }
+
+  .report-metric-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+  }
+
+  .report-heatmap-shell {
+    border-radius: 16px;
+    background: rgba(5, 18, 31, 0.28);
+    overflow: hidden;
+  }
+
+  .report-heatmap {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-heatmap-divider {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-heatmap-row-label {
+    fill: #edf6ff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .report-heatmap-xlabel {
+    fill: rgba(214, 229, 245, 0.72);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .report-heatmap-cell {
+    stroke: rgba(5, 18, 31, 0.52);
+    stroke-width: 1;
+  }
+
+  .report-heatmap-value {
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .report-metric-number {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .report-holdings-grid {
+    gap: 16px;
+  }
+
+  .report-trend-card {
+    gap: 12px;
+  }
+
+  .report-step-chart-shell {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(5, 18, 31, 0.28);
+    overflow: hidden;
+  }
+
+  .report-legend-compact {
+    gap: 8px;
+  }
+
+  .report-legend-value {
+    margin-left: auto;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf6ff;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .report-step-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-step-grid-line {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-step-axis-label,
+  .report-step-xlabel {
+    fill: rgba(214, 229, 245, 0.72);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .report-step-series-line {
+    fill: none;
+    stroke-width: 3.25;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.22));
+  }
+
+
+  .report-count-spark-shell {
+    display: grid;
+    gap: 12px;
+  }
+
+  .report-count-scale-note {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .report-player-spark-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+  }
+
+  .report-player-spark-card {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+    background: rgba(5, 18, 31, 0.28);
+  }
+
+  .report-player-spark-head,
+  .report-player-spark-foot,
+  .report-player-spark-badges {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .report-player-spark-badges {
+    justify-content: flex-end;
+  }
+
+  .report-player-spark-value,
+  .report-player-spark-delta {
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .report-player-spark-value {
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf6ff;
+  }
+
+  .report-player-spark-delta {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(214, 229, 245, 0.76);
+  }
+
+  .report-player-spark-delta.is-positive {
+    color: #75e693;
+  }
+
+  .report-player-spark-delta.is-negative {
+    color: #ff8b88;
+  }
+
+  .report-player-spark-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-player-spark-gridline {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-player-spark-area {
+    opacity: 0.18;
+  }
+
+  .report-player-spark-line {
+    fill: none;
+    stroke-width: 3.1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.24));
+  }
+
+  .report-player-spark-foot {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.67rem;
+    font-weight: 700;
+  }
+
+  .negotiation-modal {
+    width: min(640px, calc(100vw - 48px));
+    display: grid;
+    gap: 14px;
+  }
+
+  .negotiation-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .negotiation-head h2 {
+    margin: 0;
+  }
+
+  .negotiation-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .negotiation-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .negotiation-card-stage {
+    display: grid;
+    justify-content: center;
+    min-height: 288px;
+  }
+
+  .negotiation-card-stage.is-hidden {
+    display: none;
+  }
+
+  .negotiation-status {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .negotiation-status-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8fd7ff;
+  }
+
+  .negotiation-status-copy {
+    margin: 0;
+    color: #f5fbff;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .negotiation-counter-row {
+    display: grid;
+    gap: 8px;
+  }
+
+  .negotiation-counter-row label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #dfefff;
+  }
+
+  .negotiation-counter-input {
+    min-height: 42px;
+    width: 100%;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .negotiation-helper {
+    margin: 0;
+  }
+
+  .negotiation-helper.is-error {
+    color: #ffb5b5;
+  }
+
+
+  .preview-rival-name-stack {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .preview-rival-profile {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(143, 215, 255, 0.2);
+    background: rgba(143, 215, 255, 0.12);
+    color: #d9f2ff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .setup-advanced-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .setup-advanced-grid.is-hidden {
+    display: none;
+  }
+
+  .game-setup-field.is-hidden {
+    display: none;
+  }
+
+  .setup-advanced-card {
+    display: grid;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-advanced-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .setup-advanced-card-head strong {
+    color: #edf6ff;
+    font-size: 0.92rem;
+    font-weight: 800;
+  }
+
+  .setup-advanced-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .setup-advanced-select {
+    min-height: 42px;
+    width: 100%;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .setup-advanced-hint {
+    margin: 0;
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+
+  .setup-advanced-summary {
+    display: grid;
+    gap: 10px;
+  }
+
+  .setup-advanced-summary-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .setup-advanced-open {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(143, 215, 255, 0.24);
+    background: rgba(143, 215, 255, 0.12);
+    color: #e6f7ff;
+    font-size: 0.84rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .setup-advanced-open:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .setup-advanced-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .setup-advanced-summary-card {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-advanced-summary-card strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .setup-advanced-summary-card span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-editor-modal {
+    width: min(1200px, calc(100vw - 32px));
+    max-width: 1200px;
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: grid;
+    gap: 14px;
+  }
+
+  #setup-ai-editor-overlay {
+    z-index: 24;
+  }
+
+  .setup-ai-editor-head-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .setup-ai-editor-toolbar {
+    display: grid;
+    gap: 14px;
+  }
+
+  .setup-ai-editor-toolbar-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 14px;
+  }
+
+  .setup-ai-editor-toolbar-block {
+    display: grid;
+    gap: 10px;
+  }
+
+  .setup-ai-toolbar-counts {
+    align-items: stretch;
+  }
+
+  .setup-ai-editor-main {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 14px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .setup-ai-editor-side {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .setup-ai-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .setup-ai-preset-button {
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(215, 230, 245, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #edf6ff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .setup-ai-preset-button.is-active {
+    border-color: rgba(143, 215, 255, 0.26);
+    background: rgba(143, 215, 255, 0.16);
+    color: #ffffff;
+  }
+
+  .setup-ai-editor-summary {
+    display: grid;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-ai-editor-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: rgba(214, 229, 245, 0.78);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-editor-summary-row strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+  }
+
+  .setup-ai-parameter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-content: start;
+    overflow: hidden;
+  }
+
+  .setup-ai-parameter-card {
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-ai-parameter-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .setup-ai-parameter-card-head strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .setup-ai-parameter-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-parameter-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .setup-ai-slider-row {
+    display: grid;
+    gap: 4px;
+  }
+
+  .setup-ai-slider-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: rgba(214, 229, 245, 0.78);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-slider-top strong {
+    color: #edf6ff;
+    font-size: 0.76rem;
+  }
+
+  .setup-ai-slider {
+    width: 100%;
+    margin: 0;
+  }
+
+  @media (max-width: 1180px) {
+    .setup-ai-editor-toolbar-grid,
+    .setup-ai-editor-main,
+    .setup-ai-parameter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .setup-ai-editor-modal {
+      max-height: calc(100vh - 24px);
+    }
+  }
+
+  /* AI SETUP UI REFRESH */
+  .setup-ai-counts-five {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .setup-ai-mode-toggle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setup-ai-mode-note {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .game-setup-field.is-disabled {
+    opacity: 0.42;
+  }
+
+  .game-setup-field.is-disabled .game-setup-count,
+  .game-setup-field.is-disabled .settings-choice {
+    cursor: not-allowed;
+  }
+
+  .game-setup-field.is-disabled .settings-note {
+    color: rgba(214, 229, 245, 0.42);
+  }
+
+  .game-setup-count:disabled {
+    opacity: 0.46;
+    cursor: not-allowed;
+  }
+
+  .setup-ai-editor-modal {
+    width: min(1068px, calc(100vw - 14px));
+    max-width: 1068px;
+    height: min(780px, calc(100vh - 14px));
+    max-height: calc(100vh - 14px);
+    gap: 8px;
+    padding: 14px;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  .setup-ai-editor-heading {
+    margin: 0;
+    color: #f0b429;
+    font-size: 0.86rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .setup-ai-editor-head-actions {
+    gap: 8px;
+  }
+
+  .setup-ai-editor-layout {
+    display: grid;
+    grid-template-columns: 196px 836px;
+    grid-template-rows: auto 1fr;
+    gap: 8px;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    align-items: stretch;
+    justify-content: start;
+  }
+
+  .setup-ai-editor-column,
+  .setup-ai-editor-workspace {
+    min-height: 0;
+  }
+
+  .setup-ai-editor-layout > .setup-ai-editor-column:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .setup-ai-editor-layout > .setup-ai-editor-column:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .setup-ai-editor-column {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+  }
+
+  .setup-ai-editor-workspace {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 836px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .setup-ai-section-title {
+    margin: 0;
+  }
+
+  .setup-ai-section-note {
+    margin: -3px 0 2px;
+    color: rgba(214, 229, 245, 0.62);
+    font-size: 0.66rem;
+    line-height: 1.28;
+  }
+
+  .setup-ai-toolbar-counts,
+  .setup-ai-robot-tabs {
+    grid-template-columns: repeat(6, 132px);
+    gap: 6px;
+    justify-content: start;
+  }
+
+  #setup-ai-market-cases,
+  #setup-ai-preset-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .setup-ai-preset-button,
+  .setup-ai-market-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    min-height: 36px;
+    width: 100%;
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 0.7rem;
+    border-radius: 13px;
+  }
+
+  .setup-ai-button-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .setup-ai-button-help,
+  .setup-ai-inline-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(240, 180, 41, 0.32);
+    background: rgba(240, 180, 41, 0.12);
+    color: #ffd879;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: help;
+    flex: 0 0 auto;
+  }
+
+  .setup-ai-button-help::after,
+  .setup-ai-inline-help::after {
+    content: attr(data-help);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    width: 220px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(5, 18, 31, 0.96);
+    color: #edf6ff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: normal;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 120ms ease, transform 120ms ease;
+    z-index: 4;
+  }
+
+  .setup-ai-button-help:hover::after,
+  .setup-ai-button-help:focus-visible::after,
+  .setup-ai-inline-help:hover::after,
+  .setup-ai-inline-help:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .setup-ai-editor-description,
+  .setup-ai-editor-summary {
+    display: none !important;
+  }
+
+  .setup-ai-parameter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 414px);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: hidden;
+    align-content: stretch;
+    justify-content: start;
+    min-height: 0;
+  }
+
+  .setup-ai-parameter-card {
+    min-height: 0;
+    padding: 8px 10px;
+    gap: 4px;
+    border-radius: 15px;
+    overflow: visible;
+  }
+
+  .setup-ai-parameter-card-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .setup-ai-parameter-card-head strong {
+    font-size: 0.82rem;
+  }
+
+  .setup-ai-parameter-card-head span {
+    max-width: 180px;
+    text-align: right;
+    font-size: 0.62rem;
+    line-height: 1.25;
+  }
+
+  .setup-ai-parameter-list {
+    gap: 4px;
+    overflow: visible;
+    justify-items: stretch;
+  }
+
+  .setup-ai-slider-row {
+    width: 100%;
+    gap: 1px;
+    overflow: visible;
+  }
+
+  .setup-ai-slider-top {
+    font-size: 0.64rem;
+    min-height: 16px;
+  }
+
+  .setup-ai-slider-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .setup-ai-slider-top strong {
+    min-width: 32px;
+    text-align: right;
+    font-size: 0.71rem;
+  }
+
+  .setup-ai-slider {
+    --setup-ai-fill: 0%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+    cursor: pointer;
+  }
+
+  .setup-ai-slider:focus {
+    outline: none;
+  }
+
+  .setup-ai-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f0b429 0%, #ffc84d var(--setup-ai-fill), rgba(255, 255, 255, 0.26) var(--setup-ai-fill), rgba(255, 255, 255, 0.26) 100%);
+  }
+
+  .setup-ai-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+    border-radius: 999px;
+    border: 2px solid #ffcf63;
+    background: #f0b429;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+
+  .setup-ai-slider::-moz-range-track {
+    height: 4px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.26);
+  }
+
+  .setup-ai-slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: #f0b429;
+  }
+
+  .setup-ai-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffcf63;
+    border-radius: 999px;
+    background: #f0b429;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+
+  @media (max-width: 1180px) {
+    .setup-ai-editor-modal {
+      height: auto;
+    }
+
+    .setup-ai-editor-layout {
+      grid-template-columns: 1fr;
+      overflow: auto;
+    }
+
+    .setup-ai-parameter-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      overflow: auto;
+    }
+
+    .setup-ai-robot-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  /* AI SETUP UI REFRESH END */
+
+</style>
 {% endblock %}
 
 {% block body %}
@@ -89,6 +1095,20 @@
     </section>
   </div>
 
+  <div id="game-report-overlay" class="report-overlay is-hidden" aria-hidden="true">
+    <section class="report-modal" aria-labelledby="report-title">
+      <div class="report-head">
+        <div>
+          <p class="eyebrow">Relatorios</p>
+          <h2 id="report-title">Painel da simulacao</h2>
+        </div>
+        <button id="report-close-button" type="button" class="settings-close-button" aria-label="Fechar relatorio">Fechar</button>
+      </div>
+      <div id="report-tabs" class="report-tabs" role="tablist" aria-label="Relatorios disponiveis"></div>
+      <div id="report-body" class="report-body"></div>
+    </section>
+  </div>
+
   <div id="property-inspector-overlay" class="property-inspector-overlay is-hidden" aria-hidden="true">
     <div id="property-inspector-stage" class="property-inspector-stage"></div>
   </div>
@@ -97,7 +1117,7 @@
     <section class="game-setup-modal" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
       <h1 id="game-setup-title">Monte sua companhia</h1>
-      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia e quantos adversarios do sistema entrarao na partida.</p>
+      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia, quantos adversarios entram na partida e se a IA sera ajustada de forma rapida ou detalhada.</p>
 
       <form id="game-setup-form" class="game-setup-form">
         <label class="game-setup-field">
@@ -115,10 +1135,57 @@
           <div id="setup-rival-counts" class="game-setup-counts"></div>
         </div>
 
+        <div id="setup-ai-advanced-field" class="game-setup-field">
+          <span>Modo de configuracao da IA</span>
+          <div id="setup-ai-advanced-toggle" class="settings-choice-group setup-ai-mode-toggle"></div>
+          <span class="settings-note setup-ai-mode-note">Escolha entre os controles rapidos da mesa e a edicao detalhada por robo.</span>
+        </div>
+
+        <div id="setup-ai-difficulty-field" class="game-setup-field">
+          <span>Dificuldade geral da IA</span>
+          <div id="setup-ai-difficulties" class="game-setup-counts"></div>
+        </div>
+
+        <div id="setup-ai-profile-mode-field" class="game-setup-field">
+          <span>Perfis dos robos</span>
+          <div id="setup-ai-profile-modes" class="game-setup-counts"></div>
+        </div>
+
         <div class="game-setup-actions">
           <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
         </div>
       </form>
+    </section>
+  </div>
+
+    <div id="setup-ai-editor-overlay" class="settings-overlay is-hidden" aria-hidden="true">
+    <section class="settings-modal setup-ai-editor-modal" aria-labelledby="setup-ai-editor-title">
+      <div class="settings-head">
+        <h2 id="setup-ai-editor-title" class="setup-ai-editor-heading">Configuracoes iniciais avancadas</h2>
+        <div class="setup-ai-editor-head-actions">
+          <button id="setup-ai-editor-disable-button" type="button" class="settings-close-button" aria-label="Voltar ao modo basico">Modo basico</button>
+          <button id="setup-ai-editor-close-button" type="button" class="settings-close-button" aria-label="Fechar editor de perfis">Fechar</button>
+        </div>
+      </div>
+      <div class="setup-ai-editor-layout">
+        <aside class="setup-ai-editor-column">
+          <p class="eyebrow setup-ai-section-title">Mercado</p>
+          <p class="setup-ai-section-note">Aplicavel a todos os robos.</p>
+          <div id="setup-ai-market-cases" class="setup-ai-preset-grid"></div>
+        </aside>
+        <aside class="setup-ai-editor-column">
+          <p class="eyebrow setup-ai-section-title">Perfis prontos</p>
+          <p class="setup-ai-section-note">Aplicavel a um unico perfil.</p>
+          <div id="setup-ai-preset-buttons" class="setup-ai-preset-grid"></div>
+        </aside>
+        <section class="setup-ai-editor-workspace">
+          <div class="setup-ai-editor-column">
+            <p class="eyebrow setup-ai-section-title">Robos</p>
+            <div id="setup-ai-robot-tabs" class="game-setup-counts setup-ai-toolbar-counts setup-ai-robot-tabs"></div>
+          </div>
+          <div id="setup-ai-parameter-grid" class="setup-ai-parameter-grid"></div>
+        </section>
+      </div>
     </section>
   </div>
 
@@ -129,6 +1196,7 @@
           <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
           <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
+          <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
         </div>
         <h1 id="preview-turn">Turno 01</h1>
       </div>
@@ -260,6 +1328,39 @@
     </section>
   </div>
 
+  <div id="negotiation-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal negotiation-modal" aria-labelledby="negotiation-title">
+      <div class="negotiation-head">
+        <div>
+          <p class="eyebrow">Negociacao</p>
+          <h2 id="negotiation-title">Comprar ativo</h2>
+        </div>
+        <span id="negotiation-round" class="preview-soft-badge">Rodada 1</span>
+      </div>
+      <p id="negotiation-copy" class="body-copy compact">Negocie o valor com o outro jogador.</p>
+      <div class="negotiation-badges">
+        <span id="negotiation-ask" class="negotiation-badge">Pedido --</span>
+        <span id="negotiation-cash" class="negotiation-badge">Seu caixa --</span>
+        <span id="negotiation-stance" class="negotiation-badge">Postura --</span>
+      </div>
+      <div id="negotiation-card-stage" class="negotiation-card-stage is-hidden"></div>
+      <div class="negotiation-status">
+        <span id="negotiation-status-title" class="negotiation-status-title">Oponente diz</span>
+        <p id="negotiation-status-copy" class="negotiation-status-copy">Aguardando proposta.</p>
+      </div>
+      <div class="negotiation-counter-row">
+        <label id="negotiation-counter-label" for="negotiation-counter-input">Sua proposta</label>
+        <input id="negotiation-counter-input" class="negotiation-counter-input" type="number" min="0" step="1" inputmode="numeric" />
+      </div>
+      <p id="negotiation-helper" class="settings-note negotiation-helper">Faca uma proposta fechada ou aceite o pedido atual.</p>
+      <div class="decision-actions">
+        <button id="negotiation-refuse" type="button" class="decision-button secondary">Sair</button>
+        <button id="negotiation-counter" type="button" class="decision-button secondary">Enviar proposta</button>
+        <button id="negotiation-accept" type="button" class="decision-button primary">Aceitar pedido</button>
+      </div>
+    </section>
+  </div>
+
   <div id="permission-choice-overlay" class="permission-choice-overlay is-hidden">
     <section class="permission-choice-modal" aria-labelledby="permission-choice-title">
       <div class="permission-choice-head">
@@ -280,7 +1381,7 @@
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
-<script src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=ai-profiles-v1"></script>
-<script src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=ai-policy-engine-v1"></script>
-<script src="{{ request.url_for('static', path='js/game-ai-ui.js') }}?v=game-ai-ui-v2"></script>
+<script src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=ai-profiles-v15"></script>
+<script src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=ai-policy-engine-v14"></script>
+<script src="{{ request.url_for('static', path='js/game-ai-ui.js') }}?v=game-ai-ui-v20"></script>
 {% endblock %}

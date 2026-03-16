@@ -239,6 +239,22 @@ def create_app() -> FastAPI:
             context={'page_title': 'Preview dos Robos AI'},
         )
 
+    @app.get('/preview/ai-analysis-ui', response_class=HTMLResponse)
+    async def ai_analysis_ui_preview(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='ai_analysis_ui.html',
+            context={'page_title': 'Analise da IA'},
+        )
+
+    @app.get('/preview/ai-formula-lab', response_class=HTMLResponse)
+    async def ai_formula_lab_preview(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='ai_formula_lab.html',
+            context={'page_title': 'Laboratorio de Formulas da IA'},
+        )
+
     @app.get('/preview/port-titles', response_class=HTMLResponse)
     async def port_titles_preview(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(

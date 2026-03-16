@@ -90,16 +90,6 @@
     "to_node_id": "ham"
   },
   {
-    "id": "edge-050",
-    "from_node_id": "ham",
-    "to_node_id": "fuel-022"
-  },
-  {
-    "id": "edge-051",
-    "from_node_id": "fuel-022",
-    "to_node_id": "lon"
-  },
-  {
     "id": "edge-052",
     "from_node_id": "ate",
     "to_node_id": "fuel-004"
@@ -835,46 +825,6 @@
     "to_node_id": "fuel-121"
   },
   {
-    "id": "edge-220",
-    "from_node_id": "fuel-121",
-    "to_node_id": "fuel-122"
-  },
-  {
-    "id": "edge-225",
-    "from_node_id": "fuel-125",
-    "to_node_id": "chance-036"
-  },
-  {
-    "id": "edge-226",
-    "from_node_id": "fuel-126",
-    "to_node_id": "chance-036"
-  },
-  {
-    "id": "edge-227",
-    "from_node_id": "fuel-126",
-    "to_node_id": "van"
-  },
-  {
-    "id": "edge-228",
-    "from_node_id": "fuel-127",
-    "to_node_id": "fuel-128"
-  },
-  {
-    "id": "edge-229",
-    "from_node_id": "chance-037",
-    "to_node_id": "fuel-127"
-  },
-  {
-    "id": "edge-230",
-    "from_node_id": "chance-037",
-    "to_node_id": "fuel-122"
-  },
-  {
-    "id": "edge-231",
-    "from_node_id": "fuel-128",
-    "to_node_id": "fuel-125"
-  },
-  {
     "id": "edge-232",
     "from_node_id": "auc",
     "to_node_id": "fuel-129"
@@ -1058,5 +1008,120 @@
     "id": "edge-272",
     "from_node_id": "chance-016",
     "to_node_id": "fuel-048"
+  },
+  {
+    "id": "edge-273",
+    "from_node_id": "fuel-121",
+    "to_node_id": "chance-050"
+  },
+  {
+    "id": "edge-274",
+    "from_node_id": "chance-050",
+    "to_node_id": "fuel-172"
+  },
+  {
+    "id": "edge-275",
+    "from_node_id": "fuel-172",
+    "to_node_id": "fuel-127"
+  },
+  {
+    "id": "edge-276",
+    "from_node_id": "fuel-127",
+    "to_node_id": "chance-051"
+  },
+  {
+    "id": "edge-277",
+    "from_node_id": "chance-051",
+    "to_node_id": "fuel-176"
+  },
+  {
+    "id": "edge-278",
+    "from_node_id": "fuel-176",
+    "to_node_id": "fuel-175"
+  },
+  {
+    "id": "edge-279",
+    "from_node_id": "fuel-175",
+    "to_node_id": "fuel-174"
+  },
+  {
+    "id": "edge-280",
+    "from_node_id": "fuel-174",
+    "to_node_id": "van"
+  },
+  {
+    "id": "edge-284",
+    "from_node_id": "chance-048",
+    "to_node_id": "fuel-162"
+  },
+  {
+    "id": "edge-288",
+    "from_node_id": "fuel-159",
+    "to_node_id": "chance-047"
+  },
+  {
+    "id": "edge-289",
+    "from_node_id": "chance-047",
+    "to_node_id": "fuel-158"
+  },
+  {
+    "id": "edge-293",
+    "from_node_id": "fuel-155",
+    "to_node_id": "chance-046"
+  },
+  {
+    "id": "edge-294",
+    "from_node_id": "chance-046",
+    "to_node_id": "fuel-154"
+  },
+  {
+    "id": "edge-299",
+    "from_node_id": "fuel-167",
+    "to_node_id": "chance-049"
+  },
+  {
+    "id": "edge-302",
+    "from_node_id": "lon",
+    "to_node_id": "chance-052"
+  },
+  {
+    "id": "edge-303",
+    "from_node_id": "chance-052",
+    "to_node_id": "ham"
+  },
+  {
+    "id": "edge-304",
+    "from_node_id": "chance-051",
+    "to_node_id": "fuel-162"
+  },
+  {
+    "id": "edge-305",
+    "from_node_id": "chance-048",
+    "to_node_id": "fuel-159"
+  },
+  {
+    "id": "edge-306",
+    "from_node_id": "fuel-158",
+    "to_node_id": "fuel-155"
+  },
+  {
+    "id": "edge-307",
+    "from_node_id": "fuel-154",
+    "to_node_id": "fuel-169"
+  },
+  {
+    "id": "edge-308",
+    "from_node_id": "fuel-169",
+    "to_node_id": "chance-049"
+  },
+  {
+    "id": "edge-309",
+    "from_node_id": "chance-052",
+    "to_node_id": "fuel-177"
+  },
+  {
+    "id": "edge-310",
+    "from_node_id": "fuel-177",
+    "to_node_id": "fuel-167"
   }
 ]

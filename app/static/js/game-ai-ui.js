@@ -14,6 +14,166 @@ const CPU_MOVE_DELAY_MS = 240;
 const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
 const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
 
+const AI_DIFFICULTY_OPTIONS = [
+  { id: 'easy', label: 'Facil', skillPresetId: 'ai_easy' },
+  { id: 'normal', label: 'Normal', skillPresetId: 'ai_normal' },
+  { id: 'hard', label: 'Dificil', skillPresetId: 'ai_hard' },
+  { id: 'expert', label: 'Expert', skillPresetId: 'ai_expert' },
+];
+
+const AI_PROFILE_MODE_OPTIONS = [
+  { id: 'balanced', label: 'Balanceados', description: 'Todos os robos usam o perfil equilibrado.' },
+  { id: 'random', label: 'Mistura aleatoria', description: 'A mesa embaralha focos diferentes de investimento.' },
+  { id: 'closed_market', label: 'Mercado fechado', description: 'Ninguem vende ativos para ninguem.' },
+  { id: 'liquid_market', label: 'Mercado aberto', description: 'Os ativos circulam com extrema facilidade.' },
+];
+
+const AI_BASE_ARCHETYPE_ORDER = ['balanced_trader', 'port_sprinter', 'cargo_planner', 'toll_broker', 'monopoly_hunter'];
+
+const AI_PROFILE_PARAMETER_GROUPS = [
+  {
+    key: 'negotiation',
+    label: 'Negociacao',
+    description: 'Como compra, vende e protege ativos.',
+    fields: [
+      { key: 'buy_openness', label: 'Compra', min: 0, max: 1, step: 0.01 },
+      { key: 'sell_openness', label: 'Venda', min: 0, max: 1, step: 0.01 },
+      { key: 'premium_tolerance', label: 'Agio', min: 0, max: 1, step: 0.01 },
+      { key: 'discount_tolerance', label: 'Desagio', min: 0, max: 1, step: 0.01 },
+      { key: 'strategic_lock', label: 'Apego estrategico', min: 0, max: 1, step: 0.01 },
+      { key: 'desperation_discount', label: 'Desespero por caixa', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+  {
+    key: 'vision',
+    label: 'Visao',
+    description: 'O que a companhia valoriza ao investir.',
+    fields: [
+      { key: 'weight_port', label: 'Portos', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_permission', label: 'Permissoes', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_toll', label: 'Pedagios', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_monopoly', label: 'Monopolio', min: 0, max: 1, step: 0.01 },
+      { key: 'weight_origin_bonus', label: 'Origem', min: 0, max: 1, step: 0.01 },
+      { key: 'planning_horizon_turns', label: 'Horizonte', min: 0, max: 12, step: 1 },
+    ],
+  },
+  {
+    key: 'personality',
+    label: 'Personalidade',
+    description: 'Risco, reserva e impulso do robo.',
+    fields: [
+      { key: 'cash_reserve_ratio', label: 'Reserva de caixa', min: 0, max: 0.8, step: 0.01 },
+      { key: 'risk_tolerance', label: 'Risco', min: 0, max: 1, step: 0.01 },
+      { key: 'impulsiveness', label: 'Impulso', min: 0, max: 1, step: 0.01 },
+      { key: 'coupon_patience', label: 'Paciencia com cupom', min: 0, max: 1, step: 0.01 },
+      { key: 'asset_attachment', label: 'Apego a ativo', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+  {
+    key: 'skill',
+    label: 'Skill',
+    description: 'Qualidade da leitura e da execucao.',
+    fields: [
+      { key: 'foresight', label: 'Previsao', min: 0, max: 1, step: 0.01 },
+      { key: 'evaluation_noise', label: 'Ruido', min: 0, max: 0.3, step: 0.01 },
+      { key: 'liquidity_discipline', label: 'Disciplina de caixa', min: 0, max: 1, step: 0.01 },
+      { key: 'combo_awareness', label: 'Leitura de combo', min: 0, max: 1, step: 0.01 },
+      { key: 'timing_quality', label: 'Timing', min: 0, max: 1, step: 0.01 },
+    ],
+  },
+];
+
+const AI_PARAMETER_FIELD_MAP = Object.fromEntries(
+  AI_PROFILE_PARAMETER_GROUPS.flatMap((group) => group.fields.map((field) => [`${group.key}.${field.key}`, { ...field, groupKey: group.key }]))
+);
+
+const AI_SETUP_FIELD_HELP = {
+  'negotiation.buy_openness': 'Quanto o robo tenta comprar ativos que pertencem a outros jogadores.',
+  'negotiation.sell_openness': 'Quanto o robo aceita abrir mao dos ativos que ja controla.',
+  'negotiation.premium_tolerance': 'Quanto aceita pagar acima do preco-base para fechar negocio.',
+  'negotiation.discount_tolerance': 'Quanto aceita vender abaixo do ideal para liberar caixa.',
+  'negotiation.strategic_lock': 'Quanto protege ativos importantes para rota, renda ou monopolio.',
+  'negotiation.desperation_discount': 'Quanto afrouxa a venda quando o caixa aperta.',
+  'vision.weight_port': 'Peso dado a portos como fonte de frete e origem valiosa.',
+  'vision.weight_permission': 'Peso dado a permissoes para ampliar fretes possiveis.',
+  'vision.weight_toll': 'Peso dado a pedagios como renda de longo prazo.',
+  'vision.weight_monopoly': 'Peso dado a fechar uma regiao inteira sob controle.',
+  'vision.weight_origin_bonus': 'Peso dado a controlar a origem dos contratos.',
+  'vision.planning_horizon_turns': 'Quantos turnos a frente o robo tenta imaginar antes de investir.',
+  'personality.cash_reserve_ratio': 'Quanto caixa o robo quer guardar antes de se expor.',
+  'personality.risk_tolerance': 'Quanto aceita assumir risco para crescer mais rapido.',
+  'personality.impulsiveness': 'Quanto reage rapido a oportunidades sem esperar muito.',
+  'personality.coupon_patience': 'Quanto tende a guardar cupons para momentos melhores.',
+  'personality.asset_attachment': 'Quanto evita vender ou trocar ativos que ja possui.',
+  'skill.foresight': 'Qualidade da leitura de retorno futuro e impacto das compras.',
+  'skill.evaluation_noise': 'Nivel de erro ou imprecisao na avaliacao das opcoes.',
+  'skill.liquidity_discipline': 'Capacidade de preservar caixa e evitar sufoco financeiro.',
+  'skill.combo_awareness': 'Capacidade de perceber sinergias entre porto, permissao, pedagio e monopolio.',
+  'skill.timing_quality': 'Qualidade do momento escolhido para comprar, vender, usar cupom ou resgatar.',
+};
+
+function normalizeAiProfileModeId(mode = 'balanced') {
+  const resolved = String(mode || 'balanced').trim();
+  if (resolved === 'varied') return 'random';
+  if (resolved === 'sell_nothing') return 'closed_market';
+  if (resolved === 'sell_everything') return 'liquid_market';
+  return AI_PROFILE_MODE_OPTIONS.some((entry) => entry.id === resolved) ? resolved : 'balanced';
+}
+
+const AI_MARKET_CASE_OPTIONS = [
+  { id: 'balanced_market', label: 'Mercado equilibrado', presetId: 'balanced_market', description: 'Mistura compra, defesa e negociacao sem extremos.' },
+  {
+    id: 'flex_sellers_market',
+    label: 'Vendedores flexiveis',
+    values: {
+      buy_openness: 0.52,
+      sell_openness: 0.84,
+      premium_tolerance: 0.42,
+      discount_tolerance: 0.74,
+      strategic_lock: 0.18,
+      desperation_discount: 0.34,
+    },
+    description: 'Os donos vendem com mais facilidade, mas sem chegar ao giro total do mercado aberto.',
+  },
+  { id: 'selective_market', label: 'Negociacao seletiva', presetId: 'selective_market', description: 'Cada venda passa por uma analise mais fria e menos impulsiva.' },
+  { id: 'acquisitive_market', label: 'Compradores ofensivos', presetId: 'acquisitive_market', description: 'Os robos buscam ativos com forca, mas relutam mais em vender.' },
+  {
+    id: 'sell_nothing',
+    label: 'Mercado fechado',
+    values: {
+      buy_openness: 0.08,
+      sell_openness: 0.02,
+      premium_tolerance: 0.18,
+      discount_tolerance: 0.02,
+      strategic_lock: 1,
+      desperation_discount: 0,
+      buy_blocked: 1,
+      sell_blocked: 1,
+      trade_locked: 1,
+    },
+    description: 'Ninguem vende ativos: cada companhia fecha a guarda sobre o que conquista.',
+  },
+  {
+    id: 'sell_everything',
+    label: 'Mercado aberto',
+    values: {
+      buy_openness: 1,
+      sell_openness: 1,
+      premium_tolerance: 0.82,
+      discount_tolerance: 1,
+      strategic_lock: 0,
+      desperation_discount: 0.92,
+      force_buy: 1,
+      force_sell: 1,
+      trade_forced: 1,
+    },
+    description: 'Os ativos circulam com extrema facilidade sempre que houver caixa na mesa.',
+  },
+];
+
+
+const REPORT_MILESTONE_TURNS = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 350];
+
 const state = {
   nodes: [],
   projectedNodes: [],
@@ -43,6 +203,14 @@ const state = {
     companyName: '',
     selectedColorId: '',
     rivalCount: 5,
+    aiDifficulty: 'normal',
+    aiProfileMode: 'balanced',
+    aiProfileOrder: [...AI_BASE_ARCHETYPE_ORDER],
+    aiAdvancedProfiles: false,
+    manualRobotProfiles: {},
+    manualRobotConfigs: {},
+    aiEditorOpen: false,
+    aiEditorRobotIndex: 0,
     submitting: false,
   },
   permissionDraw: {
@@ -80,6 +248,18 @@ const state = {
   decision: {
     resolver: null,
   },
+  negotiation: {
+    resolver: null,
+    session: null,
+    mode: 'buy',
+    title: '',
+    copy: '',
+    cardCode: '',
+    sellerName: '',
+    buyerName: '',
+    feedback: '',
+    draftCounter: '',
+  },
   permissionChoice: {
     resolver: null,
     playerId: '',
@@ -105,6 +285,16 @@ const state = {
     logLifetimeMs: 12000,
     logMode: 'player',
     runInBackground: true,
+  },
+  report: {
+    activeKey: 'cash-by-turn',
+    cashHistory: [],
+    snapshotKeys: [],
+    windowModes: {
+      'cash-by-turn': 'full',
+      'patrimony-by-turn': 'full',
+      'holdings-by-turn': 'full',
+    },
   },
   pause: {
     waiters: [],
@@ -144,20 +334,417 @@ function aiPolicyEngine() {
   return window.RdMAiPolicyEngine || null;
 }
 
+function aiSetupDefaults(setupDefaults = {}) {
+  const slotCount = Math.max(0, Number(setupDefaults.robot_count || setupDefaults.rival_count || state?.setup?.rivalCount || 0));
+  const resolvedMode = normalizeAiProfileModeId(setupDefaults.ai_profile_mode || 'balanced');
+  const manualConfigs = normalizeManualRobotConfigs(setupDefaults.ai_manual_robot_configs || {}, slotCount);
+  const manualProfiles = normalizeManualRobotProfiles(
+    setupDefaults.ai_manual_profiles || manualProfileIdsFromConfigs(manualConfigs),
+    slotCount,
+  );
+  return {
+    aiDifficulty: String(setupDefaults.ai_difficulty || 'normal'),
+    aiProfileMode: resolvedMode,
+    aiProfileOrder: buildSetupProfileOrder(resolvedMode, setupDefaults.ai_profile_order || []),
+    aiAdvancedProfiles: Boolean(setupDefaults.ai_advanced_profiles),
+    aiManualProfiles: manualProfiles,
+    aiManualRobotConfigs: manualConfigs,
+  };
+}
+
+function buildAiSetupDefaults(setupDefaults = {}, overrides = {}) {
+  const merged = { ...setupDefaults, ...overrides };
+  const resolved = aiSetupDefaults(merged);
+  const slotCount = Math.max(0, Number(merged.robot_count || merged.rival_count || state?.setup?.rivalCount || 0));
+  return {
+    ...merged,
+    ai_difficulty: resolved.aiDifficulty,
+    ai_profile_mode: resolved.aiProfileMode,
+    ai_profile_order: resolved.aiProfileOrder,
+    ai_advanced_profiles: resolved.aiAdvancedProfiles,
+    ai_manual_profiles: resolved.aiAdvancedProfiles
+      ? serializeManualRobotProfiles(resolved.aiManualProfiles, slotCount)
+      : [],
+    ai_manual_robot_configs: resolved.aiAdvancedProfiles
+      ? serializeManualRobotConfigs(resolved.aiManualRobotConfigs, slotCount)
+      : [],
+  };
+}
+
+function aiDifficultyOption(id = 'normal') {
+  return AI_DIFFICULTY_OPTIONS.find((entry) => entry.id === id) || AI_DIFFICULTY_OPTIONS[1];
+}
+
+function aiProfileModeOption(id = 'balanced') {
+  const resolvedId = normalizeAiProfileModeId(id);
+  return AI_PROFILE_MODE_OPTIONS.find((entry) => entry.id === resolvedId) || AI_PROFILE_MODE_OPTIONS[0];
+}
+
+function aiProfileOrderForMode(mode = 'balanced') {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'balanced') return ['balanced_trader'];
+  if (resolvedMode === 'random') return shuffleArray(AI_BASE_ARCHETYPE_ORDER);
+  return [...AI_BASE_ARCHETYPE_ORDER];
+}
+
+function normalizeAiProfileOrder(rawOrder = null) {
+  if (!Array.isArray(rawOrder)) return [];
+  const allowed = new Set(AI_BASE_ARCHETYPE_ORDER);
+  return rawOrder
+    .map((entry) => String(entry || '').trim())
+    .filter((entry) => allowed.has(entry));
+}
+
+function buildSetupProfileOrder(mode = 'balanced', rawOrder = null) {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'random') {
+    const normalized = normalizeAiProfileOrder(rawOrder);
+    return normalized.length ? normalized : shuffleArray(AI_BASE_ARCHETYPE_ORDER);
+  }
+  return aiProfileOrderForMode(resolvedMode);
+}
+
+function aiProfileModeMarketCaseId(mode = 'balanced') {
+  const resolvedMode = normalizeAiProfileModeId(mode);
+  if (resolvedMode === 'closed_market') return 'sell_nothing';
+  if (resolvedMode === 'liquid_market') return 'sell_everything';
+  return '';
+}
+
+function syncSetupProfileOrder(mode = state.setup.aiProfileMode, rawOrder = null) {
+  const order = buildSetupProfileOrder(mode, rawOrder);
+  state.setup.aiProfileOrder = order;
+  return order;
+}
+
+function clampAiSetting(value, min, max, step = 0.01) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return min;
+  const safeStep = step > 0 ? step : 0.01;
+  const rounded = Math.round(numericValue / safeStep) * safeStep;
+  const decimals = String(safeStep).includes('.') ? String(safeStep).split('.')[1].length : 0;
+  return Math.min(max, Math.max(min, Number(rounded.toFixed(decimals))));
+}
+
+function normalizeManualRobotProfiles(rawProfiles = null, slotCount = 0) {
+  const normalized = {};
+  if (Array.isArray(rawProfiles)) {
+    rawProfiles.forEach((value, index) => {
+      if (index >= slotCount) return;
+      const resolved = String(value || '').trim();
+      if (resolved) normalized[index] = resolved;
+    });
+    return normalized;
+  }
+  if (rawProfiles && typeof rawProfiles === 'object') {
+    Object.entries(rawProfiles).forEach(([key, value]) => {
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0 || index >= slotCount) return;
+      const resolved = String(value || '').trim();
+      if (resolved) normalized[index] = resolved;
+    });
+  }
+  return normalized;
+}
+
+function serializeManualRobotProfiles(rawProfiles = state.setup.manualRobotProfiles, slotCount = 0) {
+  const normalized = normalizeManualRobotProfiles(rawProfiles, slotCount);
+  return Array.from({ length: slotCount }, (_, index) => String(normalized[index] || ''));
+}
+
+function aiArchetypeById(id = '') {
+  return aiProfilesLib()?.archetypes?.[String(id || '').trim()] || null;
+}
+
+function aiSkillPresetForDifficulty(difficultyId = state.setup.aiDifficulty) {
+  const option = aiDifficultyOption(difficultyId);
+  return cloneAiData(aiProfilesLib()?.skillPresets?.[option.skillPresetId] || null);
+}
+
+function buildManualRobotConfig(archetypeId = 'balanced_trader', { difficultyId = state.setup.aiDifficulty } = {}) {
+  const resolvedArchetype = aiArchetypeById(archetypeId) ? archetypeId : 'balanced_trader';
+  const baseProfile = aiProfilesLib()?.buildProfile
+    ? aiProfilesLib().buildProfile({ archetypeId: resolvedArchetype })
+    : null;
+  const seededSkill = aiSkillPresetForDifficulty(difficultyId) || cloneAiData(baseProfile?.skill || {});
+  return {
+    archetypeId: resolvedArchetype,
+    overrides: {
+      negotiation: cloneAiData(baseProfile?.negotiation || {}),
+      vision: cloneAiData(baseProfile?.vision || {}),
+      personality: cloneAiData(baseProfile?.personality || {}),
+      skill: seededSkill,
+      metadata: {
+        ...(cloneAiData(baseProfile?.metadata || {}) || {}),
+        setup_customized: true,
+        setup_archetype_id: resolvedArchetype,
+      },
+    },
+  };
+}
+
+function normalizeManualRobotConfig(rawConfig = null, slotIndex = 0) {
+  if (!rawConfig || typeof rawConfig !== 'object') return null;
+  const archetypeId = aiArchetypeById(rawConfig.archetypeId || rawConfig.profileId || rawConfig.id || defaultSetupArchetypeIdForSlot(slotIndex))
+    ? String(rawConfig.archetypeId || rawConfig.profileId || rawConfig.id || defaultSetupArchetypeIdForSlot(slotIndex))
+    : defaultSetupArchetypeIdForSlot(slotIndex);
+  const seeded = buildManualRobotConfig(archetypeId);
+  const source = rawConfig.overrides && typeof rawConfig.overrides === 'object'
+    ? rawConfig.overrides
+    : rawConfig;
+  AI_PROFILE_PARAMETER_GROUPS.forEach((group) => {
+    const sourceGroup = source[group.key] && typeof source[group.key] === 'object' ? source[group.key] : {};
+    group.fields.forEach((field) => {
+      if (sourceGroup[field.key] === undefined) return;
+      seeded.overrides[group.key][field.key] = clampAiSetting(sourceGroup[field.key], field.min, field.max, field.step);
+    });
+  });
+  seeded.overrides.metadata = {
+    ...(seeded.overrides.metadata || {}),
+    ...(source.metadata && typeof source.metadata === 'object' ? cloneAiData(source.metadata) : {}),
+    setup_customized: true,
+    setup_archetype_id: archetypeId,
+  };
+  return seeded;
+}
+
+function normalizeManualRobotConfigs(rawConfigs = null, slotCount = 0) {
+  const normalized = {};
+  if (Array.isArray(rawConfigs)) {
+    rawConfigs.forEach((value, index) => {
+      if (index >= slotCount) return;
+      const config = normalizeManualRobotConfig(value, index);
+      if (config) normalized[index] = config;
+    });
+    return normalized;
+  }
+  if (rawConfigs && typeof rawConfigs === 'object') {
+    Object.entries(rawConfigs).forEach(([key, value]) => {
+      const index = Number(key);
+      if (!Number.isInteger(index) || index < 0 || index >= slotCount) return;
+      const config = normalizeManualRobotConfig(value, index);
+      if (config) normalized[index] = config;
+    });
+  }
+  return normalized;
+}
+
+function serializeManualRobotConfigs(rawConfigs = state.setup.manualRobotConfigs, slotCount = 0) {
+  const normalized = normalizeManualRobotConfigs(rawConfigs, slotCount);
+  return Array.from({ length: slotCount }, (_, index) => normalized[index] ? cloneAiData(normalized[index]) : null);
+}
+
+function manualProfileIdsFromConfigs(configs = {}) {
+  const resolved = {};
+  Object.entries(configs || {}).forEach(([key, config]) => {
+    if (config?.archetypeId) resolved[key] = config.archetypeId;
+  });
+  return resolved;
+}
+
+function aiArchetypeSetupOptions() {
+  return Object.values(aiProfilesLib()?.archetypes || {})
+    .map((entry) => ({ id: entry.id, label: entry.label, description: entry.description || '' }))
+    .filter((entry) => entry && entry.id && entry.id !== 'legacy_open');
+}
+
+function setupRobotSlotCount() {
+  return Math.max(0, Number(state.setup.rivalCount || 0));
+}
+
+function pruneManualRobotProfiles(slotCount = setupRobotSlotCount()) {
+  state.setup.manualRobotProfiles = normalizeManualRobotProfiles(state.setup.manualRobotProfiles, slotCount);
+  state.setup.manualRobotConfigs = normalizeManualRobotConfigs(state.setup.manualRobotConfigs, slotCount);
+  return state.setup.manualRobotProfiles;
+}
+
+function defaultSetupArchetypeIdForSlot(slotIndex = 0) {
+  const order = Array.isArray(state.setup.aiProfileOrder) && state.setup.aiProfileOrder.length
+    ? state.setup.aiProfileOrder
+    : syncSetupProfileOrder(state.setup.aiProfileMode);
+  return order[Math.max(0, slotIndex) % order.length] || 'balanced_trader';
+}
+
+function persistSetupRobotConfig(slotIndex = 0, config = null) {
+  if (!Number.isInteger(slotIndex) || slotIndex < 0) return null;
+  const normalized = normalizeManualRobotConfig(config, slotIndex);
+  if (!normalized) {
+    delete state.setup.manualRobotConfigs[slotIndex];
+    delete state.setup.manualRobotProfiles[slotIndex];
+    return null;
+  }
+  state.setup.manualRobotConfigs[slotIndex] = normalized;
+  state.setup.manualRobotProfiles[slotIndex] = normalized.archetypeId;
+  return normalized;
+}
+
+function ensureSetupRobotConfig(slotIndex = 0) {
+  const existing = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[slotIndex], slotIndex);
+  if (existing) {
+    state.setup.manualRobotConfigs[slotIndex] = existing;
+    state.setup.manualRobotProfiles[slotIndex] = existing.archetypeId;
+    return existing;
+  }
+  return persistSetupRobotConfig(slotIndex, buildManualRobotConfig(defaultSetupArchetypeIdForSlot(slotIndex)));
+}
+
+function resetSetupRobotConfig(slotIndex = 0) {
+  delete state.setup.manualRobotConfigs[slotIndex];
+  delete state.setup.manualRobotProfiles[slotIndex];
+}
+
+function applyManualProfilesToPlayers(players = [], setupDefaults = {}) {
+  const robots = (players || []).filter((player) => !player?.is_human);
+  const incomingManualConfigs = normalizeManualRobotConfigs(
+    setupDefaults.ai_manual_robot_configs || state.setup.manualRobotConfigs,
+    robots.length,
+  );
+  const profileSource = setupDefaults.ai_manual_profiles !== undefined
+    ? setupDefaults.ai_manual_profiles
+    : (Object.keys(incomingManualConfigs).length ? manualProfileIdsFromConfigs(incomingManualConfigs) : state.setup.manualRobotProfiles);
+  const incomingManualProfiles = normalizeManualRobotProfiles(profileSource, robots.length);
+  const useManualProfiles = Boolean(setupDefaults.ai_advanced_profiles);
+  const effectiveConfigs = {};
+  const effectiveProfiles = {};
+
+  robots.forEach((player, index) => {
+    const fallbackProfileId = String(incomingManualProfiles[index] || '').trim();
+    const resolvedConfig = normalizeManualRobotConfig(
+      incomingManualConfigs[index] || (fallbackProfileId ? { archetypeId: fallbackProfileId } : null),
+      index,
+    );
+    if (useManualProfiles && resolvedConfig) {
+      effectiveConfigs[index] = resolvedConfig;
+      effectiveProfiles[index] = resolvedConfig.archetypeId;
+      player.ai_manual_profile = true;
+      player.ai_archetype_id = resolvedConfig.archetypeId;
+      player.ai_profile_overrides = cloneAiData(resolvedConfig.overrides || {});
+      player.ai_profile = null;
+      player.ai_profile_id = '';
+      player.ai_profile_label = '';
+      return;
+    }
+    player.ai_manual_profile = false;
+    player.ai_archetype_id = '';
+    player.ai_profile_overrides = null;
+    player.ai_profile = null;
+    player.ai_profile_id = '';
+    player.ai_profile_label = '';
+  });
+
+  state.setup.manualRobotConfigs = effectiveConfigs;
+  state.setup.manualRobotProfiles = effectiveProfiles;
+  state.setup.aiAdvancedProfiles = useManualProfiles;
+}
+
 function ensureAiProfile(player) {
   if (!player || player.is_human) return null;
+  const defaultArchetypeId = player.ai_archetype_id || state.ai?.tableConfig?.defaultRobotProfileId || 'legacy_open';
   const engine = aiPolicyEngine();
-  if (engine?.ensureProfile) return engine.ensureProfile(player);
+  if (engine?.ensureProfile) return engine.ensureProfile(player, state.ai?.tableConfig || null);
   const profiles = aiProfilesLib();
   return profiles?.assignProfile
-    ? profiles.assignProfile(player, { archetypeId: player.ai_archetype_id || 'legacy_open' })
+    ? profiles.assignProfile(player, { archetypeId: defaultArchetypeId })
     : null;
 }
 
+
+function applyAiStageConfiguration(payload = {}) {
+  const engine = aiPolicyEngine();
+  const profiles = aiProfilesLib();
+  const setupDefaults = buildAiSetupDefaults(payload.setup_defaults || {});
+  const selectedAiSetup = aiSetupDefaults(setupDefaults);
+  const difficulty = aiDifficultyOption(selectedAiSetup.aiDifficulty);
+  const profileMode = aiProfileModeOption(selectedAiSetup.aiProfileMode);
+  const profileModeMarketCaseId = selectedAiSetup.aiAdvancedProfiles ? '' : aiProfileModeMarketCaseId(selectedAiSetup.aiProfileMode);
+  const tableNegotiationOverride = profileModeMarketCaseId ? aiMarketCaseNegotiationValues(profileModeMarketCaseId) : null;
+  const robotArchetypeOrder = selectedAiSetup.aiProfileOrder.length
+    ? [...selectedAiSetup.aiProfileOrder]
+    : aiProfileOrderForMode(selectedAiSetup.aiProfileMode);
+  const baselineConfig = engine?.buildLegacyBaseline
+    ? engine.buildLegacyBaseline({ setupDefaults })
+    : {
+        id: 'legacy_open_table',
+        label: 'Mesa Legacy Aberto',
+        marketRegime: { id: 'legacy_open_market', dynamic_pricing: false },
+        defaultRobotProfileId: 'legacy_open',
+        defaultSkillPresetId: 'legacy_normal',
+        baselineLocked: true,
+        setupDefaults,
+      };
+  const tableConfig = engine?.buildStageTableConfig
+    ? engine.buildStageTableConfig({
+        presetId: 'stage6_profile_table',
+        overrides: {
+          label: `Mesa AI ${difficulty.label} / ${profileMode.label}`,
+          setupDefaults,
+          baselineReferenceId: baselineConfig.id || 'legacy_open_table',
+          defaultRobotProfileId: robotArchetypeOrder[0] || 'balanced_trader',
+          defaultSkillPresetId: difficulty.skillPresetId,
+          forcedSkillPresetId: difficulty.skillPresetId,
+          defaultProfileOverrides: tableNegotiationOverride ? { negotiation: tableNegotiationOverride } : null,
+          robotArchetypeOrder,
+        },
+      })
+    : (profiles?.buildTableConfig
+      ? profiles.buildTableConfig({
+          presetId: 'stage6_profile_table',
+          overrides: {
+            label: `Mesa AI ${difficulty.label} / ${profileMode.label}`,
+            setupDefaults,
+            baselineReferenceId: baselineConfig.id || 'legacy_open_table',
+            defaultRobotProfileId: robotArchetypeOrder[0] || 'balanced_trader',
+            defaultSkillPresetId: difficulty.skillPresetId,
+            forcedSkillPresetId: difficulty.skillPresetId,
+            defaultProfileOverrides: tableNegotiationOverride ? { negotiation: tableNegotiationOverride } : null,
+            robotArchetypeOrder,
+          },
+        })
+      : baselineConfig);
+  applyManualProfilesToPlayers(state.players, setupDefaults);
+  state.ai = {
+    enabled: true,
+    stageId: 'stage8_profile_setup',
+    stageLabel: 'Perfis, cupons e caixa',
+    baselineConfig,
+    tableConfig,
+    tableConfigId: tableConfig.id || 'stage6_profile_table',
+    baselineLocked: baselineConfig.baselineLocked !== false,
+    aiDifficultyId: selectedAiSetup.aiDifficulty,
+    aiProfileModeId: selectedAiSetup.aiProfileMode,
+    baselineSummary: {
+      label: baselineConfig.label || 'Mesa Legacy Aberto',
+      marketRegimeId: baselineConfig.marketRegime?.id || 'legacy_open_market',
+      defaultRobotProfileId: baselineConfig.defaultRobotProfileId || 'legacy_open',
+      defaultSkillPresetId: baselineConfig.defaultSkillPresetId || 'legacy_normal',
+    },
+    activeSummary: {
+      label: tableConfig.label || 'Mesa AI Stage 8',
+      marketRegimeId: tableConfig.marketRegime?.id || 'stage6_profile_market',
+      defaultRobotProfileId: tableConfig.defaultRobotProfileId || 'balanced_trader',
+      defaultSkillPresetId: difficulty.skillPresetId,
+      difficultyLabel: difficulty.label,
+      profileModeLabel: profileMode.label,
+    },
+  };
+  if (engine?.applyTableConfigToPlayers) {
+    engine.applyTableConfigToPlayers(state.players, tableConfig);
+    return tableConfig;
+  }
+  if (engine?.applyBaselineToPlayers) {
+    engine.applyBaselineToPlayers(state.players, tableConfig);
+    return tableConfig;
+  }
+  state.players.forEach((player) => ensureAiProfile(player));
+  return tableConfig;
+}
+
 function aiDecisionContext(player, extra = {}) {
+  const tableConfig = extra.tableConfig || state.ai?.tableConfig || null;
   const engine = aiPolicyEngine();
   if (engine?.buildDecisionContext) {
     return engine.buildDecisionContext(player, {
+      tableConfig,
       rules: state.rules,
       session: state.session,
       ...extra,
@@ -165,6 +752,8 @@ function aiDecisionContext(player, extra = {}) {
   }
   return {
     player,
+    tableConfig,
+    marketRegime: tableConfig?.marketRegime || null,
     rules: state.rules,
     session: state.session,
     ...extra,
@@ -174,6 +763,20 @@ function aiDecisionContext(player, extra = {}) {
 function byId(id) {
   return document.getElementById(id);
 }
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function cloneAiData(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
 
 function nextMacrotask() {
   if (typeof MessageChannel === 'function') {
@@ -192,6 +795,9 @@ function getPauseIndicator() {
 
 function getPropertyInspectorOverlay() { return byId('property-inspector-overlay'); }
 function getPropertyInspectorStage() { return byId('property-inspector-stage'); }
+function getReportOverlay() { return byId('game-report-overlay'); }
+function getReportTabs() { return byId('report-tabs'); }
+function getReportBody() { return byId('report-body'); }
 
 function hasCentralOverlayOpen() {
   const ids = [
@@ -201,6 +807,7 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
+    'negotiation-overlay',
     'permission-choice-overlay',
     'property-inspector-overlay',
     'game-settings-overlay',
@@ -361,6 +968,21 @@ function formatSignedCurrency(value) {
   return `${sign}${formatCurrency(Math.abs(amount))}`;
 }
 
+function formatCompactCurrencyValue(value) {
+  const amount = Number(value || 0);
+  const absoluteAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (absoluteAmount >= 1000000) {
+    const digits = absoluteAmount >= 10000000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000000).toFixed(digits).replace(/\.0$/, '')}M`;
+  }
+  if (absoluteAmount >= 1000) {
+    const digits = absoluteAmount >= 100000 ? 0 : 1;
+    return `${sign}${(absoluteAmount / 1000).toFixed(digits).replace(/\.0$/, '')}k`;
+  }
+  return `${sign}${Math.round(absoluteAmount)}`;
+}
+
 function cpuSpeedFactor() {
   return Math.max(0.1, Number(state.settings?.cpuSpeed || 1));
 }
@@ -433,6 +1055,9 @@ function flushDeferredUiRefresh() {
   renderNodeOverlay({ force: true });
   renderShipOverlay({ force: true });
   renderPropertyInspector({ force: true });
+  if (!getReportOverlay()?.classList.contains('is-hidden')) {
+    renderReportOverlay();
+  }
 }
 
 function pruneActionFeed() {
@@ -491,6 +1116,816 @@ function closeSettingsOverlay() {
   setSettingsVisible(false);
 }
 
+function setReportVisible(visible) {
+  const overlay = getReportOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function reportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  const label = String(snapshot?.label || '').trim();
+  if (normalizedTurn <= 0) return label || 'Inicio';
+  return label || `Turno ${String(normalizedTurn).padStart(2, '0')}`;
+}
+
+function compactReportTurnLabel(snapshot) {
+  const normalizedTurn = Number(snapshot?.turnNumber || 0);
+  if (normalizedTurn <= 0) return 'T0';
+  return `T${normalizedTurn}`;
+}
+
+function reportEmptyMarkup(message = 'O historico do relatorio vai aparecer conforme os turnos avancarem.') {
+  return `<div class="report-empty">${message}</div>`;
+}
+
+function reportWindowModeFor(reportKey) {
+  return state.report?.windowModes?.[reportKey] === 'full' ? 'full' : 'recent';
+}
+
+function reportVisibleSnapshots(snapshots, reportKey) {
+  return reportWindowModeFor(reportKey) === 'full' ? snapshots : snapshots.slice(-100);
+}
+
+function reportCountLabel(snapshots, visibleSnapshots) {
+  if (!snapshots.length) return '0 marco(s)';
+  if (visibleSnapshots.length === snapshots.length) return `${snapshots.length} marco(s)`;
+  return `${visibleSnapshots.length} de ${snapshots.length} marco(s)`;
+}
+
+function reportWindowToggleMarkup(reportKey) {
+  const mode = reportWindowModeFor(reportKey);
+  return `
+    <div class="report-range-toggle" role="group" aria-label="Janela do grafico">
+      <button type="button" class="report-range-button${mode === 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="full">Desde o inicio</button>
+      <button type="button" class="report-range-button${mode !== 'full' ? ' is-active' : ''}" data-report-window-key="${reportKey}" data-report-window-mode="recent">Ultimos 100</button>
+    </div>
+  `;
+}
+
+function reportPlayerSnapshotEntry(snapshot, playerId) {
+  return (snapshot?.players || []).find((player) => player.id === playerId) || null;
+}
+
+function cashSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.cash || 0);
+}
+
+function assetSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.asset_total || 0);
+}
+
+function patrimonySnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.patrimony_total || 0);
+}
+
+function titleCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.title_count || 0);
+}
+
+function tollCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.toll_count || 0);
+}
+
+function permissionCountSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.permission_count || 0);
+}
+
+function reportCountMetricValue(snapshot, playerId, metricKey) {
+  if (metricKey === 'toll_count') return tollCountSnapshotValue(snapshot, playerId);
+  if (metricKey === 'permission_count') return permissionCountSnapshotValue(snapshot, playerId);
+  return titleCountSnapshotValue(snapshot, playerId);
+}
+
+function reportHeatmapLabelStride(total) {
+  if (total <= 8) return 1;
+  if (total <= 16) return 2;
+  if (total <= 30) return 3;
+  if (total <= 60) return 5;
+  return Math.max(6, Math.ceil(total / 12));
+}
+
+function reportCountHeatmapMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar este mapa de calor.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const maxValue = Math.max(1, ...values);
+  const width = 960;
+  const frame = { top: 14, right: 18, bottom: 34, left: 120 };
+  const rowHeight = 34;
+  const rowGap = 6;
+  const innerHeight = (players.length * rowHeight) + (Math.max(0, players.length - 1) * rowGap);
+  const height = frame.top + innerHeight + frame.bottom;
+  const innerWidth = width - frame.left - frame.right;
+  const cellWidth = innerWidth / Math.max(1, visibleSnapshots.length);
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
+  const showValues = visibleSnapshots.length <= 40 && cellWidth >= 15;
+
+  const dividerMarkup = players.slice(1).map((_, index) => {
+    const y = frame.top + (index * (rowHeight + rowGap)) + rowHeight + (rowGap / 2);
+    return `<line class="report-heatmap-divider" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+
+  const rowsMarkup = players.map((player, rowIndex) => {
+    const rowY = frame.top + (rowIndex * (rowHeight + rowGap));
+    const labelY = rowY + (rowHeight / 2) + 4;
+    const rowLabel = `
+      <circle cx="${frame.left - 102}" cy="${(rowY + (rowHeight / 2)).toFixed(2)}" r="5.5" fill="${player.color_hex || '#8fd7ff'}"></circle>
+      <text class="report-heatmap-row-label" x="${frame.left - 90}" y="${labelY.toFixed(2)}">${player.name}</text>
+    `;
+
+    const cells = visibleSnapshots.map((snapshot, columnIndex) => {
+      const x = frame.left + (columnIndex * cellWidth);
+      const value = reportCountMetricValue(snapshot, player.id, metricKey);
+      const intensity = value <= 0 ? 0.08 : (0.18 + ((value / maxValue) * 0.78));
+      const textFill = value >= (maxValue * 0.58) ? '#06121f' : '#edf6ff';
+      return `
+        <rect class="report-heatmap-cell" x="${x.toFixed(2)}" y="${rowY.toFixed(2)}" width="${Math.max(1, cellWidth - 1).toFixed(2)}" height="${rowHeight}" rx="6" fill="${player.color_hex || '#8fd7ff'}" fill-opacity="${intensity.toFixed(3)}"></rect>
+        ${showValues ? `<text class="report-heatmap-value" x="${(x + (cellWidth / 2)).toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="middle" fill="${textFill}">${Math.round(value)}</text>` : ''}
+      `;
+    }).join('');
+
+    return `<g>${rowLabel}${cells}</g>`;
+  }).join('');
+
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
+    const x = frame.left + (index * cellWidth) + (cellWidth / 2);
+    return `<text class="report-heatmap-xlabel" x="${x.toFixed(2)}" y="${height - 10}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  return `
+    <div class="report-heatmap-shell">
+      <svg class="report-heatmap" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+        ${dividerMarkup}
+        ${rowsMarkup}
+        ${xLabelsMarkup}
+      </svg>
+    </div>
+  `;
+}
+
+function reportHeatmapCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Mapa de calor do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountHeatmapMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
+}
+
+function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn', metric, ariaLabel = 'Grafico do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const valueGetter = metric === 'patrimony'
+    ? patrimonySnapshotValue
+    : cashSnapshotValue;
+
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(valueGetter(snapshot, player.id));
+    });
+  });
+
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const rawRange = Math.max(1, maxValue - minValue);
+  const padding = Math.max(180, Math.round(rawRange * 0.16));
+  const domainMin = Math.max(0, minValue - padding);
+  const domainMax = maxValue + padding;
+  const domainRange = Math.max(1, domainMax - domainMin);
+  const height = 460;
+  const frame = { top: 22, right: 22, bottom: 56, left: 96 };
+  const width = Math.max(860, Math.min(980, frame.left + frame.right + (visibleSnapshots.length * 28)));
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((domainMax - value) / domainRange) * innerHeight);
+  const ticks = Array.from({ length: 5 }, (_, index) => domainMin + ((domainRange / 4) * index));
+
+  const gridMarkup = ticks.map((value) => {
+    const y = yFor(value);
+    return `
+      <g>
+        <line class="report-grid-line" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>
+        <text class="report-axis-label" x="${frame.left - 10}" y="${(y + 4).toFixed(2)}" text-anchor="end">${formatCurrency(Math.round(value))}</text>
+      </g>
+    `;
+  }).join('');
+
+  const labelStride = reportHeatmapLabelStride(visibleSnapshots.length);
+  const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
+    if (index !== 0 && index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
+    const x = xFor(index);
+    return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 12}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+  }).join('');
+
+  const seriesMarkup = players.map((player) => {
+    const points = visibleSnapshots.map((snapshot, index) => `${xFor(index).toFixed(2)},${yFor(valueGetter(snapshot, player.id)).toFixed(2)}`).join(' ');
+    return `<g><polyline class="report-series-line" stroke="${player.color_hex || '#8fd7ff'}" points="${points}"></polyline></g>`;
+  }).join('');
+
+  const legendMarkup = players.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+    </span>
+  `).join('');
+
+  return `
+    <div class="report-chart-shell">
+      <div class="report-legend">${legendMarkup}</div>
+      <div class="report-chart-scroll">
+        <svg class="report-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+          ${gridMarkup}
+          ${seriesMarkup}
+          ${xLabelsMarkup}
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+function cashByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'cash-by-turn',
+    metric: 'cash',
+    ariaLabel: 'Grafico de dinheiro por turno',
+  });
+}
+
+function patrimonyByTurnChartMarkup(snapshots, players) {
+  return reportMetricChartMarkup(snapshots, players, {
+    reportKey: 'patrimony-by-turn',
+    metric: 'patrimony',
+    ariaLabel: 'Grafico de patrimonio por turno',
+  });
+}
+
+function reportCountTickValues(maxValue) {
+  const safeMax = Math.max(1, Math.round(maxValue));
+  const step = Math.max(1, Math.ceil(safeMax / 6));
+  const ticks = [0];
+  for (let value = step; value <= (safeMax + step); value += step) {
+    ticks.push(value);
+  }
+  return Array.from(new Set(ticks.map((value) => Math.round(value)))).sort((left, right) => left - right);
+}
+
+function reportStepPolylinePoints(visibleSnapshots, playerId, metricKey, xFor, yFor) {
+  const points = [];
+  let previousY = 0;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  return points.join(' ');
+}
+
+function reportCountLegendMarkup(visibleSnapshots, players, metricKey) {
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const sortedPlayers = players
+    .map((player) => ({
+      ...player,
+      metricValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.metricValue !== left.metricValue) return right.metricValue - left.metricValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return sortedPlayers.map((player) => `
+    <span class="report-legend-item">
+      <span class="report-legend-swatch" style="background:${player.color_hex || '#8fd7ff'}; color:${player.color_hex || '#8fd7ff'};"></span>
+      <span>${player.name}</span>
+      <strong class="report-legend-value">${Math.round(player.metricValue)}</strong>
+    </span>
+  `).join('');
+}
+
+function reportTrafficLightTone(value, maxValue) {
+  const safeValue = Math.max(0, Number(value || 0));
+  const safeMax = Math.max(1, Number(maxValue || 0));
+  if (safeValue <= 0) return 'tone-zero';
+  const ratio = safeValue / safeMax;
+  if (ratio < 0.34) return 'tone-low';
+  if (ratio < 0.67) return 'tone-mid';
+  return 'tone-high';
+}
+
+function reportStepAreaPoints(visibleSnapshots, playerId, metricKey, xFor, yFor, baselineY) {
+  if (!visibleSnapshots.length) return '';
+  const points = [];
+  let previousY = baselineY;
+  visibleSnapshots.forEach((snapshot, index) => {
+    const x = xFor(index);
+    const value = reportCountMetricValue(snapshot, playerId, metricKey);
+    const y = yFor(value);
+    if (index === 0) {
+      points.push(`${x.toFixed(2)},${baselineY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    } else {
+      points.push(`${x.toFixed(2)},${previousY.toFixed(2)}`);
+      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    previousY = y;
+  });
+  const lastX = xFor(visibleSnapshots.length - 1);
+  points.push(`${lastX.toFixed(2)},${baselineY.toFixed(2)}`);
+  return points.join(' ');
+}
+
+function reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey = 'title_count', metricMax = 1, ariaLabel = 'Grafico de jogador' } = {}) {
+  const width = 250;
+  const height = 118;
+  const frame = { top: 12, right: 8, bottom: 20, left: 8 };
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const yFor = (value) => frame.top + (((metricMax - value) / Math.max(1, metricMax)) * innerHeight);
+  const baselineY = yFor(0);
+  const startSnapshot = visibleSnapshots[0] || null;
+  const endSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const startValue = reportCountMetricValue(startSnapshot, player.id, metricKey);
+  const endValue = reportCountMetricValue(endSnapshot, player.id, metricKey);
+  const delta = endValue - startValue;
+  const deltaLabel = `${delta > 0 ? '+' : ''}${delta}`;
+  const gridValues = Array.from(new Set([0, Math.round(metricMax / 2), metricMax].filter((value) => value >= 0))).sort((left, right) => left - right);
+  const gridMarkup = gridValues.map((value) => {
+    const y = yFor(value);
+    return `<line class="report-player-spark-gridline" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+  const areaPoints = reportStepAreaPoints(visibleSnapshots, player.id, metricKey, xFor, yFor, baselineY);
+  const linePoints = reportStepPolylinePoints(visibleSnapshots, player.id, metricKey, xFor, yFor);
+  return `
+    <article class="report-player-spark-card" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <div class="report-player-spark-head">
+        <span class="report-player-head">
+          <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+          <span>${player.name}</span>
+        </span>
+        <div class="report-player-spark-badges">
+          <strong class="report-player-spark-value">${Math.round(endValue)}</strong>
+          <span class="report-player-spark-delta${delta > 0 ? ' is-positive' : delta < 0 ? ' is-negative' : ''}">${deltaLabel}</span>
+        </div>
+      </div>
+      <svg class="report-player-spark-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}: ${player.name}">
+        ${gridMarkup}
+        <polygon class="report-player-spark-area" fill="${player.color_hex || '#8fd7ff'}" points="${areaPoints}"></polygon>
+        <polyline class="report-player-spark-line" stroke="${player.color_hex || '#8fd7ff'}" points="${linePoints}"></polyline>
+      </svg>
+      <div class="report-player-spark-foot">
+        <span>${compactReportTurnLabel(startSnapshot)}</span>
+        <span>escala 0-${Math.round(metricMax)}</span>
+        <span>${compactReportTurnLabel(endSnapshot)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const values = [];
+  visibleSnapshots.forEach((snapshot) => {
+    players.forEach((player) => {
+      values.push(reportCountMetricValue(snapshot, player.id, metricKey));
+    });
+  });
+
+  const metricMax = Math.max(1, ...values);
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const rankedPlayers = players
+    .map((player) => ({
+      ...player,
+      latestValue: reportCountMetricValue(latestSnapshot, player.id, metricKey),
+    }))
+    .sort((left, right) => {
+      if (right.latestValue !== left.latestValue) return right.latestValue - left.latestValue;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return `
+    <div class="report-count-spark-shell">
+      <div class="report-count-scale-note">Ordenado pelo valor final. Escala comum: 0-${Math.round(metricMax)}.</div>
+      <div class="report-player-spark-grid">
+        ${rankedPlayers.map((player) => reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey, metricMax, ariaLabel })).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function reportCountTrendCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+  return `
+    <article class="report-metric-card report-trend-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCountTrendChartMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+    </article>
+  `;
+}
+
+function reportPlayers() {
+  return (state.players || []).map((player) => ({
+    id: player.id,
+    name: player.name,
+    color_hex: player.color_hex || '#8fd7ff',
+  }));
+}
+
+function cashByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'cash-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Dinheiro de jogador por turno</strong>
+          <span>Historico de caixa fechado no fim de cada turno global da simulacao.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('cash-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${cashByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function patrimonyByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'patrimony-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Patrimonio de jogador por turno</strong>
+          <span>Dinheiro somado ao valor-base dos ativos de cada jogador em cada fechamento.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('patrimony-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      ${patrimonyByTurnChartMarkup(snapshots, players)}
+    </section>
+  `;
+}
+
+function holdingsByTurnReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, 'holdings-by-turn');
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Ativos por turno</strong>
+          <span>Graficos de degrau para comparar aquisicoes, paradas e arrancadas de cada jogador ao longo da mesa.</span>
+        </div>
+        <div class="report-summary-actions">
+          ${reportWindowToggleMarkup('holdings-by-turn')}
+          <span class="report-count-badge">${reportCountLabel(snapshots, visibleSnapshots)}</span>
+        </div>
+      </div>
+      <div class="report-metric-grid report-holdings-grid">
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'title_count',
+          title: 'Titulos',
+          subtitle: 'Portos conquistados por turno.',
+          ariaLabel: 'Grafico de titulos por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'toll_count',
+          title: 'Pedagios',
+          subtitle: 'Pedagios conquistados por turno.',
+          ariaLabel: 'Grafico de pedagios por turno',
+        })}
+        ${reportCountTrendCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          metricKey: 'permission_count',
+          title: 'Permissoes',
+          subtitle: 'Permissoes ativas por turno.',
+          ariaLabel: 'Grafico de permissoes por turno',
+        })}
+      </div>
+    </section>
+  `;
+}
+
+function reportMilestoneTurns(snapshots) {
+  const maxTurn = Math.max(0, ...snapshots.map((snapshot) => Number(snapshot?.turnNumber || 0)));
+  if (maxTurn <= 0) return [];
+  const turns = [...REPORT_MILESTONE_TURNS].filter((turn) => turn <= maxTurn);
+  let nextTurn = REPORT_MILESTONE_TURNS[REPORT_MILESTONE_TURNS.length - 1] + 50;
+  while (nextTurn <= maxTurn) {
+    turns.push(nextTurn);
+    nextTurn += 50;
+  }
+  return turns;
+}
+
+function milestoneTableReportMarkup() {
+  const snapshots = reportSnapshots();
+  const players = reportPlayers();
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup();
+  }
+
+  const milestoneTurns = reportMilestoneTurns(snapshots);
+  if (!milestoneTurns.length) {
+    return reportEmptyMarkup('Os milestones vao aparecer quando a simulacao ultrapassar o turno 5.');
+  }
+
+  const snapshotByTurn = new Map(snapshots.map((snapshot) => [Number(snapshot?.turnNumber || 0), snapshot]));
+  const rowsMarkup = milestoneTurns.map((turnNumber) => {
+    const snapshot = snapshotByTurn.get(turnNumber);
+    if (!snapshot) return '';
+
+    const entries = players.map((player) => ({
+      player,
+      entry: reportPlayerSnapshotEntry(snapshot, player.id) || {
+        cash: 0,
+        patrimony_total: 0,
+        title_count: 0,
+        toll_count: 0,
+        permission_count: 0,
+      },
+    }));
+
+    const leaderByMetric = {
+      cash: Math.max(0, ...entries.map(({ entry }) => Number(entry.cash || 0))),
+      patrimony_total: Math.max(0, ...entries.map(({ entry }) => Number(entry.patrimony_total || 0))),
+      title_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.title_count || 0))),
+      toll_count: Math.max(0, ...entries.map(({ entry }) => Number(entry.toll_count || 0))),
+    };
+
+    const playerCellsMarkup = entries.map(({ player, entry }) => {
+      const accent = player.color_hex || '#8fd7ff';
+      const cash = Number(entry.cash || 0);
+      const patrimony = Number(entry.patrimony_total || 0);
+      const titleCount = Math.round(Number(entry.title_count || 0));
+      const tollCount = Math.round(Number(entry.toll_count || 0));
+      const permissionCount = Math.round(Number(entry.permission_count || 0));
+      return `
+        <td class="report-milestone-player-col" style="--report-player-accent:${accent}">
+          <div class="report-milestone-cell">
+            <div class="report-milestone-primary">
+              <span class="report-milestone-stat${cash === leaderByMetric.cash && leaderByMetric.cash > 0 ? ' is-leading' : ''}">
+                <small>Caixa</small>
+                <strong>${formatCompactCurrencyValue(cash)}</strong>
+              </span>
+              <span class="report-milestone-stat${patrimony === leaderByMetric.patrimony_total && leaderByMetric.patrimony_total > 0 ? ' is-leading' : ''}">
+                <small>Patr.</small>
+                <strong>${formatCompactCurrencyValue(patrimony)}</strong>
+              </span>
+            </div>
+            <div class="report-milestone-secondary">
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(titleCount, leaderByMetric.title_count)}">
+                <small>PO</small>
+                <strong>${titleCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(tollCount, leaderByMetric.toll_count)}">
+                <small>PE</small>
+                <strong>${tollCount}</strong>
+              </span>
+              <span class="report-milestone-stat report-milestone-stat-compact ${reportTrafficLightTone(permissionCount, 6)}">
+                <small>NA</small>
+                <strong>${permissionCount}</strong>
+              </span>
+            </div>
+          </div>
+        </td>
+      `;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="report-turn-pivot-cell">
+          <div class="report-turn-cell">
+            <strong>${compactReportTurnLabel(snapshot)}</strong>
+            <span>${reportTurnLabel(snapshot)}</span>
+          </div>
+        </td>
+        ${playerCellsMarkup}
+      </tr>
+    `;
+  }).join('');
+
+  const headerMarkup = players.map((player) => `
+    <th class="report-milestone-player-head" scope="col" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <span class="report-player-head">
+        <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+        <span>${player.name}</span>
+      </span>
+    </th>
+  `).join('');
+
+  return `
+    <section class="report-panel">
+      <div class="report-summary">
+        <div class="report-summary-copy">
+          <strong>Milestones da simulacao</strong>
+          <span>Uma linha por marco e uma coluna por jogador, com PO, PE e NA em escala semaforica.</span>
+        </div>
+        <div class="report-summary-actions">
+          <span class="report-count-badge">${milestoneTurns.length} marco(s)</span>
+        </div>
+      </div>
+      <div class="report-table-wrap">
+        <table class="report-table report-milestone-table">
+          <thead>
+            <tr>
+              <th scope="col">Marco</th>
+              ${headerMarkup}
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsMarkup}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderReportOverlay() {
+  const tabs = getReportTabs();
+  const body = getReportBody();
+  if (!tabs || !body) return;
+
+  const activeKey = state.report?.activeKey || 'cash-by-turn';
+  tabs.innerHTML = `
+    <button type="button" class="report-tab${activeKey === 'cash-by-turn' ? ' is-active' : ''}" data-report-key="cash-by-turn" role="tab" aria-selected="${activeKey === 'cash-by-turn' ? 'true' : 'false'}">Dinheiro por turno</button>
+    <button type="button" class="report-tab${activeKey === 'patrimony-by-turn' ? ' is-active' : ''}" data-report-key="patrimony-by-turn" role="tab" aria-selected="${activeKey === 'patrimony-by-turn' ? 'true' : 'false'}">Patrimonio por turno</button>
+    <button type="button" class="report-tab${activeKey === 'holdings-by-turn' ? ' is-active' : ''}" data-report-key="holdings-by-turn" role="tab" aria-selected="${activeKey === 'holdings-by-turn' ? 'true' : 'false'}">Ativos por turno</button>
+    <button type="button" class="report-tab${activeKey === 'milestones-table' ? ' is-active' : ''}" data-report-key="milestones-table" role="tab" aria-selected="${activeKey === 'milestones-table' ? 'true' : 'false'}">Tabela por marco</button>
+  `;
+
+  if (activeKey === 'patrimony-by-turn') {
+    body.innerHTML = patrimonyByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'holdings-by-turn') {
+    body.innerHTML = holdingsByTurnReportMarkup();
+    return;
+  }
+  if (activeKey === 'milestones-table') {
+    body.innerHTML = milestoneTableReportMarkup();
+    return;
+  }
+
+  body.innerHTML = activeKey === 'cash-by-turn'
+    ? cashByTurnReportMarkup()
+    : reportEmptyMarkup('Esse relatorio ainda nao foi implementado.');
+}
+
+function openReportOverlay() {
+  renderReportOverlay();
+  setReportVisible(true);
+}
+
+function closeReportOverlay() {
+  setReportVisible(false);
+}
+
+function playerAssetBookValue(player) {
+  if (!player) return 0;
+  const propertiesValue = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter(Boolean)
+    .reduce((total, card) => total + Math.max(0, Number(card.price || 0)), 0);
+  const permissionsValue = (player.permissions || [])
+    .reduce((total, permission) => total + permissionPurchasePrice(permission), 0);
+  return propertiesValue + permissionsValue;
+}
+
+function playerTitleCount(player) {
+  return Math.max(0, Number(player?.ports_owned || 0));
+}
+
+function playerTollCount(player) {
+  return Math.max(0, Number(player?.tolls_owned || 0));
+}
+
+function playerPermissionCount(player) {
+  return Array.isArray(player?.permissions) ? player.permissions.length : 0;
+}
+
+function captureCashSnapshot({
+  label = state.session?.turn_label || 'Turno --',
+  turnNumber = Number(state.session?.turn_number || 0),
+  phase = state.session?.phase || '',
+  force = false,
+} = {}) {
+  if (!(state.players || []).length) return;
+
+  const normalizedTurn = Number(turnNumber || 0);
+  const normalizedLabel = String(label || '').trim() || (normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio');
+  const key = `${normalizedTurn}|${normalizedLabel}`;
+  const snapshot = {
+    key,
+    turnNumber: normalizedTurn,
+    label: normalizedLabel,
+    phase: String(phase || ''),
+    players: (state.players || []).map((player) => {
+      const cash = Number(player.cash || 0);
+      const assetTotal = playerAssetBookValue(player);
+      const titleCount = playerTitleCount(player);
+      const tollCount = playerTollCount(player);
+      const permissionCount = playerPermissionCount(player);
+      return {
+        id: player.id,
+        name: player.name,
+        cash,
+        asset_total: assetTotal,
+        patrimony_total: cash + assetTotal,
+        title_count: titleCount,
+        toll_count: tollCount,
+        permission_count: permissionCount,
+        property_count: titleCount + tollCount,
+        color: player.color_hex || '#8fd7ff',
+      };
+    }),
+  };
+
+  const existingIndex = (state.report?.snapshotKeys || []).indexOf(key);
+  if (existingIndex >= 0) {
+    if (!force) return;
+    state.report.cashHistory[existingIndex] = snapshot;
+  } else {
+    state.report.snapshotKeys.push(key);
+    state.report.cashHistory.push(snapshot);
+  }
+  renderReportOverlay();
+}
+
+function resetReportData() {
+  state.report.cashHistory = [];
+  state.report.snapshotKeys = [];
+  captureCashSnapshot({
+    label: 'Inicio',
+    turnNumber: 0,
+    phase: 'Mesa inicial',
+    force: true,
+  });
+}
+
+function reportSnapshots() { return state.report?.cashHistory || []; }
+
 function playerActionLogEntries(playerId) {
   pruneActionFeed();
   return (state.actionFeed || []).filter((entry) => entry.playerId === playerId).slice(0, 5);
@@ -547,6 +1982,7 @@ function getNodeOverlay() { return byId('game-preview-nodes'); }
 function getShipOverlay() { return byId('game-preview-ships'); }
 function getHitLayer() { return byId('game-preview-hitlayer'); }
 function getSetupOverlay() { return byId('game-setup-overlay'); }
+function getSetupAiEditorOverlay() { return byId('setup-ai-editor-overlay'); }
 function getSettingsOverlay() { return byId('game-settings-overlay'); }
 function getSettingsLogModeValue() { return byId('settings-log-mode-value'); }
 function getSettingsLogModeGlobalInput() { return byId('settings-log-mode-global'); }
@@ -787,6 +2223,7 @@ async function maybeSpendCoupon(player, kind, {
   secondaryLabel = 'Nao usar',
   hideSecondary = false,
   autoUse = true,
+  couponSignals = {},
 } = {}) {
   const coupon = firstCouponOfKind(player, kind);
   if (!coupon) return null;
@@ -811,6 +2248,7 @@ async function maybeSpendCoupon(player, kind, {
             reason: 'coupon_usage',
             action,
             cardCode,
+            couponSignals,
           }),
         })
       : null;
@@ -856,6 +2294,11 @@ async function maybeUseFreePortStayCoupon(player, card, charge, owner = null) {
       ? `Zerou a estadia de ${card.code} que seria paga a ${owner.name}.`
       : `Zerou a estadia de ${card.code} que seria paga ao banco.`,
     statusLabel: `porto livre ${card.code}`,
+    couponSignals: {
+      charge,
+      ownerPresent: Boolean(owner),
+      propertyKind: 'port',
+    },
   });
 }
 
@@ -873,6 +2316,12 @@ async function maybeUseFreeTollCoupon(player, card, charge, owner = null) {
       ? `Zerou o pedagio de ${card.code} que seria pago a ${owner.name}.`
       : `Zerou o pedagio de ${card.code} que seria pago ao banco.`,
     statusLabel: `pedagio livre ${card.code}`,
+    couponSignals: {
+      charge,
+      ownerPresent: Boolean(owner),
+      propertyKind: 'toll',
+      mandatoryToll: player?.active_contract?.mandatory_toll === card.code,
+    },
   });
   if (spent && player?.active_contract?.mandatory_toll === card.code) {
     player.active_contract.toll_passed = true;
@@ -931,6 +2380,10 @@ async function resolveFuelStopForPlayer(player, node) {
     secondaryLabel: 'Pagar normalmente',
     detail: `Abastecimento em ${player.location_label} sem custo.`,
     statusLabel: 'abastecimento gratis',
+    couponSignals: {
+      charge: amount,
+      propertyKind: 'fuel',
+    },
   });
   if (couponUse) {
     return {
@@ -1054,7 +2507,7 @@ function activePermissionRecord(player) {
 }
 
 function availablePermissionRecords(player) {
-  return (player?.permissions || []).filter((permission) => !permission?.mortgaged);
+  return (player?.permissions || []).filter(Boolean);
 }
 
 function permissionPurchasePrice(permission) {
@@ -1091,18 +2544,18 @@ function propertyRedeemCost(card) {
 }
 
 function permissionMortgageCredit(permission) {
-  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(permissionPurchasePrice(permission), normalizedGameRules()) : Math.floor(permissionPurchasePrice(permission) * 0.5);
+  return 0;
 }
 
 function permissionRedeemCost(permission) {
-  return economyLib()?.redeemCost ? economyLib().redeemCost(permissionPurchasePrice(permission), normalizedGameRules()) : Math.round(permissionMortgageCredit(permission) * 1.5);
+  return 0;
 }
 
 function syncActivePermissionAfterEconomyChange(player) {
   if (!player) return;
   const available = availablePermissionRecords(player);
   const active = activePermissionRecord(player);
-  if (active && !active.mortgaged) return;
+  if (active) return;
   if (available.length) {
     const next = available[0];
     player.active_permission_id = next.id;
@@ -1120,7 +2573,7 @@ function syncActivePermissionAfterEconomyChange(player) {
 
 function setActivePermissionForPlayer(player, permissionId, { statusLabel = null } = {}) {
   const permission = findPermissionRecord(player, permissionId);
-  if (!player || !permission || permission.mortgaged) return { permission: null, changed: false };
+  if (!player || !permission) return { permission: null, changed: false };
   const changed = String(player.active_permission_id || '') !== String(permission.id);
   player.active_permission_id = permission.id;
   player.active_permission_label = permission.title;
@@ -1196,7 +2649,7 @@ function applyBestContractPermissionForRobot(player, originCode = null) {
     statusLabel: 'permissao ativa definida',
   });
   if (result.changed && result.permission) {
-    pushActionLog(player, 'Permissao escolhida', `${result.permission.title} (${selection.ownsOrigin ? `melhor frete no porto inicial ${selection.originCode}` : 'maior estadia'}).`);
+    pushActionLog(player, 'Permissao escolhida', `${result.permission.title} (${bestPermissionDecision?.explanation || (selection.ownsOrigin ? `melhor frete no porto inicial ${selection.originCode}` : 'melhor combinacao atual')}).`);
     renderHud();
   }
   return { ...bestChoice, changed: result.changed, ownsOrigin: selection.ownsOrigin, originCode: selection.originCode };
@@ -1218,25 +2671,11 @@ function canRedeemProperty(player, code) {
 }
 
 function canMortgagePermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission) return false;
-  if (permission.mortgaged) return false;
-  const activePermissionId = String(player.active_permission_id || '');
-  const contractInProgress = Boolean(
-    player.active_contract
-    && !player.active_contract.completed
-    && player.active_contract.destination
-    && player.active_contract.destination !== '--'
-    && !player.needs_new_contract
-  );
-  if (String(permission.id) === activePermissionId && contractInProgress) return false;
-  return true;
+  return false;
 }
 
 function canRedeemPermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission || !permission.mortgaged) return false;
-  return player.cash >= permissionRedeemCost(permission);
+  return false;
 }
 
 function mortgagePropertyForPlayer(player, code, { auto = false, reason = 'hipoteca' } = {}) {
@@ -1267,37 +2706,16 @@ function redeemPropertyForPlayer(player, code, { auto = false } = {}) {
 }
 
 function mortgagePermissionForPlayer(player, permissionId, { auto = false, reason = 'hipoteca' } = {}) {
-  if (!canMortgagePermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const credit = permissionMortgageCredit(permission);
-  permission.mortgaged = true;
-  updatePlayerCash(player, credit);
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `hipotecou ${permission.title}`;
-  pushActionLog(player, auto ? 'Hipoteca automatica' : 'Hipoteca', `${permission.title}: recebeu ${formatCurrency(credit)} (${reason}).`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function redeemPermissionForPlayer(player, permissionId, { auto = false } = {}) {
-  if (!canRedeemPermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const cost = permissionRedeemCost(permission);
-  updatePlayerCash(player, -cost);
-  permission.mortgaged = false;
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `resgatou ${permission.title}`;
-  pushActionLog(player, auto ? 'Resgate automatico' : 'Resgate', `${permission.title}: pagou ${formatCurrency(cost)} ao banco.`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function mortgageCandidatesForPlayer(player) {
   if (!player || player.bankrupt) return [];
+  const activePermissionCount = availablePermissionRecords(player).length;
   const propertyCandidates = (player.property_codes || [])
     .map((code) => getPropertyCard(code))
     .filter((card) => card && !card.mortgaged)
@@ -1306,27 +2724,67 @@ function mortgageCandidatesForPlayer(player) {
       key: card.code,
       label: card.code,
       credit: propertyMortgageCredit(card),
-      priority: playerHasRegionMonopoly(player, card.continent) ? 2 : 1,
+      propertyKind: card.is_toll ? 'toll' : 'port',
+      continent: card.continent || '',
+      monopolyProtected: !card.is_toll && playerHasRegionMonopoly(player, card.continent),
+      remainingPermissionCount: activePermissionCount,
     }));
-  const permissionCandidates = (player.permissions || [])
-    .filter((permission) => canMortgagePermission(player, permission.id))
-    .map((permission) => ({
-      type: 'permission',
-      key: permission.id,
-      label: permission.title,
-      credit: permissionMortgageCredit(permission),
-      priority: 3,
+  return [...propertyCandidates]
+    .filter((entry) => entry.credit > 0);
+}
+
+function redeemCandidatesForPlayer(player) {
+  if (!player || player.bankrupt) return [];
+  const activePermissionCount = availablePermissionRecords(player).length;
+  const propertyCandidates = (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card && card.mortgaged)
+    .map((card) => ({
+      type: 'property',
+      key: card.code,
+      label: card.code,
+      cost: propertyRedeemCost(card),
+      propertyKind: card.is_toll ? 'toll' : 'port',
+      continent: card.continent || '',
+      monopolyProtected: !card.is_toll && regionPortCards(card.continent).every((entry) => player.property_codes?.includes(entry.code)),
+      remainingPermissionCount: activePermissionCount,
     }));
-  return [...propertyCandidates, ...permissionCandidates]
-    .filter((entry) => entry.credit > 0)
-    .sort((left, right) => (left.priority - right.priority) || (left.credit - right.credit) || String(left.label).localeCompare(String(right.label)));
+  return [...propertyCandidates]
+    .filter((entry) => entry.cost > 0);
 }
 
 function performMortgageCandidate(player, candidate, reason) {
   if (!player || !candidate) return false;
   if (candidate.type === 'property') return mortgagePropertyForPlayer(player, candidate.key, { auto: true, reason });
-  if (candidate.type === 'permission') return mortgagePermissionForPlayer(player, candidate.key, { auto: true, reason });
   return false;
+}
+
+function performRedeemCandidate(player, candidate) {
+  if (!player || !candidate) return false;
+  if (candidate.type === 'property') return redeemPropertyForPlayer(player, candidate.key, { auto: true });
+  return false;
+}
+
+async function maybeAutoRedeemForRobot(player) {
+  if (!player || player.is_human || player.bankrupt) return false;
+  let redeemedAny = false;
+  let loops = 0;
+  while (loops < 2) {
+    const candidates = redeemCandidatesForPlayer(player);
+    if (!candidates.length) break;
+    const decision = aiPolicyEngine()?.decideRedeemCandidate
+      ? aiPolicyEngine().decideRedeemCandidate({
+          player,
+          candidates,
+          context: aiDecisionContext(player, { reason: 'auto_redeem' }),
+        })
+      : null;
+    if (!(decision?.shouldRedeem) || !decision?.candidate) break;
+    if (!performRedeemCandidate(player, decision.candidate)) break;
+    redeemedAny = true;
+    loops += 1;
+  }
+  return redeemedAny;
 }
 
 function releaseCouponsOnBankruptcy(player) {
@@ -1434,10 +2892,19 @@ async function ensurePlayerLiquidity(player, amount, { reason = 'pagamento obrig
     return promptHumanMortgageForLiquidity(player, due, { reason, creditor });
   }
 
-  const candidates = mortgageCandidatesForPlayer(player);
-  for (const candidate of candidates) {
-    if (player.cash >= due) break;
-    performMortgageCandidate(player, candidate, reason);
+  while (player.cash < due) {
+    const candidates = mortgageCandidatesForPlayer(player);
+    if (!candidates.length) break;
+    const decision = aiPolicyEngine()?.decideMortgageCandidate
+      ? aiPolicyEngine().decideMortgageCandidate({
+          player,
+          candidates,
+          due,
+          context: aiDecisionContext(player, { reason: 'auto_mortgage' }),
+        })
+      : null;
+    const candidate = decision?.candidate || candidates[0];
+    if (!candidate || !performMortgageCandidate(player, candidate, reason)) break;
   }
   if (player.cash >= due) return true;
   bankruptPlayer(player, { creditor, reason, detail: `faltavam ${formatCurrency(Math.max(0, due - player.cash))}` });
@@ -1543,6 +3010,573 @@ function stopChargeBreakdown(player, card) {
     mortgaged: isPropertyMortgaged(card?.code || ''),
   };
 }
+
+function playerRegionPortCount(player, continent) {
+  if (!player || player.bankrupt || !continent) return 0;
+  return regionPortCards(continent)
+    .filter((card) => player.property_codes?.includes(card.code) && !isPropertyMortgaged(card.code))
+    .length;
+}
+
+
+function buildAiBankPurchaseSignals(player, card, { reason = 'property_purchase' } = {}) {
+  const propertyKind = card?.kind || 'port';
+  const regionSize = propertyKind === 'port' ? (regionPortCards(card?.continent || '').length || 0) : 0;
+  const regionOwned = regionSize ? playerRegionPortCount(player, card?.continent || '') : 0;
+  const { fee, multiplier } = getPropertyStopRate(player, card);
+  return {
+    propertyKind,
+    propertyCode: card?.code || '',
+    propertyContinent: card?.continent || '',
+    regionSize,
+    regionOwnedRatio: regionSize ? (regionOwned / regionSize) : 0,
+    wouldCompleteMonopoly: Boolean(propertyKind === 'port' && regionSize && regionOwned + 1 >= regionSize),
+    rateFee: fee,
+    rateMultiplier: multiplier,
+    freightPotential: fee * Math.max(1, multiplier),
+    mortgageFloor: propertyMortgageCredit(card),
+    portsOwned: Math.max(0, Number(player?.ports_owned || 0)),
+    tollsOwned: Math.max(0, Number(player?.tolls_owned || 0)),
+    permissionCount: availablePermissionRecords(player).length,
+    availablePermissionCount: availablePermissionCardsForPlayer(player, { excludeOwned: true }).length,
+    reason,
+  };
+}
+
+function buildAiPermissionSignals(player, availableCards = [], extraCost = 0, { reason = 'extra_permission_after_delivery' } = {}) {
+  const livePermissions = availablePermissionRecords(player);
+  const ownedPortCards = (player?.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card?.kind === 'port' && !isPropertyMortgaged(card.code));
+  let bestCurrentFreight = 0;
+  let bestNewPermissionFreight = 0;
+
+  ownedPortCards.forEach((card) => {
+    livePermissions.forEach((permission) => {
+      const row = getRate(card, permission.kind || permission.id) || { fee: 0, multiplier: 1 };
+      bestCurrentFreight = Math.max(bestCurrentFreight, Number(row.fee || 0) * Math.max(1, Number(row.multiplier || 1)));
+    });
+    availableCards.forEach((permissionCard) => {
+      const row = getRate(card, permissionCard.kind || permissionCard.id) || { fee: 0, multiplier: 1 };
+      bestNewPermissionFreight = Math.max(bestNewPermissionFreight, Number(row.fee || 0) * Math.max(1, Number(row.multiplier || 1)));
+    });
+  });
+
+  return {
+    ownedPortCount: Math.max(0, Number(player?.ports_owned || 0)),
+    ownedTollCount: Math.max(0, Number(player?.tolls_owned || 0)),
+    permissionCount: livePermissions.length,
+    availableCount: availableCards.length,
+    extraCost,
+    bestCurrentFreight,
+    bestNewPermissionFreight,
+    reason,
+  };
+}
+
+function buildAiNegotiationSignals(buyer, seller, card, { reason = 'owned_property_negotiation', stop = null, listPrice = 0 } = {}) {
+  const propertyKind = card?.kind || 'port';
+  const regionSize = propertyKind === 'port' ? (regionPortCards(card?.continent || '').length || 0) : 0;
+  const buyerRegionOwned = regionSize ? playerRegionPortCount(buyer, card?.continent || '') : 0;
+  const sellerRegionOwned = regionSize ? playerRegionPortCount(seller, card?.continent || '') : 0;
+  const { fee, multiplier } = getPropertyStopRate(buyer, card);
+  return {
+    propertyKind,
+    propertyCode: card?.code || '',
+    propertyContinent: card?.continent || '',
+    listPrice,
+    ownerCharge: stop?.ownerCharge || 0,
+    bankFee: stop?.bankFee || 0,
+    rateFee: fee,
+    rateMultiplier: multiplier,
+    freightPotential: fee * Math.max(1, multiplier),
+    mortgageFloor: propertyMortgageCredit(card),
+    regionSize,
+    buyerRegionBeforeRatio: regionSize ? (buyerRegionOwned / regionSize) : 0,
+    buyerRegionAfterRatio: regionSize ? (Math.min(regionSize, buyerRegionOwned + 1) / regionSize) : 0,
+    sellerRegionBeforeRatio: regionSize ? (sellerRegionOwned / regionSize) : 0,
+    sellerRegionAfterRatio: regionSize ? (Math.max(0, sellerRegionOwned - 1) / regionSize) : 0,
+    buyerWouldCompleteMonopoly: Boolean(propertyKind === 'port' && regionSize && buyerRegionOwned + 1 >= regionSize),
+    sellerWouldLoseMonopoly: Boolean(propertyKind === 'port' && regionSize && sellerRegionOwned >= regionSize),
+    buyerPortsOwned: buyer?.ports_owned || 0,
+    buyerTollsOwned: buyer?.tolls_owned || 0,
+    sellerPortsOwned: seller?.ports_owned || 0,
+    sellerTollsOwned: seller?.tolls_owned || 0,
+    reason,
+  };
+}
+
+function logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction = 'Vendeu porto' } = {}) {
+  if (!buyer || !seller || !card || !decision) return;
+  const opening = (decision.transcript || []).find((entry) => entry.phase === 'opening_offer' && entry.amount > 0);
+  const counter = (decision.transcript || []).find((entry) => entry.phase === 'counter_offer' && entry.amount > 0);
+
+  if (decision.mode === 'dynamic') {
+    if (opening?.amount) {
+      pushActionLog(buyer, 'Oferta enviada', `${card.code} para ${seller.name}: ${formatCurrency(opening.amount)}.`);
+    }
+    if (counter?.amount) {
+      pushActionLog(seller, 'Contraoferta', `${card.code} para ${buyer.name}: ${formatCurrency(counter.amount)}.`);
+    }
+    if (!decision.accepted) {
+      const rejectionDetail = decision.rejectionReason === 'no_overlap'
+        ? `sem faixa em comum. Maximo ${formatCurrency(decision.buyerMax || 0)}.`
+        : decision.rejectionReason === 'spread_too_small'
+          ? `sem margem para fechar ${card.code}.`
+          : `sem caixa suficiente para fechar ${card.code}.`;
+      pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: ${rejectionDetail}`);
+      pushActionLog(seller, 'Negociacao recusada', `${card.code} ficou com ${seller.name}. Minimo ${formatCurrency(decision.sellerMin || 0)}.`);
+      return;
+    }
+  }
+
+  if (decision.accepted) {
+    const detailSuffix = opening?.amount && counter?.amount
+      ? ` Oferta ${formatCurrency(opening.amount)} | contraoferta ${formatCurrency(counter.amount)}.`
+      : '';
+    pushActionLog(buyer, 'Negociacao aceita', `${card.code} por ${formatCurrency(decision.finalPrice || 0)}.${detailSuffix}`.trim());
+    pushActionLog(seller, saleAction, `${card.code} por ${formatCurrency(decision.finalPrice || 0)} para ${buyer.name}.`);
+  }
+}
+
+function executeCpuOwnedPropertyNegotiation(buyer, seller, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+} = {}) {
+  if (!buyer || !seller || !card || buyer.bankrupt || seller.bankrupt || seller.id === buyer.id) {
+    return { accepted: false, finalPrice: 0, decision: null, statusLabel: buyer?.status_label || '--' };
+  }
+
+  const signals = buildAiNegotiationSignals(buyer, seller, card, { reason, stop, listPrice });
+  const legacyFallbackAccepted = cpuShouldNegotiateOwnedProperty(buyer, listPrice, seller, card);
+  const decision = aiPolicyEngine()?.decideOwnedPropertyNegotiation
+    ? aiPolicyEngine().decideOwnedPropertyNegotiation({
+        player: buyer,
+        owner: seller,
+        card,
+        price: listPrice,
+        context: aiDecisionContext(buyer, {
+          reason,
+          negotiationSignals: signals,
+        }),
+      })
+    : {
+        accepted: legacyFallbackAccepted,
+        shouldBuy: legacyFallbackAccepted,
+        finalPrice: listPrice,
+        mode: 'legacy',
+        transcript: [],
+      };
+
+  if (!decision?.accepted || !(decision.finalPrice > 0)) {
+    if (decision?.mode === 'dynamic') {
+      logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction });
+      renderHud();
+    }
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision,
+      statusLabel: buyer.status_label || '--',
+    };
+  }
+
+  const finalPrice = Math.round(Number(decision.finalPrice || 0));
+  if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+    if (decision?.mode === 'dynamic') {
+      pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: nao conseguiu fechar por ${formatCurrency(finalPrice)}.`);
+      pushActionLog(seller, 'Negociacao recusada', `${card.code} permaneceu com ${seller.name}.`);
+      renderHud();
+    }
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision,
+      statusLabel: buyer.status_label || '--',
+    };
+  }
+
+  buyer.status_label = `comprou ${card.code}`;
+  logCpuNegotiationTranscript(buyer, seller, card, {
+    ...decision,
+    accepted: true,
+    finalPrice,
+  }, { saleAction });
+  renderHud();
+  return {
+    accepted: true,
+    finalPrice,
+    decision,
+    statusLabel: buyer.status_label,
+  };
+}
+function prepareHumanOwnedPropertyNegotiation(buyer, seller, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+} = {}) {
+  const signals = buildAiNegotiationSignals(buyer, seller, card, { reason, stop, listPrice });
+  const decision = aiPolicyEngine()?.buildHumanOwnedPropertyNegotiation
+    ? aiPolicyEngine().buildHumanOwnedPropertyNegotiation({
+        player: buyer,
+        owner: seller,
+        card,
+        price: listPrice,
+        context: aiDecisionContext(buyer, {
+          reason,
+          negotiationSignals: signals,
+        }),
+      })
+    : null;
+
+  return {
+    saleAction,
+    reason,
+    signals,
+    decision,
+    canNegotiate: Boolean(decision?.canNegotiate),
+  };
+}
+
+function humanNegotiationRejectionDetail(decision, seller, card) {
+  if (decision?.robotLine) return decision.robotLine;
+  if (decision?.reason === 'human_declined') {
+    return `${card.code} ficou com ${seller.name}.`;
+  }
+  if (decision?.reason === 'insufficient_cash') {
+    return `sem caixa para fechar ${card.code}.`;
+  }
+  if (decision?.reason === 'lowball') {
+    return `a proposta ficou baixa demais para ${card.code}.`;
+  }
+  if (decision?.reason === 'final_refusal') {
+    return `${seller.name} preferiu manter ${card.code}.`;
+  }
+  if (decision?.reason === 'cash_gap') {
+    return `seu caixa nao chegou onde ${seller.name} queria.`;
+  }
+  return `${card.code} ficou com ${seller.name}.`;
+}
+
+function logHumanNegotiationStart(buyer, seller, card, session) {
+  if (!buyer || !seller || !card || !session?.currentAsk) return;
+  const suffix = session?.sellerLine ? ` ${session.sellerLine}` : '';
+  pushActionLog(seller, 'Oferta enviada', `${card.code} para voce: ${formatCurrency(session.currentAsk)}.${suffix}`);
+}
+
+function logHumanNegotiationCounter(buyer, seller, card, amount) {
+  if (!buyer || !seller || !card || !(amount > 0)) return;
+  pushActionLog(buyer, 'Contraoferta', `${card.code} para ${seller.name}: ${formatCurrency(amount)}.`);
+}
+
+function logHumanNegotiationOutcome(buyer, seller, card, result, { saleAction = 'Vendeu porto' } = {}) {
+  if (!buyer || !seller || !card || !result) return;
+  if (result.accepted) {
+    pushActionLog(buyer, 'Negociacao aceita', `${card.code} por ${formatCurrency(result.finalPrice || 0)} com ${seller.name}.`);
+    pushActionLog(seller, saleAction, `${card.code} por ${formatCurrency(result.finalPrice || 0)} para ${buyer.name}.`);
+    return;
+  }
+  const detail = humanNegotiationRejectionDetail(result, seller, card);
+  pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: ${detail}`);
+  pushActionLog(seller, 'Negociacao recusada', `${card.code} ficou com ${seller.name}.`);
+}
+
+
+function logHumanSaleNegotiationStart(buyer, seller, card, session) {
+  if (!buyer || !seller || !card || !session?.currentBid) return;
+  const suffix = session?.buyerLine ? ` ${session.buyerLine}` : '';
+  pushActionLog(buyer, 'Oferta enviada', `${card.code} para ${seller.name}: ${formatCurrency(session.currentBid)}.${suffix}`);
+}
+
+function humanSaleNegotiationRejectionDetail(decision, buyer, card) {
+  if (decision?.robotLine) return decision.robotLine;
+  if (decision?.reason === 'seller_declined') {
+    return `${card.code} ficou com voce.`;
+  }
+  if (decision?.reason === 'cash_gap') {
+    return `${buyer.name} nao chegou no seu pedido por ${card.code}.`;
+  }
+  if (decision?.reason === 'high_ask') {
+    return `${buyer.name} achou alto demais o pedido por ${card.code}.`;
+  }
+  if (decision?.reason === 'final_refusal') {
+    return `${buyer.name} desistiu de ${card.code}.`;
+  }
+  return `${card.code} ficou com voce.`;
+}
+
+function logHumanSaleNegotiationCounter(buyer, seller, card, amount) {
+  if (!buyer || !seller || !card || !(amount > 0)) return;
+  pushActionLog(seller, 'Contraoferta', `${card.code} para ${buyer.name}: ${formatCurrency(amount)}.`);
+}
+
+function logHumanSaleNegotiationOutcome(buyer, seller, card, result, { saleAction = 'Vendeu porto' } = {}) {
+  if (!buyer || !seller || !card || !result) return;
+  if (result.accepted) {
+    pushActionLog(buyer, 'Negociacao aceita', `${card.code} por ${formatCurrency(result.finalPrice || 0)} com ${seller.name}.`);
+    pushActionLog(seller, saleAction, `${card.code} por ${formatCurrency(result.finalPrice || 0)} para ${buyer.name}.`);
+    return;
+  }
+  const detail = humanSaleNegotiationRejectionDetail(result, buyer, card);
+  pushActionLog(buyer, 'Negociacao recusada', `${card.code} ficou com ${seller.name}: ${detail}`);
+  pushActionLog(seller, 'Negociacao recusada', `${card.code} ficou com voce.`);
+}
+
+function prepareHumanSaleToRobotNegotiation(seller, buyer, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+} = {}) {
+  const signals = buildAiNegotiationSignals(buyer, seller, card, { reason, stop, listPrice });
+  const decision = aiPolicyEngine()?.buildHumanSalePropertyNegotiation
+    ? aiPolicyEngine().buildHumanSalePropertyNegotiation({
+        player: buyer,
+        owner: seller,
+        card,
+        price: listPrice,
+        context: aiDecisionContext(buyer, {
+          reason,
+          negotiationSignals: signals,
+        }),
+      })
+    : null;
+  return {
+    saleAction,
+    reason,
+    signals,
+    decision,
+    canNegotiate: Boolean(decision?.canNegotiate),
+  };
+}
+
+async function runHumanSaleToRobotNegotiation(seller, buyer, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+  title = 'Negociacao',
+  copy = 'O robo abriu uma oferta pelo seu ativo.',
+} = {}) {
+  if (!buyer || !seller || !card || buyer.bankrupt || seller.bankrupt || seller.id === buyer.id) {
+    return { accepted: false, finalPrice: 0, decision: null };
+  }
+
+  const prepared = prepareHumanSaleToRobotNegotiation(seller, buyer, card, {
+    listPrice,
+    reason,
+    stop,
+    saleAction,
+  });
+  let session = prepared.decision;
+  if (!session?.canNegotiate) {
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision: session,
+      blocked: true,
+    };
+  }
+
+  logHumanSaleNegotiationStart(buyer, seller, card, session);
+  renderHud();
+
+  while (session?.canNegotiate) {
+    const response = await openHumanNegotiationRound({
+      session,
+      title,
+      copy,
+      cardCode: card.code,
+      sellerName: seller.name,
+      buyerName: buyer.name,
+      mode: 'sell',
+    });
+
+    if (!response || response.action === 'refuse') {
+      const decision = aiPolicyEngine()?.closeHumanSaleNegotiation
+        ? aiPolicyEngine().closeHumanSaleNegotiation({
+            session,
+            reason: 'seller_declined',
+          })
+        : { status: 'rejected', accepted: false, reason: 'seller_declined', session };
+      logHumanSaleNegotiationOutcome(buyer, seller, card, decision, { saleAction });
+      renderHud();
+      return { accepted: false, finalPrice: 0, decision };
+    }
+
+    if (response.action === 'accept') {
+      const decision = aiPolicyEngine()?.acceptHumanSaleOffer
+        ? aiPolicyEngine().acceptHumanSaleOffer({ session })
+        : { status: 'accepted', accepted: true, finalPrice: session.currentBid, session };
+      const finalPrice = Math.round(Number(decision.finalPrice || 0));
+      if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+        const failed = { ...decision, accepted: false, reason: 'insufficient_cash' };
+        logHumanSaleNegotiationOutcome(buyer, seller, card, failed, { saleAction });
+        renderHud();
+        return { accepted: false, finalPrice: 0, decision: failed };
+      }
+      buyer.status_label = `comprou ${card.code}`;
+      logHumanSaleNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
+      renderHud();
+      return { accepted: true, finalPrice, decision };
+    }
+
+    logHumanSaleNegotiationCounter(buyer, seller, card, response.amount);
+    const decision = aiPolicyEngine()?.respondToHumanSaleCounterOffer
+      ? aiPolicyEngine().respondToHumanSaleCounterOffer({
+          session,
+          ask: response.amount,
+        })
+      : { status: 'rejected', accepted: false, reason: 'engine_missing', session };
+
+    if (decision.status === 'accepted') {
+      const finalPrice = Math.round(Number(decision.finalPrice || 0));
+      if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+        const failed = { ...decision, accepted: false, reason: 'insufficient_cash' };
+        logHumanSaleNegotiationOutcome(buyer, seller, card, failed, { saleAction });
+        renderHud();
+        return { accepted: false, finalPrice: 0, decision: failed };
+      }
+      buyer.status_label = `comprou ${card.code}`;
+      logHumanSaleNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
+      renderHud();
+      return { accepted: true, finalPrice, decision };
+    }
+
+    if (decision.status === 'countered') {
+      const counterAmount = Number(decision.counterPrice || decision.session?.currentBid || 0);
+      if (counterAmount > 0) {
+        const suffix = decision.robotLine ? ` ${decision.robotLine}` : '';
+        pushActionLog(buyer, 'Contraoferta', `${card.code} para ${seller.name}: ${formatCurrency(counterAmount)}.${suffix}`);
+      }
+      session = decision.session;
+      renderHud();
+      continue;
+    }
+
+    logHumanSaleNegotiationOutcome(buyer, seller, card, decision, { saleAction });
+    renderHud();
+    return { accepted: false, finalPrice: 0, decision };
+  }
+
+  return { accepted: false, finalPrice: 0, decision: session };
+}
+
+async function runHumanOwnedPropertyNegotiation(buyer, seller, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+  saleAction = 'Vendeu porto',
+  title = 'Negociacao',
+  copy = 'Negocie o valor com o outro jogador.',
+} = {}) {
+  if (!buyer || !seller || !card || buyer.bankrupt || seller.bankrupt || seller.id === buyer.id) {
+    return { accepted: false, finalPrice: 0, decision: null };
+  }
+
+  const prepared = prepareHumanOwnedPropertyNegotiation(buyer, seller, card, {
+    listPrice,
+    reason,
+    stop,
+    saleAction,
+  });
+  let session = prepared.decision;
+
+  if (!session?.canNegotiate) {
+    return {
+      accepted: false,
+      finalPrice: 0,
+      decision: session,
+      blocked: true,
+    };
+  }
+
+  logHumanNegotiationStart(buyer, seller, card, session);
+  renderHud();
+
+  while (session?.canNegotiate) {
+    const response = await openHumanNegotiationRound({
+      session,
+      title,
+      copy,
+      cardCode: card.code,
+      sellerName: seller.name,
+    });
+
+    if (!response || response.action === 'refuse') {
+      const decision = aiPolicyEngine()?.closeHumanOwnedPropertyNegotiation
+        ? aiPolicyEngine().closeHumanOwnedPropertyNegotiation({
+            session,
+            reason: 'human_declined',
+          })
+        : { status: 'rejected', accepted: false, reason: 'human_declined', session };
+      logHumanNegotiationOutcome(buyer, seller, card, decision, { saleAction });
+      renderHud();
+      return { accepted: false, finalPrice: 0, decision };
+    }
+
+    if (response.action === 'accept') {
+      const decision = aiPolicyEngine()?.acceptHumanOwnedPropertyOffer
+        ? aiPolicyEngine().acceptHumanOwnedPropertyOffer({ session })
+        : { status: 'accepted', accepted: true, finalPrice: session.currentAsk, session };
+      const finalPrice = Math.round(Number(decision.finalPrice || 0));
+      if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+        const failed = { ...decision, accepted: false, reason: 'insufficient_cash' };
+        logHumanNegotiationOutcome(buyer, seller, card, failed, { saleAction });
+        renderHud();
+        return { accepted: false, finalPrice: 0, decision: failed };
+      }
+      buyer.status_label = `comprou ${card.code}`;
+      logHumanNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
+      renderHud();
+      return { accepted: true, finalPrice, decision };
+    }
+
+    logHumanNegotiationCounter(buyer, seller, card, response.amount);
+    const decision = aiPolicyEngine()?.respondToHumanOwnedPropertyOffer
+      ? aiPolicyEngine().respondToHumanOwnedPropertyOffer({
+          session,
+          offer: response.amount,
+        })
+      : { status: 'rejected', accepted: false, reason: 'engine_missing', session };
+
+    if (decision.status === 'accepted') {
+      const finalPrice = Math.round(Number(decision.finalPrice || 0));
+      if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+        const failed = { ...decision, accepted: false, reason: 'insufficient_cash' };
+        logHumanNegotiationOutcome(buyer, seller, card, failed, { saleAction });
+        renderHud();
+        return { accepted: false, finalPrice: 0, decision: failed };
+      }
+      buyer.status_label = `comprou ${card.code}`;
+      logHumanNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
+      renderHud();
+      return { accepted: true, finalPrice, decision };
+    }
+
+    if (decision.status === 'countered') {
+      const counterAmount = Number(decision.counterPrice || decision.session?.currentAsk || 0);
+      if (counterAmount > 0) {
+        const suffix = decision.robotLine ? ` ${decision.robotLine}` : '';
+        pushActionLog(seller, 'Contraoferta', `${card.code} para voce: ${formatCurrency(counterAmount)}.${suffix}`);
+      }
+      session = decision.session;
+      renderHud();
+      continue;
+    }
+
+    logHumanNegotiationOutcome(buyer, seller, card, decision, { saleAction });
+    renderHud();
+    return { accepted: false, finalPrice: 0, decision };
+  }
+
+  return { accepted: false, finalPrice: 0, decision: session };
+}
+
+
 // ===== Advanced Economy Integration END =====
 
 function getRate(card, shipType) {
@@ -1602,13 +3636,13 @@ function permissionMiniMarkup(permission) {
   const mortgaged = Boolean(permission?.mortgaged);
   return `
     <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-permission-mini-head">${permission.title}</header>
       <div class="preview-permission-mini-row top">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
       </div>
-      <div class="preview-permission-mini-body">${mortgaged ? 'Hipotecada' : 'Permissao'}</div>
+      <div class="preview-permission-mini-body">Permissao</div>
       <div class="preview-permission-mini-row bottom">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
@@ -1636,7 +3670,7 @@ function propertyMiniMarkup(card) {
   const mortgaged = Boolean(card?.mortgaged);
   return `
     <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}${mortgaged ? ' is-mortgaged' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-property-mini-head${tollHeadClass}">
         ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
@@ -1751,10 +3785,32 @@ function readableTextColor(backgroundHex, light = '#edf6ff', dark = '#06111a') {
   return luminance >= 0.62 ? dark : light;
 }
 
+const REGION_LABELS = {
+  AF: 'Africa',
+  AS: 'Asia',
+  EU: 'Europa',
+  NA: 'America do Norte',
+  OC: 'Oceania',
+  OM: 'Oriente Medio',
+  SA: 'America do Sul',
+};
+
+function monopolyRegionStyle(regionCode) {
+  const card = regionPortCards(regionCode)?.[0] || null;
+  const background = card?.fill || '#8fd7ff';
+  const text = card?.text || readableTextColor(background);
+  return { background, text };
+}
+
+function monopolyRegionLabel(regionCode) {
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  return REGION_LABELS[normalized] || normalized;
+}
+
 function monopolyChipMarkup(player, regionCode) {
-  const background = player?.color_hex || '#8fd7ff';
-  const text = readableTextColor(background);
-  return `<span class="preview-monopoly-chip" style="background:${background}; color:${text}; border-color:${background};">${regionCode}</span>`;
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  const style = monopolyRegionStyle(normalized);
+  return `<span class="preview-monopoly-chip" style="background:${style.background}; color:${style.text}; border-color:${style.background};">${monopolyRegionLabel(normalized)}</span>`;
 }
 
 function contractDeadlineTone(contract) {
@@ -1786,6 +3842,11 @@ function playerCashFlashMarkup(player) {
   const elapsedMs = Math.max(0, Math.min(PLAYER_CASH_FLASH_ANIMATION_MS, PLAYER_CASH_FLASH_ANIMATION_MS - remainingMs));
   const style = `animation-delay:-${elapsedMs}ms; animation-duration:${PLAYER_CASH_FLASH_ANIMATION_MS}ms;`;
   return `<span class="preview-rival-cash-flash ${value > 0 ? 'is-positive' : 'is-negative'}" style="${style}">${formatSignedCurrency(value)}</span>`;
+}
+
+function playerProfileBadgeMarkup(player) {
+  if (!player || player.is_human || !player.ai_profile_label) return '';
+  return `<span class="preview-rival-profile">${player.ai_profile_label}</span>`;
 }
 
 function playerActionLogMarkup(player) {
@@ -2103,7 +4164,10 @@ function renderRivals({ force = false } = {}) {
       ${playerActionLogMarkup(player)}
       <div class="preview-rival-top">
         <span class="preview-rival-dot" style="background:${player.color_hex}"></span>
-        <strong>${isHuman ? player.name : `&#129302; ${player.name}`}${player.bankrupt ? ' (falido)' : ''}</strong>
+        <div class="preview-rival-name-stack">
+          <strong>${isHuman ? player.name : `&#129302; ${player.name}`}${player.bankrupt ? ' (falido)' : ''}</strong>
+          ${playerProfileBadgeMarkup(player)}
+        </div>
         <span class="preview-rival-cash-wrap">${playerCashFlashMarkup(player)}<span class="preview-rival-cash">${player.cash_display}</span></span>
       </div>
       ${contractSummaryMarkup(player, contract)}
@@ -2885,6 +4949,10 @@ async function maybeUseShortcutIgnoreTollCoupon(player) {
     secondaryLabel: 'Manter rota',
     detail: `Dispensou a passagem obrigatoria por ${contract.mandatory_toll}.`,
     statusLabel: 'atalho ativado',
+    couponSignals: {
+      mandatoryToll: true,
+      tollCode: contract.mandatory_toll,
+    },
   });
   if (!spent) return null;
 
@@ -2924,6 +4992,22 @@ async function maybeUseRerouteCoupon(player) {
       }
     }
   } else {
+    const couponDecision = aiPolicyEngine()?.decideCouponUsage
+      ? aiPolicyEngine().decideCouponUsage({
+          player,
+          kind: 'reroute_same_value',
+          autoUse: true,
+          context: aiDecisionContext(player, {
+            reason: 'coupon_usage',
+            couponSignals: {
+              candidateCount: candidates.length,
+            },
+          }),
+        })
+      : null;
+    if (!(couponDecision ? couponDecision.shouldUse : true)) {
+      return null;
+    }
     [selected] = candidates;
   }
 
@@ -3037,26 +5121,33 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
       return false;
     }
 
-    if (owner.id === player.id || player.cash < negotiationPrice) return false;
+    if (owner.id === player.id) return false;
+    const negotiation = prepareHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'post_delivery_port_negotiation',
+      saleAction: 'Vendeu porto',
+    });
+    if (!negotiation.canNegotiate) return false;
     const choice = await openDecisionModal({
       title: `${card.code} pertence a ${owner.name}`,
-      copy: `Deseja negociar a compra do porto ${card.code} por ${formatCurrency(negotiationPrice)} antes do novo contrato?`,
-      primaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
+      copy: `Deseja abrir uma negociacao pela compra do porto ${card.code} antes do novo contrato?`,
+      primaryLabel: 'Negociar agora',
       secondaryLabel: 'Nao negociar',
       cardCode: card.code,
     });
-    if (choice === 'primary' && transferProperty(owner, player, card.code, negotiationPrice)) {
-      player.status_label = `comprou ${card.code}`;
-      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para voce.`);
-      renderHud();
-      return true;
-    }
-    return false;
+    if (choice !== 'primary') return false;
+    const outcome = await runHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'post_delivery_port_negotiation',
+      saleAction: 'Vendeu porto',
+      title: `${card.code} pertence a ${owner.name}`,
+      copy: `Negocie a compra do porto ${card.code} com ${owner.name} antes de abrir o proximo contrato.`,
+    });
+    return Boolean(outcome.accepted);
   }
 
   if (!owner) {
-    if (cpuShouldBuyOrigin(player, card) && buyProperty(player, card.code)) {
+    if (cpuShouldBuyOrigin(player, card, 'post_delivery_port_purchase') && buyProperty(player, card.code)) {
       pushActionLog(player, 'Porto comprado no destino', `${card.code} por ${formatCurrency(card.price)}.`);
       renderHud();
       return true;
@@ -3064,11 +5155,28 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
     return false;
   }
 
-  if (owner.id !== player.id && cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card) && transferProperty(owner, player, card.code, negotiationPrice)) {
-    pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-    pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-    renderHud();
-    return true;
+  if (owner.id !== player.id) {
+    if (owner.is_human) {
+      const negotiation = await runHumanSaleToRobotNegotiation(owner, player, card, {
+        listPrice: negotiationPrice,
+        reason: 'post_delivery_port_negotiation',
+        saleAction: 'Vendeu porto',
+        title: `${player.name} quer ${card.code}`,
+        copy: `${player.name} quer comprar o porto ${card.code} antes da abertura do proximo contrato.` ,
+      });
+      if (negotiation.accepted) {
+        return true;
+      }
+    } else {
+      const negotiation = executeCpuOwnedPropertyNegotiation(player, owner, card, {
+        listPrice: negotiationPrice,
+        reason: 'post_delivery_port_negotiation',
+        saleAction: 'Vendeu porto',
+      });
+      if (negotiation.accepted) {
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -3127,6 +5235,9 @@ async function maybeHandleExtraPermissionAfterDelivery(player) {
         availableCount: availablePermissionCards.length,
         context: aiDecisionContext(player, {
           reason: 'extra_permission_after_delivery',
+          permissionSignals: buildAiPermissionSignals(player, availablePermissionCards, extraCost, {
+            reason: 'extra_permission_after_delivery',
+          }),
         }),
       })
     : null;
@@ -3190,6 +5301,8 @@ async function runPostContractForPlayer(player, {
     await maybeHandleCurrentPortAfterDelivery(player);
     await delay(preparationDelayFor(player, false));
     await maybeHandleExtraPermissionAfterDelivery(player);
+    await delay(preparationDelayFor(player, false));
+    await maybeAutoRedeemForRobot(player);
     await delay(preparationDelayFor(player, false));
 
     const contract = await runContractOpeningForPlayer(player, {
@@ -3493,6 +5606,10 @@ function triggerEnterOnOverlay() {
   }
   if (!getPermissionChoiceOverlay()?.classList.contains('is-hidden')) {
     const button = getPermissionChoiceStage()?.querySelector('.permission-choice-card.is-current, .permission-choice-card');
+    if (button && !button.disabled) { button.click(); return true; }
+  }
+  if (!getNegotiationOverlay()?.classList.contains('is-hidden')) {
+    const button = getNegotiationAccept();
     if (button && !button.disabled) { button.click(); return true; }
   }
   if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
@@ -4213,6 +6330,268 @@ function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryL
   });
 }
 
+
+function getNegotiationOverlay() {
+  return byId('negotiation-overlay');
+}
+
+function getNegotiationTitle() {
+  return byId('negotiation-title');
+}
+
+function getNegotiationRound() {
+  return byId('negotiation-round');
+}
+
+function getNegotiationCopy() {
+  return byId('negotiation-copy');
+}
+
+function getNegotiationAsk() {
+  return byId('negotiation-ask');
+}
+
+function getNegotiationCash() {
+  return byId('negotiation-cash');
+}
+
+function getNegotiationStance() {
+  return byId('negotiation-stance');
+}
+
+function getNegotiationCardStage() {
+  return byId('negotiation-card-stage');
+}
+
+function getNegotiationStatusTitle() {
+  return byId('negotiation-status-title');
+}
+
+function getNegotiationStatusCopy() {
+  return byId('negotiation-status-copy');
+}
+
+function getNegotiationCounterInput() {
+  return byId('negotiation-counter-input');
+}
+
+function getNegotiationCounterLabel() {
+  return byId('negotiation-counter-label');
+}
+
+function getNegotiationHelper() {
+  return byId('negotiation-helper');
+}
+
+function getNegotiationAccept() {
+  return byId('negotiation-accept');
+}
+
+function getNegotiationCounterButton() {
+  return byId('negotiation-counter');
+}
+
+function getNegotiationRefuse() {
+  return byId('negotiation-refuse');
+}
+
+function setNegotiationVisible(visible) {
+  const overlay = getNegotiationOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+}
+
+function suggestedNegotiationOffer(session) {
+  const buyerCash = Math.max(0, Math.round(Number(session?.buyerCash || 0)));
+  const currentAsk = Math.max(0, Math.round(Number(session?.currentAsk || session?.openingOffer || 0)));
+  const suggested = Math.max(0, Math.round(Number(session?.suggestedOffer || 0)));
+  if (!(buyerCash > 0)) return 0;
+  if (suggested > 0) {
+    return Math.min(buyerCash, suggested);
+  }
+  const fallback = Math.round(currentAsk * 0.88);
+  return Math.max(1, Math.min(buyerCash, fallback || buyerCash));
+}
+
+function suggestedNegotiationAsk(session) {
+  const currentBid = Math.max(0, Math.round(Number(session?.currentBid || session?.openingBid || 0)));
+  const suggested = Math.max(0, Math.round(Number(session?.suggestedAsk || 0)));
+  if (suggested > 0) return suggested;
+  return Math.max(currentBid + 1, Math.round(currentBid * 1.1));
+}
+
+function renderHumanNegotiation() {
+  const session = state.negotiation.session;
+  const mode = state.negotiation.mode === 'sell' ? 'sell' : 'buy';
+  const sellerName = state.negotiation.sellerName || 'Oponente';
+  const buyerName = state.negotiation.buyerName || 'Comprador';
+  const card = getPropertyCard(state.negotiation.cardCode || '');
+  const titleNode = getNegotiationTitle();
+  const roundNode = getNegotiationRound();
+  const copyNode = getNegotiationCopy();
+  const askNode = getNegotiationAsk();
+  const cashNode = getNegotiationCash();
+  const stanceNode = getNegotiationStance();
+  const cardStage = getNegotiationCardStage();
+  const statusTitle = getNegotiationStatusTitle();
+  const statusCopy = getNegotiationStatusCopy();
+  const input = getNegotiationCounterInput();
+  const inputLabel = getNegotiationCounterLabel();
+  const helper = getNegotiationHelper();
+  const acceptButton = getNegotiationAccept();
+  const counterButton = getNegotiationCounterButton();
+  const refuseButton = getNegotiationRefuse();
+
+  if (titleNode) titleNode.textContent = state.negotiation.title || 'Negociacao';
+  if (roundNode) {
+    const currentRound = Math.min(Number(session?.round || 0) + 1, Number(session?.maxRounds || 2));
+    roundNode.textContent = `Rodada ${currentRound} de ${Number(session?.maxRounds || 2)}`;
+  }
+  if (copyNode) {
+    copyNode.textContent = state.negotiation.copy
+      || session?.introLine
+      || (mode === 'sell'
+        ? 'O robo abriu uma oferta pelo seu ativo.'
+        : 'Faca sua proposta e veja se o robo topa vender.');
+  }
+  if (askNode) {
+    askNode.textContent = mode === 'sell'
+      ? `Oferta ${formatCurrency(session?.currentBid || session?.openingBid || 0)}`
+      : `Pedido ${formatCurrency(session?.currentAsk || session?.openingOffer || 0)}`;
+  }
+  if (cashNode) {
+    cashNode.textContent = mode === 'sell'
+      ? `Caixa de ${buyerName} ${formatCurrency(session?.buyerCash || 0)}`
+      : `Seu caixa ${formatCurrency(session?.buyerCash || 0)}`;
+  }
+  if (stanceNode) {
+    stanceNode.textContent = mode === 'sell'
+      ? (session?.buyerStanceLabel || 'Interesse moderado')
+      : (session?.sellerStanceLabel || 'Postura firme');
+  }
+
+  if (cardStage) {
+    cardStage.innerHTML = card ? propertyInspectorMarkup(card) : '';
+    cardStage.classList.toggle('is-hidden', !card);
+  }
+
+  if (statusTitle) {
+    statusTitle.textContent = state.negotiation.feedback
+      ? (mode === 'sell' ? 'Ajuste seu pedido' : 'Ajuste sua proposta')
+      : (mode === 'sell' ? `${buyerName} diz` : `${sellerName} diz`);
+  }
+  if (statusCopy) {
+    statusCopy.textContent = state.negotiation.feedback
+      || session?.buyerLine
+      || session?.sellerLine
+      || session?.introLine
+      || 'Aguardando proposta.';
+  }
+
+  const suggested = mode === 'sell'
+    ? String(state.negotiation.draftCounter || suggestedNegotiationAsk(session) || '')
+    : String(state.negotiation.draftCounter || suggestedNegotiationOffer(session) || '');
+  if (input && document.activeElement !== input) {
+    input.value = suggested;
+  }
+  if (inputLabel) {
+    inputLabel.textContent = mode === 'sell' ? 'Seu pedido' : 'Sua proposta';
+  }
+
+  if (helper) {
+    helper.textContent = state.negotiation.feedback
+      ? 'Corrija o valor e tente de novo.'
+      : (Number(session?.round || 0) + 1 >= Number(session?.maxRounds || 2)
+        ? 'Esta e a ultima rodada. O robo pode desistir de vez.'
+        : (mode === 'sell'
+          ? 'Aceite a oferta, recuse ou peca outro valor.'
+          : 'Envie uma proposta fechada ou aceite o pedido atual.'));
+    helper.classList.toggle('is-error', Boolean(state.negotiation.feedback));
+  }
+
+  if (acceptButton) {
+    acceptButton.textContent = mode === 'sell'
+      ? `Aceitar ${formatCurrency(session?.currentBid || 0)}`
+      : `Fechar por ${formatCurrency(session?.currentAsk || 0)}`;
+    acceptButton.disabled = mode === 'sell'
+      ? (!session?.canNegotiate || !(Number(session?.currentBid || 0) > 0))
+      : (!session?.canNegotiate || !(Number(session?.currentAsk || 0) > 0) || Number(session?.buyerCash || 0) < Number(session?.currentAsk || 0));
+  }
+  if (counterButton) {
+    counterButton.textContent = mode === 'sell' ? 'Pedir outro valor' : 'Enviar proposta';
+    counterButton.disabled = mode === 'sell'
+      ? !session?.canNegotiate
+      : (!session?.canNegotiate || !(Number(session?.buyerCash || 0) > 0));
+  }
+  if (refuseButton) {
+    refuseButton.textContent = mode === 'sell' ? 'Recusar' : 'Sair';
+    refuseButton.disabled = false;
+  }
+}
+
+function resetHumanNegotiationState() {
+  state.negotiation.resolver = null;
+  state.negotiation.session = null;
+  state.negotiation.mode = 'buy';
+  state.negotiation.title = '';
+  state.negotiation.copy = '';
+  state.negotiation.cardCode = '';
+  state.negotiation.sellerName = '';
+  state.negotiation.buyerName = '';
+  state.negotiation.feedback = '';
+  state.negotiation.draftCounter = '';
+}
+
+function closeHumanNegotiation(result = { action: 'refuse' }) {
+  setNegotiationVisible(false);
+  const resolver = state.negotiation.resolver;
+  resetHumanNegotiationState();
+  if (resolver) resolver(result);
+}
+
+function openHumanNegotiationRound({ session, title, copy, cardCode = '', sellerName = '', buyerName = '', mode = 'buy' } = {}) {
+  state.negotiation.session = session;
+  state.negotiation.mode = mode === 'sell' ? 'sell' : 'buy';
+  state.negotiation.title = title || 'Negociacao';
+  state.negotiation.copy = copy || '';
+  state.negotiation.cardCode = cardCode || '';
+  state.negotiation.sellerName = sellerName || 'Oponente';
+  state.negotiation.buyerName = buyerName || 'Comprador';
+  state.negotiation.feedback = '';
+  state.negotiation.draftCounter = String((mode === 'sell' ? suggestedNegotiationAsk(session) : suggestedNegotiationOffer(session)) || '');
+  renderHumanNegotiation();
+  setNegotiationVisible(true);
+  window.setTimeout(() => {
+    const input = getNegotiationCounterInput();
+    input?.focus();
+    input?.select();
+  }, 0);
+  return new Promise((resolve) => {
+    state.negotiation.resolver = resolve;
+  });
+}
+
+function submitHumanNegotiation(action = 'accept') {
+  if (action !== 'counter') {
+    closeHumanNegotiation({ action });
+    return;
+  }
+  const rawValue = String(state.negotiation.draftCounter || getNegotiationCounterInput()?.value || '').trim();
+  const amount = Math.round(Number(rawValue));
+  const buyerCash = Math.max(0, Math.round(Number(state.negotiation.session?.buyerCash || 0)));
+  const mode = state.negotiation.mode === 'sell' ? 'sell' : 'buy';
+  if (!(amount > 0)) {
+    state.negotiation.feedback = mode === 'sell' ? 'Digite um pedido valido.' : 'Digite uma proposta valida.';
+    renderHumanNegotiation();
+    return;
+  }
+  if (mode !== 'sell' && amount > buyerCash) {
+    state.negotiation.feedback = 'Sua proposta precisa caber no seu caixa.';
+    renderHumanNegotiation();
+    return;
+  }
+  closeHumanNegotiation({ action: 'counter', amount });
+}
 
 function getPermissionChoiceOverlay() {
   return byId('permission-choice-overlay');
@@ -4975,7 +7354,7 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
 
   if (!owner) {
     if (!player.is_human) {
-      const shouldBuy = cpuShouldBuyOrigin(player, card);
+      const shouldBuy = cpuShouldBuyOrigin(player, card, 'stop_port_purchase');
       if (shouldBuy && buyProperty(player, card.code)) {
         player.status_label = `comprou ${card.code}`;
         pushActionLog(player, 'Porto comprado', `${card.code} por ${formatCurrency(card.price)}.`);
@@ -5098,15 +7477,25 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
-    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
-      player.status_label = `comprou ${card.code}`;
-      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-      renderHud();
+    const negotiation = owner.is_human
+      ? await runHumanSaleToRobotNegotiation(owner, player, card, {
+          listPrice: negotiationPrice,
+          reason: 'stop_port_negotiation',
+          stop,
+          saleAction: 'Vendeu porto',
+          title: `${player.name} quer ${card.code}`,
+          copy: `${player.name} quer comprar o porto ${card.code} antes de decidir a estadia.`,
+        })
+      : executeCpuOwnedPropertyNegotiation(player, owner, card, {
+          listPrice: negotiationPrice,
+          reason: 'stop_port_negotiation',
+          stop,
+          saleAction: 'Vendeu porto',
+        });
+    if (negotiation.accepted) {
       return {
-        note: `${playerActionName(player)} negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-        statusLabel: player.status_label,
+        note: `${playerActionName(player)} negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiation.finalPrice)}.`,
+        statusLabel: negotiation.statusLabel || player.status_label,
       };
     }
 
@@ -5139,27 +7528,39 @@ async function resolvePortStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  const canNegotiate = player.cash >= negotiationPrice;
+  const negotiation = prepareHumanOwnedPropertyNegotiation(player, owner, card, {
+    listPrice: negotiationPrice,
+    reason: 'stop_port_negotiation',
+    stop,
+    saleAction: 'Vendeu porto',
+  });
+  const canNegotiate = negotiation.canNegotiate;
   const choice = await openDecisionModal({
     title: `${card.code} pertence a ${owner.name}`,
     copy: canNegotiate
-      ? `Pague ${formatCurrency(stop.ownerCharge)} de estadia ao dono ou negocie a compra do porto por ${formatCurrency(negotiationPrice)}.`
-      : `Pague ${formatCurrency(stop.ownerCharge)} de estadia ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
+      ? `Pague ${formatCurrency(stop.ownerCharge)} de estadia ou abra uma negociacao pela compra do porto.`
+      : `Pague ${formatCurrency(stop.ownerCharge)} de estadia. ${negotiation.decision?.sellerLine || `${owner.name} nao esta disposto a vender agora.`}`,
     primaryLabel: `Pagar ${formatCurrency(stop.ownerCharge)}`,
-    secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
+    secondaryLabel: 'Negociar',
     hideSecondary: !canNegotiate,
     cardCode: card.code,
   });
 
-  if (canNegotiate && choice === 'secondary' && transferProperty(owner, player, card.code, negotiationPrice)) {
-    player.status_label = `comprou ${card.code}`;
-    pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-    pushActionLog(owner, 'Vendeu porto', `${card.code} por ${formatCurrency(negotiationPrice)} para voce.`);
-    renderHud();
-    return {
-      note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-      statusLabel: player.status_label,
-    };
+  if (canNegotiate && choice === 'secondary') {
+    const outcome = await runHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'stop_port_negotiation',
+      stop,
+      saleAction: 'Vendeu porto',
+      title: `${card.code} pertence a ${owner.name}`,
+      copy: `Negocie a compra do porto ${card.code} com ${owner.name} antes de decidir a estadia.`,
+    });
+    if (outcome.accepted) {
+      return {
+        note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(outcome.finalPrice || 0)}.`,
+        statusLabel: player.status_label,
+      };
+    }
   }
 
   const freeStay = await maybeUseFreePortStayCoupon(player, card, stop.ownerCharge, owner);
@@ -5210,7 +7611,7 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
 
   if (!owner) {
     if (!player.is_human) {
-      const shouldBuy = cpuShouldBuyOrigin(player, card);
+      const shouldBuy = cpuShouldBuyOrigin(player, card, 'stop_toll_purchase');
       if (shouldBuy && buyProperty(player, card.code)) {
         player.status_label = `comprou ${card.code}`;
         pushActionLog(player, 'Pedagio comprado', `${card.code} por ${formatCurrency(card.price)}.`);
@@ -5333,15 +7734,25 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
   }
 
   if (!player.is_human) {
-    const canNegotiate = cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner, card);
-    if (canNegotiate && transferProperty(owner, player, card.code, negotiationPrice)) {
-      player.status_label = `comprou ${card.code}`;
-      pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-      pushActionLog(owner, 'Vendeu pedagio', `${card.code} por ${formatCurrency(negotiationPrice)} para ${player.name}.`);
-      renderHud();
+    const negotiation = owner.is_human
+      ? await runHumanSaleToRobotNegotiation(owner, player, card, {
+          listPrice: negotiationPrice,
+          reason: 'stop_toll_negotiation',
+          stop,
+          saleAction: 'Vendeu pedagio',
+          title: `${player.name} quer ${card.code}`,
+          copy: `${player.name} quer comprar o pedagio ${card.code} antes de decidir o pagamento.`,
+        })
+      : executeCpuOwnedPropertyNegotiation(player, owner, card, {
+          listPrice: negotiationPrice,
+          reason: 'stop_toll_negotiation',
+          stop,
+          saleAction: 'Vendeu pedagio',
+        });
+    if (negotiation.accepted) {
       return {
-        note: `${playerActionName(player)} negociou e comprou o pedagio ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-        statusLabel: player.status_label,
+        note: `${playerActionName(player)} negociou e comprou o pedagio ${card.code} de ${owner.name} por ${formatCurrency(negotiation.finalPrice)}.`,
+        statusLabel: negotiation.statusLabel || player.status_label,
       };
     }
 
@@ -5374,27 +7785,39 @@ async function resolveTollStopForPlayer(player, node, { stepDelay = 260 } = {}) 
     };
   }
 
-  const canNegotiate = player.cash >= negotiationPrice;
+  const negotiation = prepareHumanOwnedPropertyNegotiation(player, owner, card, {
+    listPrice: negotiationPrice,
+    reason: 'stop_toll_negotiation',
+    stop,
+    saleAction: 'Vendeu pedagio',
+  });
+  const canNegotiate = negotiation.canNegotiate;
   const choice = await openDecisionModal({
     title: `${card.code} pertence a ${owner.name}`,
     copy: canNegotiate
-      ? `Pague ${formatCurrency(stop.ownerCharge)} ao dono ou negocie a compra do pedagio por ${formatCurrency(negotiationPrice)}.`
-      : `Pague ${formatCurrency(stop.ownerCharge)} ao dono. Voce nao tem caixa para a oferta padrao de ${formatCurrency(negotiationPrice)}.`,
+      ? `Pague ${formatCurrency(stop.ownerCharge)} ao dono ou abra uma negociacao pela compra do pedagio.`
+      : `Pague ${formatCurrency(stop.ownerCharge)} ao dono. ${negotiation.decision?.sellerLine || `${owner.name} nao esta disposto a vender agora.`}`,
     primaryLabel: `Pagar ${formatCurrency(stop.ownerCharge)}`,
-    secondaryLabel: `Negociar ${formatCurrency(negotiationPrice)}`,
+    secondaryLabel: 'Negociar',
     hideSecondary: !canNegotiate,
     cardCode: card.code,
   });
 
-  if (canNegotiate && choice === 'secondary' && transferProperty(owner, player, card.code, negotiationPrice)) {
-    player.status_label = `comprou ${card.code}`;
-    pushActionLog(player, 'Negociacao aceita', `${card.code} por ${formatCurrency(negotiationPrice)}.`);
-    pushActionLog(owner, 'Vendeu pedagio', `${card.code} por ${formatCurrency(negotiationPrice)} para voce.`);
-    renderHud();
-    return {
-      note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(negotiationPrice)}.`,
-      statusLabel: player.status_label,
-    };
+  if (canNegotiate && choice === 'secondary') {
+    const outcome = await runHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'stop_toll_negotiation',
+      stop,
+      saleAction: 'Vendeu pedagio',
+      title: `${card.code} pertence a ${owner.name}`,
+      copy: `Negocie a compra do pedagio ${card.code} com ${owner.name} antes de decidir o pagamento.`,
+    });
+    if (outcome.accepted) {
+      return {
+        note: `Voce negociou e comprou ${card.code} de ${owner.name} por ${formatCurrency(outcome.finalPrice || 0)}.`,
+        statusLabel: player.status_label,
+      };
+    }
   }
 
   const freeToll = await maybeUseFreeTollCoupon(player, card, stop.ownerCharge, owner);
@@ -5870,7 +8293,7 @@ function applyBootstrapPayload(payload) {
     permissions: (player.permissions || []).map((permission) => ({
       ...permission,
       purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
-      mortgaged: Boolean(permission.mortgaged),
+      mortgaged: false,
     })),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
@@ -5890,12 +8313,12 @@ function applyBootstrapPayload(payload) {
   }));
   state.players.forEach((player) => {
     syncActivePermissionAfterEconomyChange(player);
-    ensureAiProfile(player);
   });
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
   state.activeContract = payload.active_contract || null;
+  applyAiStageConfiguration(payload);
   state.view.openSystemDrawerId = null;
   state.view.humanDrawerOpen = true;
   state.view.actionFeedExpanded = false;
@@ -5908,6 +8331,7 @@ function applyBootstrapPayload(payload) {
   buildCardIndexes();
   syncDerivedState();
   renderSettingsOverlay();
+  resetReportData();
   renderHud();
   renderShipOverlay();
   renderActionFeed();
@@ -5918,6 +8342,10 @@ function setSetupOverlayVisible(visible) {
   const overlay = getSetupOverlay();
   if (!overlay) return;
   overlay.classList.toggle('is-hidden', !visible);
+  if (!visible) {
+    state.setup.aiEditorOpen = false;
+    setSetupAiEditorVisible(false);
+  }
 }
 
 function updateSetupStartButton() {
@@ -5958,31 +8386,426 @@ function renderSetupRivalCounts() {
     button.textContent = String(count);
     button.addEventListener('click', () => {
       state.setup.rivalCount = count;
+      pruneManualRobotProfiles(count);
+      state.setup.aiEditorRobotIndex = Math.min(state.setup.aiEditorRobotIndex || 0, Math.max(0, count - 1));
       renderSetupRivalCounts();
+      renderSetupAiProfileGrid();
+      if (state.setup.aiEditorOpen) renderSetupAiEditor();
       updateSetupStartButton();
     });
     target.appendChild(button);
   });
 }
 
+function renderSetupAiDifficulties() {
+  const target = byId('setup-ai-difficulties');
+  if (!target) return;
+  const disabled = Boolean(state.setup.aiAdvancedProfiles);
+  target.innerHTML = '';
+  AI_DIFFICULTY_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${state.setup.aiDifficulty === option.id ? ' is-active' : ''}`;
+    button.textContent = option.label;
+    button.disabled = disabled;
+    button.title = disabled ? 'Desative o modo detalhado para mexer neste controle rapido.' : `Dificuldade ${option.label}.`;
+    button.addEventListener('click', () => {
+      if (disabled) return;
+      state.setup.aiDifficulty = option.id;
+      renderSetupAiDifficulties();
+    });
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiProfileModes() {
+  const target = byId('setup-ai-profile-modes');
+  if (!target) return;
+  const disabled = Boolean(state.setup.aiAdvancedProfiles);
+  target.innerHTML = '';
+  AI_PROFILE_MODE_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${state.setup.aiProfileMode === option.id ? ' is-active' : ''}`;
+    button.textContent = option.label;
+    button.disabled = disabled;
+    button.title = disabled ? 'Desative o modo detalhado para mexer neste controle rapido.' : option.description;
+    button.addEventListener('click', () => {
+      if (disabled) return;
+      state.setup.aiProfileMode = option.id;
+      syncSetupProfileOrder(option.id);
+      renderSetupAiProfileModes();
+      renderSetupAiProfileGrid();
+      if (state.setup.aiEditorOpen) renderSetupAiEditor();
+    });
+    target.appendChild(button);
+  });
+}
+
+function setSetupAiEditorVisible(visible) {
+  const overlay = getSetupAiEditorOverlay?.() || byId('setup-ai-editor-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+  overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function activeSetupEditorRobotIndex() {
+  const slotCount = setupRobotSlotCount();
+  if (!slotCount) return 0;
+  return Math.min(Math.max(0, Number(state.setup.aiEditorRobotIndex || 0)), slotCount - 1);
+}
+
+function setupRobotDisplayName(index = 0) {
+  return `Robo ${index + 1}`;
+}
+
+function aiMarketCaseOption(id = '') {
+  return AI_MARKET_CASE_OPTIONS.find((entry) => entry.id === id) || null;
+}
+
+function aiMarketCaseNegotiationValues(caseId = '') {
+  const option = aiMarketCaseOption(caseId);
+  if (!option) return null;
+  if (option.presetId) {
+    return cloneAiData(aiProfilesLib()?.negotiationPresets?.[option.presetId] || null);
+  }
+  return cloneAiData(option.values || null);
+}
+
+function formatAiSetupValue(field, value) {
+  const numericValue = Number(value || 0);
+  if ((field?.step || 0) >= 1) return String(Math.round(numericValue));
+  return numericValue.toFixed(2);
+}
+
+function updateSetupAiSliderFill(input, field, rawValue) {
+  if (!input || !field) return;
+  const min = Number(field.min || 0);
+  const max = Number(field.max || 0);
+  const value = Number(rawValue || 0);
+  const span = max - min;
+  const ratio = span > 0 ? (value - min) / span : 0;
+  const percent = Math.max(0, Math.min(1, ratio)) * 100;
+  input.style.setProperty('--setup-ai-fill', `${percent}%`);
+}
+
+function resolveSetupRobotConfig(index = 0) {
+  const stored = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[index], index);
+  if (stored) return stored;
+  return buildManualRobotConfig(defaultSetupArchetypeIdForSlot(index));
+}
+
+function robotProfileLabelForSetup(index = 0) {
+  const config = normalizeManualRobotConfig(state.setup.manualRobotConfigs?.[index], index);
+  const profile = aiArchetypeById(config?.archetypeId || defaultSetupArchetypeIdForSlot(index));
+  return profile?.label || 'Equilibrado';
+}
+
+function renderSetupAiEditorSummary(config, robotIndex) {
+  const target = byId('setup-ai-editor-summary');
+  const descriptionTarget = byId('setup-ai-editor-description');
+  const profile = aiArchetypeById(config?.archetypeId || defaultSetupArchetypeIdForSlot(robotIndex));
+  if (descriptionTarget) {
+    descriptionTarget.textContent = profile?.description || 'Ajuste fino completo do robo atual.';
+  }
+  if (!target) return;
+  const negotiation = config?.overrides?.negotiation || {};
+  const vision = config?.overrides?.vision || {};
+  const personality = config?.overrides?.personality || {};
+  const skill = config?.overrides?.skill || {};
+  target.innerHTML = `
+    <div class="setup-ai-editor-summary-row"><span>Perfil base</span><strong>${escapeHtml(profile?.label || 'Custom')}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Compra / venda</span><strong>${formatAiSetupValue({ step: 0.01 }, negotiation.buy_openness || 0)} / ${formatAiSetupValue({ step: 0.01 }, negotiation.sell_openness || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Portos / pedagios</span><strong>${formatAiSetupValue({ step: 0.01 }, vision.weight_port || 0)} / ${formatAiSetupValue({ step: 0.01 }, vision.weight_toll || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Reserva / risco</span><strong>${formatAiSetupValue({ step: 0.01 }, personality.cash_reserve_ratio || 0)} / ${formatAiSetupValue({ step: 0.01 }, personality.risk_tolerance || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Previsao / timing</span><strong>${formatAiSetupValue({ step: 0.01 }, skill.foresight || 0)} / ${formatAiSetupValue({ step: 0.01 }, skill.timing_quality || 0)}</strong></div>
+    <div class="setup-ai-editor-summary-row"><span>Companhia</span><strong>${setupRobotDisplayName(robotIndex)}</strong></div>
+  `;
+}
+
+function updateSetupAiParameter(groupKey, fieldKey, rawValue) {
+  const robotIndex = activeSetupEditorRobotIndex();
+  const field = AI_PARAMETER_FIELD_MAP[`${groupKey}.${fieldKey}`];
+  if (!field) return;
+  const config = ensureSetupRobotConfig(robotIndex);
+  config.overrides[groupKey][fieldKey] = clampAiSetting(rawValue, field.min, field.max, field.step);
+  persistSetupRobotConfig(robotIndex, config);
+  renderSetupAiEditorSummary(config, robotIndex);
+  renderSetupAiProfileGrid();
+}
+
+function renderSetupAiParameterGrid() {
+  const target = byId('setup-ai-parameter-grid');
+  if (!target) return;
+  const robotIndex = activeSetupEditorRobotIndex();
+  const config = resolveSetupRobotConfig(robotIndex);
+  target.innerHTML = AI_PROFILE_PARAMETER_GROUPS.map((group) => `
+    <section class="setup-ai-parameter-card">
+      <div class="setup-ai-parameter-card-head">
+        <strong>${escapeHtml(group.label)}</strong>
+        <span>${escapeHtml(group.description)}</span>
+      </div>
+      <div class="setup-ai-parameter-list">
+        ${group.fields.map((field) => {
+          const value = Number(config?.overrides?.[group.key]?.[field.key] || 0);
+          const helpText = escapeHtml(AI_SETUP_FIELD_HELP[`${group.key}.${field.key}`] || group.description || '');
+          const listId = `setup-ai-ticks-${group.key}-${field.key}`;
+          const tickStep = (field.step || 0) >= 1 ? 1 : 0.1;
+          const tickValues = [];
+          for (let current = Number(field.min); current <= Number(field.max) + 1e-9; current += tickStep) {
+            tickValues.push((field.step || 0) >= 1 ? String(Math.round(current)) : Number(current.toFixed(1)).toFixed(1));
+          }
+          return `
+            <label class="setup-ai-slider-row">
+              <div class="setup-ai-slider-top">
+                <span class="setup-ai-slider-label">
+                  <span>${escapeHtml(field.label)}</span>
+                  <span class="setup-ai-inline-help" tabindex="0" data-help="${helpText}">?</span>
+                </span>
+                <strong data-setup-ai-slider-value="${group.key}.${field.key}">${formatAiSetupValue(field, value)}</strong>
+              </div>
+              <input
+                class="setup-ai-slider"
+                type="range"
+                min="${field.min}"
+                max="${field.max}"
+                step="${field.step}"
+                value="${value}"
+                list="${listId}"
+                data-setup-ai-group="${group.key}"
+                data-setup-ai-field="${field.key}"
+              />
+              <datalist id="${listId}">${tickValues.map((tick) => `<option value="${tick}"></option>`).join('')}</datalist>
+            </label>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  `).join('');
+
+  target.querySelectorAll('[data-setup-ai-group][data-setup-ai-field]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      const groupKey = String(event.currentTarget.dataset.setupAiGroup || '');
+      const fieldKey = String(event.currentTarget.dataset.setupAiField || '');
+      const field = AI_PARAMETER_FIELD_MAP[`${groupKey}.${fieldKey}`];
+      if (!field) return;
+      const value = clampAiSetting(event.currentTarget.value, field.min, field.max, field.step);
+      event.currentTarget.value = value;
+      const label = target.querySelector(`[data-setup-ai-slider-value="${groupKey}.${fieldKey}"]`);
+      if (label) label.textContent = formatAiSetupValue(field, value);
+      updateSetupAiSliderFill(event.currentTarget, field, value);
+      updateSetupAiParameter(groupKey, fieldKey, value);
+    });
+    const field = AI_PARAMETER_FIELD_MAP[`${input.dataset.setupAiGroup || ''}.${input.dataset.setupAiField || ''}`];
+    if (field) updateSetupAiSliderFill(input, field, input.value);
+  });
+}
+
+function applySetupAiPreset(archetypeId = '') {
+  const robotIndex = activeSetupEditorRobotIndex();
+  if (!archetypeId) {
+    resetSetupRobotConfig(robotIndex);
+    renderSetupAiProfileGrid();
+    renderSetupAiEditor();
+    return;
+  }
+  state.setup.aiAdvancedProfiles = true;
+  persistSetupRobotConfig(robotIndex, buildManualRobotConfig(archetypeId));
+  renderSetupAiProfileGrid();
+  renderSetupAiEditor();
+}
+
+function applySetupAiMarketCase(caseId = '') {
+  const values = aiMarketCaseNegotiationValues(caseId);
+  if (!values) return;
+  state.setup.aiAdvancedProfiles = true;
+  for (let index = 0; index < setupRobotSlotCount(); index += 1) {
+    const config = ensureSetupRobotConfig(index);
+    config.overrides.negotiation = {
+      ...(config.overrides.negotiation || {}),
+      ...cloneAiData(values),
+    };
+    persistSetupRobotConfig(index, config);
+  }
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiEditor();
+}
+
+function renderSetupAiMarketCases() {
+  const target = byId('setup-ai-market-cases');
+  if (!target) return;
+  target.innerHTML = '';
+  AI_MARKET_CASE_OPTIONS.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'setup-ai-preset-button setup-ai-market-button';
+    button.setAttribute('aria-label', `${option.label}: ${option.description}`);
+    button.innerHTML = `<span class="setup-ai-button-label">${escapeHtml(option.label)}</span><span class="setup-ai-button-help" aria-hidden="true" data-help="${escapeHtml(option.description || option.label)}">?</span>`;
+    button.addEventListener('click', () => applySetupAiMarketCase(option.id));
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiRobotTabs() {
+  const target = byId('setup-ai-robot-tabs');
+  if (!target) return;
+  const slotCount = setupRobotSlotCount();
+  const activeIndex = activeSetupEditorRobotIndex();
+  target.innerHTML = '';
+  for (let index = 0; index < slotCount; index += 1) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `game-setup-count${activeIndex === index ? ' is-active' : ''}`;
+    button.textContent = String(index + 1);
+    button.title = `${setupRobotDisplayName(index)} - ${robotProfileLabelForSetup(index)}`;
+    button.addEventListener('click', () => {
+      state.setup.aiEditorRobotIndex = index;
+      renderSetupAiEditor();
+    });
+    target.appendChild(button);
+  }
+}
+
+function renderSetupAiPresetButtons() {
+  const target = byId('setup-ai-preset-buttons');
+  if (!target) return;
+  const robotIndex = activeSetupEditorRobotIndex();
+  const activeConfig = resolveSetupRobotConfig(robotIndex);
+  const options = aiArchetypeSetupOptions();
+  target.innerHTML = '';
+  options.forEach((option) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `setup-ai-preset-button${activeConfig.archetypeId === option.id ? ' is-active' : ''}`;
+    button.dataset.setupAiPreset = option.id;
+    button.setAttribute('aria-label', `${option.label}: ${option.description || option.label}`);
+    button.innerHTML = `<span class="setup-ai-button-label">${escapeHtml(option.label)}</span><span class="setup-ai-button-help" aria-hidden="true" data-help="${escapeHtml(option.description || option.label)}">?</span>`;
+    button.addEventListener('click', () => applySetupAiPreset(option.id));
+    target.appendChild(button);
+  });
+}
+
+function renderSetupAiEditor() {
+  if (!state.setup.aiEditorOpen) return;
+  const slotCount = setupRobotSlotCount();
+  if (!slotCount) {
+    closeSetupAiEditor();
+    return;
+  }
+  state.setup.aiEditorRobotIndex = activeSetupEditorRobotIndex();
+  setSetupAiEditorVisible(true);
+  renderSetupAiMarketCases();
+  renderSetupAiRobotTabs();
+  renderSetupAiPresetButtons();
+  const config = resolveSetupRobotConfig(state.setup.aiEditorRobotIndex);
+  renderSetupAiEditorSummary(config, state.setup.aiEditorRobotIndex);
+  renderSetupAiParameterGrid();
+}
+
+function openSetupAiEditor(robotIndex = 0) {
+  if (!setupRobotSlotCount()) return;
+  state.setup.aiAdvancedProfiles = true;
+  state.setup.aiEditorOpen = true;
+  state.setup.aiEditorRobotIndex = Math.max(0, Math.min(robotIndex, setupRobotSlotCount() - 1));
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiModeVisibility();
+  renderSetupAiEditor();
+}
+
+function deactivateSetupAiAdvanced() {
+  state.setup.aiAdvancedProfiles = false;
+  state.setup.aiEditorOpen = false;
+  setSetupAiEditorVisible(false);
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
+  renderSetupAiModeVisibility();
+}
+
+function closeSetupAiEditor() {
+  state.setup.aiEditorOpen = false;
+  setSetupAiEditorVisible(false);
+}
+
+function renderSetupAiModeVisibility() {
+  const advancedEnabled = Boolean(state.setup.aiAdvancedProfiles);
+  const difficultyField = byId('setup-ai-difficulty-field');
+  const profileField = byId('setup-ai-profile-mode-field');
+  difficultyField?.classList.toggle('is-disabled', advancedEnabled);
+  profileField?.classList.toggle('is-disabled', advancedEnabled);
+  difficultyField?.setAttribute('aria-disabled', advancedEnabled ? 'true' : 'false');
+  profileField?.setAttribute('aria-disabled', advancedEnabled ? 'true' : 'false');
+  renderSetupAiDifficulties();
+  renderSetupAiProfileModes();
+}
+
+function renderSetupAiAdvancedToggle() {
+  const target = byId('setup-ai-advanced-toggle');
+  if (!target) return;
+  target.innerHTML = `
+    <label class="settings-choice" data-setup-ai-mode="basic">
+      <input id="setup-ai-mode-basic" type="radio" name="setup-ai-mode" value="basic" ${state.setup.aiAdvancedProfiles ? '' : 'checked'} />
+      <span>Basico</span>
+    </label>
+    <label class="settings-choice" data-setup-ai-mode="advanced">
+      <input id="setup-ai-mode-advanced" type="radio" name="setup-ai-mode" value="advanced" ${state.setup.aiAdvancedProfiles ? 'checked' : ''} />
+      <span>Detalhado</span>
+    </label>
+  `;
+  target.querySelector('#setup-ai-mode-basic')?.addEventListener('change', () => {
+    if (!state.setup.aiAdvancedProfiles) return;
+    deactivateSetupAiAdvanced();
+  });
+  target.querySelector('#setup-ai-mode-advanced')?.addEventListener('change', () => {
+    openSetupAiEditor(activeSetupEditorRobotIndex());
+  });
+  target.querySelector('[data-setup-ai-mode="advanced"]')?.addEventListener('click', () => {
+    if (state.setup.aiAdvancedProfiles && !state.setup.aiEditorOpen) {
+      openSetupAiEditor(activeSetupEditorRobotIndex());
+    }
+  });
+  renderSetupAiModeVisibility();
+}
+
+function renderSetupAiProfileGrid() {
+  const target = byId('setup-ai-profile-grid');
+  if (!target) return;
+  target.classList.add('is-hidden');
+  target.innerHTML = '';
+}
+
+
 function populateSetupFromPayload(payload) {
-  const defaults = payload.setup_defaults || {};
+  const defaults = buildAiSetupDefaults(payload.setup_defaults || {});
   state.setup.companyName = defaults.company_name || 'Minha Companhia';
   state.setup.selectedColorId = defaults.human_color_id || state.playerColors[0]?.id || '';
   state.setup.rivalCount = defaults.rival_count || 5;
+  state.setup.aiDifficulty = defaults.ai_difficulty || 'normal';
+  state.setup.aiProfileMode = normalizeAiProfileModeId(defaults.ai_profile_mode || 'balanced');
+  state.setup.aiProfileOrder = buildSetupProfileOrder(state.setup.aiProfileMode, defaults.ai_profile_order || []);
+  state.setup.aiAdvancedProfiles = Boolean(defaults.ai_advanced_profiles);
+  state.setup.manualRobotProfiles = normalizeManualRobotProfiles(defaults.ai_manual_profiles || {}, state.setup.rivalCount);
+  state.setup.manualRobotConfigs = normalizeManualRobotConfigs(defaults.ai_manual_robot_configs || {}, state.setup.rivalCount);
+  state.setup.aiEditorOpen = false;
+  state.setup.aiEditorRobotIndex = 0;
   state.setup.submitting = false;
 
   const nameInput = byId('setup-company-name');
   if (nameInput) {
     nameInput.value = state.setup.companyName;
-    nameInput.addEventListener('input', (event) => {
+    nameInput.oninput = (event) => {
       state.setup.companyName = event.target.value;
       updateSetupStartButton();
-    });
+    };
   }
 
   renderSetupColorGrid();
   renderSetupRivalCounts();
+  renderSetupAiDifficulties();
+  renderSetupAiProfileModes();
+  renderSetupAiAdvancedToggle();
+  renderSetupAiProfileGrid();
   updateSetupStartButton();
 }
 
@@ -5993,7 +8816,10 @@ function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'prope
       player,
       card,
       price,
-      context: aiDecisionContext(player, { reason }),
+      context: aiDecisionContext(player, {
+        reason,
+        purchaseSignals: card ? buildAiBankPurchaseSignals(player, card, { reason }) : { reason },
+      }),
     });
     return Boolean(decision?.shouldBuy);
   }
@@ -6006,9 +8832,9 @@ function cpuShouldBuyPropertyAtPrice(player, price, card = null, reason = 'prope
   return player.cash >= normalizedPrice;
 }
 
-function cpuShouldBuyOrigin(player, card) {
+function cpuShouldBuyOrigin(player, card, reason = 'origin_purchase') {
   if (!card) return false;
-  return cpuShouldBuyPropertyAtPrice(player, card.price, card, 'origin_purchase');
+  return cpuShouldBuyPropertyAtPrice(player, card.price, card, reason);
 }
 
 function cpuShouldNegotiateOwnedProperty(player, negotiationPrice, owner = null, card = null) {
@@ -6039,7 +8865,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
   if (!needsPermission && !activePermissionRecord(player)) {
     player.status_label = 'sem permissao ativa';
     pushActionLog(player, 'Sem permissao ativa', player.is_human
-      ? 'Resgate uma permissao hipotecada antes de abrir novo contrato.'
+      ? 'Voce nao tem permissao disponivel para abrir novo contrato.'
       : `${player.name} nao tem permissao disponivel para novo contrato.`);
     renderHud();
     return null;
@@ -6087,7 +8913,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
       originResult = { bought: Boolean(player.property_codes?.includes(player.location_code || '')), note: ensurePlayerContractDraft(player)?.note || '' };
     } else {
       const originCard = randomChoice(state.portCards);
-      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard);
+      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard, 'origin_purchase');
       originResult = applyOriginSelectionForPlayer(player, originCard, shouldBuyOrigin, {
         updateSession: true,
         actionLabel: `${player.name}: porto inicial`,
@@ -6292,6 +9118,13 @@ async function runSubsequentTurnCycle() {
       for (const player of alivePlayers()) {
         await runPlayerSubsequentTurn(player, nextTurn);
       }
+
+      captureCashSnapshot({
+        label: `Turno ${String(nextTurn).padStart(2, '0')}`,
+        turnNumber: nextTurn,
+        phase: 'Fechamento da rodada',
+        force: true,
+      });
     }
   } finally {
     state.flow.turnCycleRunning = false;
@@ -6313,6 +9146,12 @@ async function runCpuOpeningRound() {
       phase: 'Primeiro turno concluido',
       action_label: 'Todos os jogadores preparados',
       note: 'Todos os jogadores concluiram o primeiro turno inicial.',
+    });
+    captureCashSnapshot({
+      label: 'Turno 01',
+      turnNumber: 1,
+      phase: 'Fechamento do primeiro turno',
+      force: true,
     });
     renderHud();
     renderNodeOverlay();
@@ -6340,6 +9179,18 @@ async function submitSetupSelection(event) {
       }),
     });
 
+    payload.setup_defaults = buildAiSetupDefaults(payload.setup_defaults || {}, {
+      ai_difficulty: state.setup.aiDifficulty,
+      ai_profile_mode: state.setup.aiProfileMode,
+      ai_profile_order: state.setup.aiProfileOrder,
+      ai_advanced_profiles: state.setup.aiAdvancedProfiles,
+      ai_manual_profiles: state.setup.aiAdvancedProfiles
+        ? serializeManualRobotProfiles(state.setup.manualRobotProfiles, state.setup.rivalCount)
+        : [],
+      ai_manual_robot_configs: state.setup.aiAdvancedProfiles
+        ? serializeManualRobotConfigs(state.setup.manualRobotConfigs, state.setup.rivalCount)
+        : [],
+    });
     applyBootstrapPayload(payload);
     state.setup.started = true;
     setSetupOverlayVisible(false);
@@ -6377,6 +9228,7 @@ async function bootstrap() {
     fetchJson('/api/game-ai/bootstrap'),
   ]);
 
+  uiPayload.setup_defaults = buildAiSetupDefaults(uiPayload.setup_defaults || {});
   applyMapPayload(mapPayload);
   applyBootstrapPayload(uiPayload);
   populateSetupFromPayload(uiPayload);
@@ -6406,12 +9258,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     closePermissionChoice(button.dataset.permissionChoiceId);
   });
 
+  getNegotiationCounterInput()?.addEventListener('input', (event) => {
+    state.negotiation.draftCounter = String(event.target.value || '').trim();
+    if (state.negotiation.feedback) {
+      state.negotiation.feedback = '';
+      renderHumanNegotiation();
+    }
+  });
+  getNegotiationCounterInput()?.addEventListener('keydown', (event) => {
+    if (event.code === 'Enter' && !event.repeat) {
+      event.preventDefault();
+      submitHumanNegotiation('counter');
+      return;
+    }
+    if (event.code === 'Escape' && !event.repeat) {
+      event.preventDefault();
+      submitHumanNegotiation('refuse');
+    }
+  });
+  getNegotiationAccept()?.addEventListener('click', () => submitHumanNegotiation('accept'));
+  getNegotiationCounterButton()?.addEventListener('click', () => submitHumanNegotiation('counter'));
+  getNegotiationRefuse()?.addEventListener('click', () => submitHumanNegotiation('refuse'));
+
   document.addEventListener('keydown', (event) => {
     const active = document.activeElement;
     const tag = active?.tagName || '';
     if (active?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
     if (event.code === 'Escape' && !event.repeat) {
+      if (!getNegotiationOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        submitHumanNegotiation('refuse');
+        return;
+      }
+      if (!getSetupAiEditorOverlay()?.classList.contains('is-hidden')) {
+        event.preventDefault();
+        closeSetupAiEditor();
+        return;
+      }
       if (!getSettingsOverlay()?.classList.contains('is-hidden')) {
         event.preventDefault();
         closeSettingsOverlay();
@@ -6441,13 +9325,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   byId('preview-settings-button')?.addEventListener('click', () => {
     openSettingsOverlay();
   });
+  byId('preview-report-button')?.addEventListener('click', () => {
+    openReportOverlay();
+  });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();
+  });
+  byId('report-close-button')?.addEventListener('click', () => {
+    closeReportOverlay();
+  });
+  byId('setup-ai-editor-close-button')?.addEventListener('click', () => {
+    closeSetupAiEditor();
+  });
+  byId('setup-ai-editor-disable-button')?.addEventListener('click', () => {
+    deactivateSetupAiAdvanced();
+  });
+  getSetupAiEditorOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getSetupAiEditorOverlay()) {
+      closeSetupAiEditor();
+    }
   });
   getSettingsOverlay()?.addEventListener('click', (event) => {
     if (event.target === getSettingsOverlay()) {
       closeSettingsOverlay();
     }
+  });
+  getReportOverlay()?.addEventListener('click', (event) => {
+    if (event.target === getReportOverlay()) {
+      closeReportOverlay();
+    }
+  });
+  getReportTabs()?.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-report-key]');
+    if (!tab?.dataset?.reportKey) return;
+    state.report.activeKey = tab.dataset.reportKey;
+    renderReportOverlay();
+  });
+  getReportBody()?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-report-window-key]');
+    if (!button?.dataset?.reportWindowKey || !button?.dataset?.reportWindowMode) return;
+    const reportKey = button.dataset.reportWindowKey;
+    const mode = button.dataset.reportWindowMode === 'full' ? 'full' : 'recent';
+    state.report.windowModes = {
+      ...(state.report.windowModes || {}),
+      [reportKey]: mode,
+    };
+    renderReportOverlay();
   });
   [getSettingsLogModeGlobalInput(), getSettingsLogModePlayerInput()].forEach((input) => {
     input?.addEventListener('change', (event) => {

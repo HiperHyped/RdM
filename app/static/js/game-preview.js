@@ -1005,7 +1005,7 @@ function activePermissionRecord(player) {
 }
 
 function availablePermissionRecords(player) {
-  return (player?.permissions || []).filter((permission) => !permission?.mortgaged);
+  return (player?.permissions || []).filter(Boolean);
 }
 
 function permissionPurchasePrice(permission) {
@@ -1042,18 +1042,18 @@ function propertyRedeemCost(card) {
 }
 
 function permissionMortgageCredit(permission) {
-  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(permissionPurchasePrice(permission), normalizedGameRules()) : Math.floor(permissionPurchasePrice(permission) * 0.5);
+  return 0;
 }
 
 function permissionRedeemCost(permission) {
-  return economyLib()?.redeemCost ? economyLib().redeemCost(permissionPurchasePrice(permission), normalizedGameRules()) : Math.round(permissionMortgageCredit(permission) * 1.5);
+  return 0;
 }
 
 function syncActivePermissionAfterEconomyChange(player) {
   if (!player) return;
   const available = availablePermissionRecords(player);
   const active = activePermissionRecord(player);
-  if (active && !active.mortgaged) return;
+  if (active) return;
   if (available.length) {
     const next = available[0];
     player.active_permission_id = next.id;
@@ -1071,7 +1071,7 @@ function syncActivePermissionAfterEconomyChange(player) {
 
 function setActivePermissionForPlayer(player, permissionId, { statusLabel = null } = {}) {
   const permission = findPermissionRecord(player, permissionId);
-  if (!player || !permission || permission.mortgaged) return { permission: null, changed: false };
+  if (!player || !permission) return { permission: null, changed: false };
   const changed = String(player.active_permission_id || '') !== String(permission.id);
   player.active_permission_id = permission.id;
   player.active_permission_label = permission.title;
@@ -1162,25 +1162,11 @@ function canRedeemProperty(player, code) {
 }
 
 function canMortgagePermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission) return false;
-  if (permission.mortgaged) return false;
-  const activePermissionId = String(player.active_permission_id || '');
-  const contractInProgress = Boolean(
-    player.active_contract
-    && !player.active_contract.completed
-    && player.active_contract.destination
-    && player.active_contract.destination !== '--'
-    && !player.needs_new_contract
-  );
-  if (String(permission.id) === activePermissionId && contractInProgress) return false;
-  return true;
+  return false;
 }
 
 function canRedeemPermission(player, permissionId) {
-  const permission = findPermissionRecord(player, permissionId);
-  if (!player || player.bankrupt || !permission || !permission.mortgaged) return false;
-  return player.cash >= permissionRedeemCost(permission);
+  return false;
 }
 
 function mortgagePropertyForPlayer(player, code, { auto = false, reason = 'hipoteca' } = {}) {
@@ -1211,33 +1197,11 @@ function redeemPropertyForPlayer(player, code, { auto = false } = {}) {
 }
 
 function mortgagePermissionForPlayer(player, permissionId, { auto = false, reason = 'hipoteca' } = {}) {
-  if (!canMortgagePermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const credit = permissionMortgageCredit(permission);
-  permission.mortgaged = true;
-  updatePlayerCash(player, credit);
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `hipotecou ${permission.title}`;
-  pushActionLog(player, auto ? 'Hipoteca automatica' : 'Hipoteca', `${permission.title}: recebeu ${formatCurrency(credit)} (${reason}).`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function redeemPermissionForPlayer(player, permissionId, { auto = false } = {}) {
-  if (!canRedeemPermission(player, permissionId)) return false;
-  const permission = findPermissionRecord(player, permissionId);
-  const cost = permissionRedeemCost(permission);
-  updatePlayerCash(player, -cost);
-  permission.mortgaged = false;
-  syncActivePermissionAfterEconomyChange(player);
-  player.status_label = `resgatou ${permission.title}`;
-  pushActionLog(player, auto ? 'Resgate automatico' : 'Resgate', `${permission.title}: pagou ${formatCurrency(cost)} ao banco.`);
-  renderHud();
-  renderNodeOverlay();
-  renderShipOverlay();
-  return true;
+  return false;
 }
 
 function mortgageCandidatesForPlayer(player) {
@@ -1252,16 +1216,7 @@ function mortgageCandidatesForPlayer(player) {
       credit: propertyMortgageCredit(card),
       priority: playerHasRegionMonopoly(player, card.continent) ? 2 : 1,
     }));
-  const permissionCandidates = (player.permissions || [])
-    .filter((permission) => canMortgagePermission(player, permission.id))
-    .map((permission) => ({
-      type: 'permission',
-      key: permission.id,
-      label: permission.title,
-      credit: permissionMortgageCredit(permission),
-      priority: 3,
-    }));
-  return [...propertyCandidates, ...permissionCandidates]
+  return [...propertyCandidates]
     .filter((entry) => entry.credit > 0)
     .sort((left, right) => (left.priority - right.priority) || (left.credit - right.credit) || String(left.label).localeCompare(String(right.label)));
 }
@@ -1269,7 +1224,6 @@ function mortgageCandidatesForPlayer(player) {
 function performMortgageCandidate(player, candidate, reason) {
   if (!player || !candidate) return false;
   if (candidate.type === 'property') return mortgagePropertyForPlayer(player, candidate.key, { auto: true, reason });
-  if (candidate.type === 'permission') return mortgagePermissionForPlayer(player, candidate.key, { auto: true, reason });
   return false;
 }
 
@@ -1546,13 +1500,13 @@ function permissionMiniMarkup(permission) {
   const mortgaged = Boolean(permission?.mortgaged);
   return `
     <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-permission-mini-head">${permission.title}</header>
       <div class="preview-permission-mini-row top">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
       </div>
-      <div class="preview-permission-mini-body">${mortgaged ? 'Hipotecada' : 'Permissao'}</div>
+      <div class="preview-permission-mini-body">Permissao</div>
       <div class="preview-permission-mini-row bottom">
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
         <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
@@ -1580,7 +1534,7 @@ function propertyMiniMarkup(card) {
   const mortgaged = Boolean(card?.mortgaged);
   return `
     <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}${mortgaged ? ' is-mortgaged' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
-      ${mortgaged ? '<span class="preview-mini-badge is-mortgaged">Hipoteca</span>' : ''}
+      
       <header class="preview-property-mini-head${tollHeadClass}">
         ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
@@ -1695,10 +1649,32 @@ function readableTextColor(backgroundHex, light = '#edf6ff', dark = '#06111a') {
   return luminance >= 0.62 ? dark : light;
 }
 
+const REGION_LABELS = {
+  AF: 'Africa',
+  AS: 'Asia',
+  EU: 'Europa',
+  NA: 'America do Norte',
+  OC: 'Oceania',
+  OM: 'Oriente Medio',
+  SA: 'America do Sul',
+};
+
+function monopolyRegionStyle(regionCode) {
+  const card = regionPortCards(regionCode)?.[0] || null;
+  const background = card?.fill || '#8fd7ff';
+  const text = card?.text || readableTextColor(background);
+  return { background, text };
+}
+
+function monopolyRegionLabel(regionCode) {
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  return REGION_LABELS[normalized] || normalized;
+}
+
 function monopolyChipMarkup(player, regionCode) {
-  const background = player?.color_hex || '#8fd7ff';
-  const text = readableTextColor(background);
-  return `<span class="preview-monopoly-chip" style="background:${background}; color:${text}; border-color:${background};">${regionCode}</span>`;
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  const style = monopolyRegionStyle(normalized);
+  return `<span class="preview-monopoly-chip" style="background:${style.background}; color:${style.text}; border-color:${style.background};">${monopolyRegionLabel(normalized)}</span>`;
 }
 
 function contractDeadlineTone(contract) {
@@ -5802,7 +5778,7 @@ function applyBootstrapPayload(payload) {
     permissions: (player.permissions || []).map((permission) => ({
       ...permission,
       purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
-      mortgaged: Boolean(permission.mortgaged),
+      mortgaged: false,
     })),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
@@ -5946,7 +5922,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
   if (!needsPermission && !activePermissionRecord(player)) {
     player.status_label = 'sem permissao ativa';
     pushActionLog(player, 'Sem permissao ativa', player.is_human
-      ? 'Resgate uma permissao hipotecada antes de abrir novo contrato.'
+      ? 'Voce nao tem permissao disponivel para abrir novo contrato.'
       : `${player.name} nao tem permissao disponivel para novo contrato.`);
     renderHud();
     return null;

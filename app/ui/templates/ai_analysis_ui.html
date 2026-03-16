@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<script defer src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=16"></script>
+<script defer src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=16"></script>
+<script defer src="{{ request.url_for('static', path='js/ai-analysis-ui.js') }}?v=1"></script>
+<style>
+  .ai-analysis-page {
+    min-height: 100vh;
+    padding: 28px;
+    background:
+      radial-gradient(circle at top, rgba(42, 117, 181, 0.22), transparent 30%),
+      linear-gradient(180deg, #07111d 0%, #0a1524 100%);
+    color: #e9f2fb;
+  }
+
+  .ai-analysis-shell {
+    width: min(1420px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 22px;
+  }
+
+  .ai-analysis-hero,
+  .ai-analysis-section,
+  .ai-analysis-side-card {
+    border-radius: 28px;
+    border: 1px solid rgba(168, 198, 226, 0.16);
+    background: linear-gradient(180deg, rgba(10, 25, 42, 0.96), rgba(9, 20, 35, 0.98));
+    box-shadow: 0 26px 52px rgba(3, 10, 18, 0.35);
+  }
+
+  .ai-analysis-hero {
+    padding: 24px 26px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .ai-analysis-topline {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .ai-analysis-title-block {
+    display: grid;
+    gap: 10px;
+  }
+
+  .ai-analysis-eyebrow {
+    margin: 0;
+    color: #f0b429;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ai-analysis-title {
+    margin: 0;
+    font-size: clamp(2rem, 3.6vw, 3rem);
+    line-height: 1.04;
+    color: #f7fbff;
+  }
+
+  .ai-analysis-copy {
+    margin: 0;
+    max-width: 860px;
+    color: #aec6da;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .ai-analysis-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 10px;
+  }
+
+  .ai-analysis-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.18);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f7fbff;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .ai-analysis-link:hover {
+    border-color: rgba(240, 180, 41, 0.5);
+    color: #ffd36c;
+  }
+
+  .ai-analysis-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .ai-analysis-summary-card {
+    padding: 16px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    display: grid;
+    gap: 8px;
+  }
+
+  .ai-analysis-summary-card strong {
+    font-size: 1.65rem;
+    line-height: 1;
+    color: #f7fbff;
+  }
+
+  .ai-analysis-summary-card span {
+    color: #9fb7cb;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  .ai-analysis-section {
+    padding: 22px 24px 24px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .ai-analysis-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .ai-analysis-section-head h2,
+  .ai-analysis-side-card h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #f7fbff;
+  }
+
+  .ai-analysis-section-note {
+    margin: 6px 0 0;
+    color: #9fb7cb;
+    line-height: 1.55;
+  }
+
+  .ai-analysis-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 10px;
+  }
+
+  .ai-analysis-filter-button,
+  .ai-analysis-profile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eaf4fc;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .ai-analysis-filter-button.is-active,
+  .ai-analysis-profile-button.is-active {
+    border-color: rgba(240, 180, 41, 0.56);
+    background: rgba(240, 180, 41, 0.14);
+    color: #ffd36c;
+    box-shadow: inset 0 0 0 1px rgba(240, 180, 41, 0.2);
+  }
+
+  .ai-analysis-table-wrap,
+  .ai-analysis-metadata-wrap {
+    overflow: auto;
+    border-radius: 20px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .ai-analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 960px;
+  }
+
+  .ai-analysis-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 14px 16px;
+    background: #0f2033;
+    color: #f7fbff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+
+  .ai-analysis-table td {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(174, 198, 218, 0.08);
+    vertical-align: top;
+    color: #dbe8f4;
+    line-height: 1.55;
+  }
+
+  .ai-analysis-slider-name {
+    display: grid;
+    gap: 4px;
+  }
+
+  .ai-analysis-slider-name strong {
+    color: #f7fbff;
+    font-size: 0.96rem;
+  }
+
+  .ai-analysis-slider-name span {
+    color: #8eb0c7;
+    font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ai-analysis-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ai-analysis-status.is-vivo {
+    color: #d9ffef;
+    background: rgba(37, 191, 109, 0.18);
+    border: 1px solid rgba(37, 191, 109, 0.32);
+  }
+
+  .ai-analysis-status.is-meio-vivo {
+    color: #fff0cd;
+    background: rgba(240, 180, 41, 0.18);
+    border: 1px solid rgba(240, 180, 41, 0.34);
+  }
+
+  .ai-analysis-status.is-morto {
+    color: #ffd7d7;
+    background: rgba(237, 85, 101, 0.18);
+    border: 1px solid rgba(237, 85, 101, 0.34);
+  }
+
+  .ai-analysis-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: 22px;
+  }
+
+  .ai-analysis-side-card {
+    padding: 22px 24px 24px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .ai-analysis-profile-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ai-analysis-profile-copy {
+    margin: 0;
+    color: #a8c1d5;
+    line-height: 1.55;
+  }
+
+  .ai-analysis-profile-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .ai-analysis-group-card {
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    display: grid;
+    gap: 12px;
+  }
+
+  .ai-analysis-group-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #f7fbff;
+  }
+
+  .ai-analysis-meter-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .ai-analysis-meter-row {
+    display: grid;
+    gap: 6px;
+  }
+
+  .ai-analysis-meter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.84rem;
+    color: #dfeaf3;
+  }
+
+  .ai-analysis-meter-head strong {
+    color: #f8fbff;
+  }
+
+  .ai-analysis-meter-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+  }
+
+  .ai-analysis-meter-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f0b429 0%, #ffc84d 100%);
+  }
+
+  .ai-analysis-metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ai-analysis-metadata-table th,
+  .ai-analysis-metadata-table td {
+    padding: 13px 14px;
+    border-top: 1px solid rgba(174, 198, 218, 0.08);
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .ai-analysis-metadata-table thead th {
+    border-top: 0;
+    background: #0f2033;
+    color: #f7fbff;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ai-analysis-empty {
+    padding: 18px;
+    color: #9fb7cb;
+  }
+
+  @media (max-width: 1180px) {
+    .ai-analysis-summary,
+    .ai-analysis-grid,
+    .ai-analysis-profile-groups {
+      grid-template-columns: 1fr;
+    }
+
+    .ai-analysis-section-head,
+    .ai-analysis-topline {
+      grid-template-columns: 1fr;
+      display: grid;
+    }
+
+    .ai-analysis-links,
+    .ai-analysis-filter-bar {
+      justify-content: start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<main class="ai-analysis-page">
+  <section class="ai-analysis-shell">
+    <header class="ai-analysis-hero">
+      <div class="ai-analysis-topline">
+        <div class="ai-analysis-title-block">
+          <p class="ai-analysis-eyebrow">Analise da IA</p>
+          <h1 class="ai-analysis-title">Mapa matematico dos perfis e sliders</h1>
+          <p class="ai-analysis-copy">
+            Esta ferramenta resume a matematica que hoje realmente roda nas versoes AI do projeto. Ela mostra cada slider,
+            a equacao principal em portugues, o efeito intuitivo na mesa e o status real do parametro: vivo, meio vivo ou morto.
+          </p>
+        </div>
+        <div class="ai-analysis-links">
+          <a class="ai-analysis-link" href="/preview/game-ai-ui">Abrir game-ai-ui</a>
+          <a class="ai-analysis-link" href="/preview/robots-ai-ui">Abrir robots-ai-ui</a>
+        </div>
+      </div>
+      <div id="analysis-summary" class="ai-analysis-summary"></div>
+    </header>
+
+    <section class="ai-analysis-section">
+      <div class="ai-analysis-section-head">
+        <div>
+          <p class="ai-analysis-eyebrow">Tabela dos sliders</p>
+          <h2>Equacoes, efeitos e status real</h2>
+          <p class="ai-analysis-section-note">
+            As equacoes abaixo sao as equacoes-mestras do engine atual. Alguns sliders entram em mais de uma decisao;
+            aqui eu mostro a formula principal que mais explica o comportamento do robo.
+          </p>
+        </div>
+        <div id="analysis-filter-bar" class="ai-analysis-filter-bar"></div>
+      </div>
+      <div class="ai-analysis-table-wrap">
+        <table class="ai-analysis-table">
+          <thead>
+            <tr>
+              <th>Slider</th>
+              <th>Equacao principal</th>
+              <th>Efeito intuitivo</th>
+              <th>Onde entra</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="analysis-slider-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="ai-analysis-grid">
+      <section class="ai-analysis-side-card">
+        <div>
+          <p class="ai-analysis-eyebrow">Perfis prontos</p>
+          <h2>Valores atuais de cada perfil</h2>
+          <p class="ai-analysis-section-note">
+            Clique em um perfil do codigo para ver os valores reais que ele aplica hoje em negociacao, visao, personalidade e skill.
+          </p>
+        </div>
+        <div id="analysis-profile-picker" class="ai-analysis-profile-picker"></div>
+        <p id="analysis-profile-copy" class="ai-analysis-profile-copy"></p>
+        <div id="analysis-profile-groups" class="ai-analysis-profile-groups"></div>
+      </section>
+
+      <section class="ai-analysis-side-card">
+        <div>
+          <p class="ai-analysis-eyebrow">Metadados e flags</p>
+          <h2>Campos fora dos sliders</h2>
+          <p class="ai-analysis-section-note">
+            Aqui ficam as flags e metadados que afetam o motor de IA sem aparecer como slider na tela de configuracao.
+          </p>
+        </div>
+        <div class="ai-analysis-metadata-wrap">
+          <table class="ai-analysis-metadata-table">
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Regra</th>
+                <th>Efeito</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-metadata-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+</main>
+{% endblock %}
