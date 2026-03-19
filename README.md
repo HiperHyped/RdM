@@ -33,12 +33,14 @@ Depois abra no navegador:
 
 - `http://127.0.0.1:8000/`:
   pagina inicial com links para previews e ferramentas
+  
 - `http://127.0.0.1:8000/preview/game-ai-ui-v2`:
   partida principal, com jogador humano contra robos
+
 - `http://127.0.0.1:8000/preview/robots-ai-ui-v2`:
   mesa totalmente automatica entre robos
 
-Se a ideia for jogar de fato, a rota recomendada e `preview/game-ai-ui-v2`.
+
 
 ## Como comecar uma partida
 
