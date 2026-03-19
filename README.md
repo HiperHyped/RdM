@@ -9,6 +9,42 @@ Este projeto permite jogar uma partida contra robos ou acompanhar simulacoes com
 - Python 3.12 ou superior
 - Navegador moderno
 
+## O que fazer com os arquivos antes de rodar
+
+Antes de executar qualquer comando Python, faça exatamente isto:
+
+1. Deixe a pasta do projeto inteira como esta, sem mover arquivos para fora dela.
+2. Abra um terminal dentro da pasta raiz do projeto, a mesma pasta onde estao `pyproject.toml` e `run.py`.
+3. Confirme que estas pastas continuam presentes na raiz:
+  - `app`
+  - `data`
+  - `assets`
+  - `manual`
+4. Nao apague nem renomeie os arquivos JSON dentro de `data`, porque eles alimentam as regras, cartas, cores, portos, pedagogios e distancias do jogo.
+5. Nao apague nem renomeie `run.py` e `pyproject.toml`, porque sao os arquivos usados para iniciar e instalar o projeto.
+
+O que voce nao precisa fazer antes de rodar:
+
+- nao precisa abrir nem converter os arquivos da pasta `manual`
+- nao precisa editar os arquivos de `data`
+- nao precisa copiar arquivos para outro lugar
+- nao precisa criar banco de dados
+- nao precisa configurar variaveis de ambiente
+
+Para evitar erro de caminho, o terminal deve estar nesta pasta:
+
+```powershell
+C:\Users\Haroldo Duraes\Desktop\GOvGO\RdM
+```
+
+Uma forma simples de conferir isso e executar:
+
+```powershell
+dir
+```
+
+Se aparecerem `run.py`, `pyproject.toml`, `app` e `data` na listagem, voce esta no lugar certo.
+
 ## Instalacao
 
 No diretorio do projeto, instale as dependencias:
@@ -33,7 +69,7 @@ Depois abra no navegador:
 
 - `http://127.0.0.1:8000/`:
   pagina inicial com links para previews e ferramentas
-  
+
 - `http://127.0.0.1:8000/preview/game-ai-ui-v2`:
   partida principal, com jogador humano contra robos
 
@@ -123,6 +159,6 @@ python -m pytest -q
 ## Leitura recomendada
 
 - `MANUAL.md`
-- `docs/DEVELOPER_DOCUMENTATION.md`
+- `DEVELOPER_DOCUMENTATION.md`
 
 
