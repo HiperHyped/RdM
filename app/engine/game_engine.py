@@ -372,7 +372,7 @@ class ReiDosMaresEngine:
                 owner_player_id=card.owner_id,
             )
 
-        owner_fee = rate.multiplier
+        owner_fee = rate.fee * rate.multiplier
         if (
             card.kind == PropertyKind.PORT
             and self.rules.monopoly_stay_uses_multiplier_times_region_size

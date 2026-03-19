@@ -94,10 +94,9 @@
   </div>
 
   <div id="game-setup-overlay" class="game-setup-overlay">
-    <section class="game-setup-modal" aria-labelledby="game-setup-title">
+    <section class="game-setup-modal game-setup-modal-game" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
       <h1 id="game-setup-title">Monte sua companhia</h1>
-      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia e quantos adversarios do sistema entrarao na partida.</p>
 
       <form id="game-setup-form" class="game-setup-form">
         <label class="game-setup-field">
@@ -107,7 +106,7 @@
 
         <div class="game-setup-field">
           <span>Cor da companhia</span>
-          <div id="setup-color-grid" class="game-setup-color-grid"></div>
+          <div id="setup-color-grid" class="game-setup-color-grid game-setup-color-grid-game"></div>
         </div>
 
         <div class="game-setup-field">
@@ -116,6 +115,8 @@
         </div>
 
         <div class="game-setup-actions">
+          <button id="setup-continue-button" type="button" class="game-setup-start">Continuar</button>
+          <button id="setup-load-button" type="button" class="game-setup-start">Carregar</button>
           <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
         </div>
       </form>
@@ -127,7 +128,8 @@
       <div class="preview-contract-topline">
         <div class="preview-contract-head-actions">
           <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
-          <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
+          <button id="preview-load-button" type="button" class="preview-ghost-button" aria-label="Carregar">&#128194;</button>
+          <button id="preview-save-button" type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
         </div>
         <h1 id="preview-turn">Turno 01</h1>
@@ -260,6 +262,42 @@
     </section>
   </div>
 
+  <div id="save-name-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal save-name-modal" aria-labelledby="save-name-title">
+      <p class="eyebrow">Salvar partida</p>
+      <h2 id="save-name-title">Nome do arquivo</h2>
+      <p id="save-name-copy" class="body-copy compact">Edite o nome do save ou pressione Enter para usar o nome sugerido.</p>
+      <label class="save-name-field" for="save-name-input">
+        <span>Arquivo</span>
+        <input id="save-name-input" class="save-name-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="decision-actions">
+        <button id="save-name-primary" type="button" class="decision-button primary">Salvar</button>
+        <button id="save-name-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="load-browser-overlay" class="decision-overlay is-hidden" aria-hidden="true">
+    <section class="decision-modal load-browser-modal" aria-labelledby="load-browser-title">
+      <p class="eyebrow">Carregar partida</p>
+      <h2 id="load-browser-title">Saves compativeis</h2>
+      <p id="load-browser-copy" class="body-copy compact">Navegue pelos saves compativeis desta tela e valide o arquivo antes do restore completo.</p>
+      <div class="load-browser-toolbar">
+        <span id="load-browser-status" class="load-browser-status">Buscando saves...</span>
+        <button id="load-browser-refresh" type="button" class="decision-button secondary load-browser-refresh">Atualizar</button>
+      </div>
+      <div class="load-browser-shell">
+        <div id="load-browser-list" class="load-browser-list"></div>
+        <div id="load-browser-detail" class="load-browser-detail"></div>
+      </div>
+      <div class="decision-actions">
+        <button id="load-browser-primary" type="button" class="decision-button primary">Carregar</button>
+        <button id="load-browser-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
   <div id="permission-choice-overlay" class="permission-choice-overlay is-hidden">
     <section class="permission-choice-modal" aria-labelledby="permission-choice-title">
       <div class="permission-choice-head">
@@ -280,5 +318,6 @@
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
+<script src="{{ request.url_for('static', path='js/save-browser.js') }}?v=save-browser-v1"></script>
 <script src="{{ request.url_for('static', path='js/game-preview.js') }}?v=economy-integration-v4"></script>
 {% endblock %}

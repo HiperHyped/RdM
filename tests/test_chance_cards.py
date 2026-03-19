@@ -6,8 +6,8 @@ from app.services import build_chance_cards, load_game_data
 def test_chance_cards_preview_data_matches_full_deck() -> None:
     cards = build_chance_cards()
 
-    assert len(cards) == 35
-    assert sum(1 for card in cards if card['category'] == 'sorte') == 18
+    assert len(cards) == 39
+    assert sum(1 for card in cards if card['category'] == 'sorte') == 22
     assert sum(1 for card in cards if card['category'] == 'reves') == 17
     assert cards[0]['title'] == 'Baleias'
     assert cards[0]['accent'] == '#18C43A'
@@ -23,5 +23,9 @@ def test_loaded_cards_keep_category_color_and_effect_metadata() -> None:
     assert data.cards[0].category == 'sorte'
     assert data.cards[0].accent == '#18C43A'
     assert data.cards[0].effect['type'] == 'gain_money'
-    assert data.cards[18].category == 'reves'
-    assert data.cards[18].effect['type'] == 'pay_money'
+    assert data.cards[18].category == 'sorte'
+    assert data.cards[18].effect['type'] == 'coupon'
+    assert data.cards[21].category == 'sorte'
+    assert data.cards[21].effect['type'] == 'coupon'
+    assert data.cards[22].category == 'reves'
+    assert data.cards[22].effect['type'] == 'pay_money'

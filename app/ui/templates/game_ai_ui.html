@@ -239,6 +239,136 @@
     font-weight: 700;
   }
 
+  .report-milestone-table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .report-milestone-table thead th:first-child {
+    width: 92px;
+  }
+
+  .report-milestone-table thead th:first-child,
+  .report-milestone-table tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: rgba(6, 24, 41, 0.96);
+  }
+
+  .report-milestone-table thead th:first-child {
+    z-index: 3;
+  }
+
+  .report-milestone-player-head {
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+  }
+
+  .report-turn-pivot-cell {
+    vertical-align: top;
+  }
+
+  .report-milestone-player-col {
+    padding: 10px 8px;
+    vertical-align: top;
+  }
+
+  .report-milestone-cell {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .report-milestone-primary,
+  .report-milestone-secondary {
+    display: grid;
+    gap: 8px;
+  }
+
+  .report-milestone-primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-milestone-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .report-milestone-stat {
+    display: grid;
+    gap: 3px;
+    padding: 8px 8px 9px;
+    border-radius: 12px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(5, 18, 31, 0.34);
+  }
+
+  .report-milestone-stat small {
+    color: rgba(214, 229, 245, 0.62);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .report-milestone-stat strong {
+    color: #edf6ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+
+  .report-milestone-stat-compact strong {
+    font-size: 1rem;
+  }
+
+  .report-milestone-stat.is-leading {
+    border-color: rgba(143, 215, 255, 0.5);
+    background: rgba(143, 215, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(143, 215, 255, 0.14);
+  }
+
+  .report-milestone-stat.tone-zero {
+    border-color: rgba(255, 93, 93, 0.34);
+    background: rgba(255, 93, 93, 0.12);
+  }
+
+  .report-milestone-stat.tone-zero strong {
+    color: #ff8b88;
+  }
+
+  .report-milestone-stat.tone-low {
+    border-color: rgba(255, 126, 68, 0.34);
+    background: rgba(255, 126, 68, 0.12);
+  }
+
+  .report-milestone-stat.tone-low strong {
+    color: #ffb179;
+  }
+
+  .report-milestone-stat.tone-mid {
+    border-color: rgba(255, 204, 74, 0.34);
+    background: rgba(255, 204, 74, 0.12);
+  }
+
+  .report-milestone-stat.tone-mid strong {
+    color: #ffd76e;
+  }
+
+  .report-milestone-stat.tone-high {
+    border-color: rgba(72, 212, 123, 0.34);
+    background: rgba(72, 212, 123, 0.12);
+  }
+
+  .report-milestone-stat.tone-high strong {
+    color: #78e59a;
+  }
+
   .negotiation-modal {
     width: min(640px, calc(100vw - 48px));
     display: grid;
@@ -1091,6 +1221,42 @@
           </div>
           <span class="settings-note">Continua a simulacao quando a aba fica em segundo plano.</span>
         </div>
+
+        <div class="settings-row">
+          <div class="settings-row-top">
+            <span class="settings-label">Travar compra</span>
+            <strong id="settings-trade-lock-buy-value" class="settings-value">Livre</strong>
+          </div>
+          <div class="settings-choice-group" role="radiogroup" aria-label="Travar compra">
+            <label class="settings-choice" for="settings-trade-lock-buy-off">
+              <input id="settings-trade-lock-buy-off" type="radio" name="settings-trade-lock-buy" value="off" checked />
+              <span>Livre</span>
+            </label>
+            <label class="settings-choice" for="settings-trade-lock-buy-on">
+              <input id="settings-trade-lock-buy-on" type="radio" name="settings-trade-lock-buy" value="on" />
+              <span>Travada</span>
+            </label>
+          </div>
+          <span class="settings-note">Quando travada, sua companhia nao compra portos nem pedagios durante a partida.</span>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-top">
+            <span class="settings-label">Travar venda</span>
+            <strong id="settings-trade-lock-sell-value" class="settings-value">Livre</strong>
+          </div>
+          <div class="settings-choice-group" role="radiogroup" aria-label="Travar venda">
+            <label class="settings-choice" for="settings-trade-lock-sell-off">
+              <input id="settings-trade-lock-sell-off" type="radio" name="settings-trade-lock-sell" value="off" checked />
+              <span>Livre</span>
+            </label>
+            <label class="settings-choice" for="settings-trade-lock-sell-on">
+              <input id="settings-trade-lock-sell-on" type="radio" name="settings-trade-lock-sell" value="on" />
+              <span>Travada</span>
+            </label>
+          </div>
+          <span class="settings-note">Quando travada, sua companhia recusa automaticamente ofertas de compra dos robos.</span>
+        </div>
       </div>
     </section>
   </div>
@@ -1114,10 +1280,9 @@
   </div>
 
   <div id="game-setup-overlay" class="game-setup-overlay">
-    <section class="game-setup-modal" aria-labelledby="game-setup-title">
+    <section class="game-setup-modal game-setup-modal-game" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
       <h1 id="game-setup-title">Monte sua companhia</h1>
-      <p class="body-copy compact">Escolha o nome da empresa, a cor oficial da companhia, quantos adversarios entram na partida e se a IA sera ajustada de forma rapida ou detalhada.</p>
 
       <form id="game-setup-form" class="game-setup-form">
         <label class="game-setup-field">
@@ -1127,7 +1292,7 @@
 
         <div class="game-setup-field">
           <span>Cor da companhia</span>
-          <div id="setup-color-grid" class="game-setup-color-grid"></div>
+          <div id="setup-color-grid" class="game-setup-color-grid game-setup-color-grid-game"></div>
         </div>
 
         <div class="game-setup-field">
@@ -1138,7 +1303,6 @@
         <div id="setup-ai-advanced-field" class="game-setup-field">
           <span>Modo de configuracao da IA</span>
           <div id="setup-ai-advanced-toggle" class="settings-choice-group setup-ai-mode-toggle"></div>
-          <span class="settings-note setup-ai-mode-note">Escolha entre os controles rapidos da mesa e a edicao detalhada por robo.</span>
         </div>
 
         <div id="setup-ai-difficulty-field" class="game-setup-field">
@@ -1152,6 +1316,8 @@
         </div>
 
         <div class="game-setup-actions">
+          <button id="setup-continue-button" type="button" class="game-setup-start">Continuar</button>
+          <button id="setup-load-button" type="button" class="game-setup-start">Carregar</button>
           <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
         </div>
       </form>
@@ -1194,7 +1360,8 @@
       <div class="preview-contract-topline">
         <div class="preview-contract-head-actions">
           <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
-          <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
+          <button id="preview-load-button" type="button" class="preview-ghost-button" aria-label="Carregar">&#128194;</button>
+          <button id="preview-save-button" type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
           <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
         </div>
@@ -1328,6 +1495,42 @@
     </section>
   </div>
 
+  <div id="save-name-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal save-name-modal" aria-labelledby="save-name-title">
+      <p class="eyebrow">Salvar partida</p>
+      <h2 id="save-name-title">Nome do arquivo</h2>
+      <p id="save-name-copy" class="body-copy compact">Edite o nome do save ou pressione Enter para usar o nome sugerido.</p>
+      <label class="save-name-field" for="save-name-input">
+        <span>Arquivo</span>
+        <input id="save-name-input" class="save-name-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="decision-actions">
+        <button id="save-name-primary" type="button" class="decision-button primary">Salvar</button>
+        <button id="save-name-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="load-browser-overlay" class="decision-overlay is-hidden" aria-hidden="true">
+    <section class="decision-modal load-browser-modal" aria-labelledby="load-browser-title">
+      <p class="eyebrow">Carregar partida</p>
+      <h2 id="load-browser-title">Saves compativeis</h2>
+      <p id="load-browser-copy" class="body-copy compact">Navegue pelos saves compativeis desta tela e valide o arquivo antes do restore completo.</p>
+      <div class="load-browser-toolbar">
+        <span id="load-browser-status" class="load-browser-status">Buscando saves...</span>
+        <button id="load-browser-refresh" type="button" class="decision-button secondary load-browser-refresh">Atualizar</button>
+      </div>
+      <div class="load-browser-shell">
+        <div id="load-browser-list" class="load-browser-list"></div>
+        <div id="load-browser-detail" class="load-browser-detail"></div>
+      </div>
+      <div class="decision-actions">
+        <button id="load-browser-primary" type="button" class="decision-button primary">Carregar</button>
+        <button id="load-browser-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
   <div id="negotiation-overlay" class="decision-overlay is-hidden">
     <section class="decision-modal negotiation-modal" aria-labelledby="negotiation-title">
       <div class="negotiation-head">
@@ -1381,6 +1584,7 @@
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
+<script src="{{ request.url_for('static', path='js/save-browser.js') }}?v=save-browser-v1"></script>
 <script src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=ai-profiles-v15"></script>
 <script src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=ai-policy-engine-v14"></script>
 <script src="{{ request.url_for('static', path='js/game-ai-ui.js') }}?v=game-ai-ui-v20"></script>

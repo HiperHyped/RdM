@@ -14,7 +14,7 @@ def test_ui_bootstrap_exposes_empty_first_turn_session() -> None:
     assert payload['human_company']['active_permission_id'] is None
     assert payload['active_contract'] is None
     assert len(payload['freight_permission_cards']) == 6
-    assert len(payload['chance_cards']) == 35
+    assert len(payload['chance_cards']) == 39
     assert len(payload['port_cards']) == 30
     assert len(payload['toll_cards']) == 6
     assert payload['chance_cards'][0]['effect']['type'] == 'gain_money'

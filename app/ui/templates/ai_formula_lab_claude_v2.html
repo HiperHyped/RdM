@@ -1,0 +1,795 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<script defer src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=16"></script>
+<script defer src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=16"></script>
+<script defer src="{{ request.url_for('static', path='js/ai-formula-lab.js') }}?v=2"></script>
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Formula Lab  –  dark theme, tab-based layout
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .fl-page {
+    min-height: 100vh;
+    padding: 24px;
+    background:
+      radial-gradient(circle at top, rgba(42, 117, 181, 0.22), transparent 30%),
+      linear-gradient(180deg, #07111d 0%, #0a1524 100%);
+    color: #e9f2fb;
+  }
+
+  .fl-shell {
+    width: min(1520px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+  }
+
+  /* ── hero ─────────────────────────────────────────────────────────────────── */
+  .fl-hero {
+    padding: 22px 24px;
+    border-radius: 28px;
+    border: 1px solid rgba(168, 198, 226, 0.16);
+    background: linear-gradient(180deg, rgba(10, 25, 42, 0.96), rgba(9, 20, 35, 0.98));
+    box-shadow: 0 26px 52px rgba(3, 10, 18, 0.35);
+    display: grid;
+    gap: 16px;
+  }
+
+  .fl-hero-top {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .fl-title-block {
+    display: grid;
+    gap: 8px;
+  }
+
+  .fl-eyebrow {
+    margin: 0;
+    color: #f0b429;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .fl-title {
+    margin: 0;
+    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    line-height: 1.06;
+    color: #f7fbff;
+  }
+
+  .fl-copy {
+    margin: 0;
+    max-width: 880px;
+    color: #aec6da;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .fl-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 10px;
+  }
+
+  .fl-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.18);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f7fbff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+  }
+
+  .fl-link:hover {
+    border-color: rgba(240, 180, 41, 0.5);
+    color: #ffd36c;
+  }
+
+  /* ── stats row ───────────────────────────────────────────────────────────── */
+  .fl-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .fl-stat {
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    display: grid;
+    gap: 6px;
+  }
+
+  .fl-stat span {
+    color: #9ab7cc;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .fl-stat strong {
+    color: #f7fbff;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  /* ── tab bar ─────────────────────────────────────────────────────────────── */
+  .fl-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  .fl-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dbe9f5;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .fl-tab:hover {
+    border-color: rgba(174, 198, 218, 0.28);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .fl-tab.is-active {
+    border-color: rgba(240, 180, 41, 0.56);
+    background: rgba(240, 180, 41, 0.14);
+    color: #ffd36c;
+    box-shadow: inset 0 0 0 1px rgba(240, 180, 41, 0.2);
+  }
+
+  .fl-tab-icon {
+    font-size: 1.1rem;
+  }
+
+  /* ── body container ──────────────────────────────────────────────────────── */
+  .fl-body {
+    min-height: 300px;
+  }
+
+  .fl-empty {
+    padding: 32px;
+    color: #8faec3;
+    text-align: center;
+  }
+
+  /* ── profiles tab ────────────────────────────────────────────────────────── */
+  .fl-profiles-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .fl-profiles-picker {
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    display: grid;
+    gap: 12px;
+  }
+
+  .fl-profiles-picker h3 {
+    margin: 0;
+    color: #f7fbff;
+    font-size: 1rem;
+  }
+
+  .fl-profile-buttons {
+    display: grid;
+    gap: 8px;
+  }
+
+  .fl-profile-btn {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(174, 198, 218, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eff7ff;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+
+  .fl-profile-btn.is-active {
+    border-color: rgba(240, 180, 41, 0.5);
+    background: rgba(240, 180, 41, 0.14);
+    color: #ffd36c;
+    box-shadow: inset 0 0 0 1px rgba(240, 180, 41, 0.18);
+  }
+
+  .fl-profiles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  /* ── meter rows (profile view) ───────────────────────────────────────────── */
+  .fl-meter-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .fl-meter-row {
+    display: grid;
+    gap: 6px;
+  }
+
+  .fl-meter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.84rem;
+    color: #dfeaf3;
+  }
+
+  .fl-meter-head strong {
+    color: #f8fbff;
+  }
+
+  .fl-meter-track {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+  }
+
+  .fl-meter-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f0b429, #ffc84d);
+  }
+
+  .fl-meter-eq {
+    display: flex;
+    gap: 10px;
+    font-size: 0.76rem;
+    color: #8aaac0;
+    align-items: center;
+  }
+
+  .fl-meter-eq code {
+    color: #a8c3d8;
+    font-family: inherit;
+    font-weight: 700;
+  }
+
+  /* ── catalog tab ─────────────────────────────────────────────────────────── */
+  .fl-catalog-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .fl-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eaf4fc;
+    font-weight: 700;
+    font-size: 0.84rem;
+    cursor: pointer;
+  }
+
+  .fl-filter-btn.is-active {
+    border-color: rgba(240, 180, 41, 0.56);
+    background: rgba(240, 180, 41, 0.14);
+    color: #ffd36c;
+  }
+
+  .fl-catalog-table-wrap {
+    overflow: auto;
+    border-radius: 20px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .fl-catalog-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 860px;
+  }
+
+  .fl-catalog-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 14px;
+    background: #0f2033;
+    color: #f7fbff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+
+  .fl-catalog-table td {
+    padding: 12px 14px;
+    border-top: 1px solid rgba(174, 198, 218, 0.08);
+    vertical-align: top;
+    color: #dbe8f4;
+    line-height: 1.5;
+  }
+
+  .fl-catalog-table code {
+    color: #a8c3d8;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .fl-slider-name {
+    display: grid;
+    gap: 3px;
+  }
+
+  .fl-slider-name strong {
+    color: #f7fbff;
+    font-size: 0.92rem;
+  }
+
+  .fl-slider-name span {
+    color: #8eb0c7;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── formula tab layout ──────────────────────────────────────────────────── */
+  .fl-formula-layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .fl-formula-nav {
+    padding: 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    display: grid;
+    gap: 12px;
+    position: sticky;
+    top: 24px;
+  }
+
+  .fl-formula-nav h3 {
+    margin: 0;
+    color: #f7fbff;
+    font-size: 1rem;
+  }
+
+  .fl-formula-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .fl-formula-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(174, 198, 218, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eff7ff;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.86rem;
+    cursor: pointer;
+    display: grid;
+    gap: 4px;
+  }
+
+  .fl-formula-btn.is-active {
+    border-color: rgba(240, 180, 41, 0.5);
+    background: rgba(240, 180, 41, 0.14);
+    color: #ffd36c;
+    box-shadow: inset 0 0 0 1px rgba(240, 180, 41, 0.18);
+  }
+
+  .fl-formula-btn small {
+    color: #96b3c8;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .fl-formula-btn.is-active small {
+    color: #e8c96e;
+  }
+
+  .fl-formula-eyebrow {
+    color: #f0b429;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .fl-formula-main {
+    display: grid;
+    gap: 18px;
+  }
+
+  .fl-formula-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 20px 22px;
+    border-radius: 24px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: linear-gradient(180deg, rgba(10, 25, 42, 0.96), rgba(9, 20, 35, 0.98));
+  }
+
+  .fl-formula-header h2 {
+    margin: 4px 0 0;
+    color: #f7fbff;
+    font-size: 1.4rem;
+  }
+
+  .fl-formula-header p {
+    margin: 6px 0 0;
+    color: #9fbad0;
+    line-height: 1.55;
+  }
+
+  /* ── panels row (profile + input) ────────────────────────────────────────── */
+  .fl-panels-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  /* ── group card (shared) ─────────────────────────────────────────────────── */
+  .fl-group-card {
+    padding: 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    display: grid;
+    gap: 12px;
+  }
+
+  .fl-group-card h3,
+  .fl-group-card h4 {
+    margin: 0;
+    color: #f7fbff;
+  }
+
+  .fl-group-card h3 {
+    font-size: 1rem;
+  }
+
+  .fl-group-card h4 {
+    font-size: 0.88rem;
+    color: #c5daea;
+  }
+
+  .fl-fields {
+    display: grid;
+    gap: 12px;
+  }
+
+  /* ── field row ───────────────────────────────────────────────────────────── */
+  .fl-field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .fl-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.84rem;
+    color: #e7f2fc;
+    font-weight: 700;
+  }
+
+  .fl-field-head small {
+    color: #8aaac0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .fl-field-head strong {
+    color: #f8fbff;
+    white-space: nowrap;
+  }
+
+  /* ── inputs ──────────────────────────────────────────────────────────────── */
+  .fl-range {
+    width: 100%;
+    height: 26px;
+    appearance: none;
+    background: transparent;
+  }
+
+  .fl-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .fl-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: #f0b429;
+    border: 2px solid #ffd36c;
+    box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.18);
+  }
+
+  .fl-range::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .fl-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f0b429;
+    border: 2px solid #ffd36c;
+    box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.18);
+  }
+
+  .fl-number,
+  .fl-select {
+    width: 100%;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f7fbff;
+    font-weight: 700;
+    font-size: 0.88rem;
+  }
+
+  .fl-toggle label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2effb;
+    font-weight: 700;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+
+  /* ── summary cards ───────────────────────────────────────────────────────── */
+  .fl-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .fl-summary-card {
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    display: grid;
+    gap: 6px;
+  }
+
+  .fl-summary-card span {
+    color: #9fbad0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fl-summary-card strong {
+    color: #f8fbff;
+    font-size: 1.15rem;
+  }
+
+  /* ── breakdown cards ─────────────────────────────────────────────────────── */
+  .fl-breakdown-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .fl-breakdown-card {
+    padding: 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    display: grid;
+    gap: 12px;
+  }
+
+  .fl-breakdown-card h3 {
+    margin: 0;
+    color: #f7fbff;
+    font-size: 1rem;
+  }
+
+  .fl-breakdown-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .fl-breakdown-row {
+    display: grid;
+    gap: 3px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(174, 198, 218, 0.08);
+  }
+
+  .fl-breakdown-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .fl-breakdown-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .fl-breakdown-top strong {
+    color: #f7fbff;
+  }
+
+  .fl-breakdown-row small {
+    color: #8faec3;
+    line-height: 1.4;
+    font-size: 0.8rem;
+  }
+
+  /* ── notes ───────────────────────────────────────────────────────────────── */
+  .fl-note-list {
+    display: grid;
+    gap: 6px;
+    color: #a8c3d8;
+    padding-left: 18px;
+    font-size: 0.9rem;
+  }
+
+  .fl-note-list li {
+    line-height: 1.5;
+  }
+
+  /* ── status pills ────────────────────────────────────────────────────────── */
+  .fl-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(174, 198, 218, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dbe9f5;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fl-status.is-vivo {
+    color: #d9ffef;
+    border-color: rgba(37, 191, 109, 0.32);
+    background: rgba(37, 191, 109, 0.18);
+  }
+
+  .fl-status.is-meio-vivo {
+    color: #fff0cd;
+    border-color: rgba(240, 180, 41, 0.34);
+    background: rgba(240, 180, 41, 0.18);
+  }
+
+  .fl-status.is-morto {
+    color: #ffd7d7;
+    border-color: rgba(237, 85, 101, 0.34);
+    background: rgba(237, 85, 101, 0.18);
+  }
+
+  /* ── responsive ──────────────────────────────────────────────────────────── */
+  @media (max-width: 1200px) {
+    .fl-formula-layout,
+    .fl-profiles-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .fl-formula-nav {
+      position: static;
+    }
+
+    .fl-profiles-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .fl-hero-top {
+      flex-direction: column;
+    }
+
+    .fl-links {
+      justify-content: start;
+    }
+
+    .fl-panels-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<main class="fl-page">
+  <section class="fl-shell">
+    <header class="fl-hero">
+      <div class="fl-hero-top">
+        <div class="fl-title-block">
+          <p class="fl-eyebrow">Laboratorio de Formulas</p>
+          <h1 class="fl-title">IA dos Robos: formulas abertas e editaveis</h1>
+          <p class="fl-copy">
+            Escolha a aba, selecione a formula, altere os sliders de perfil e os parametros de contexto.
+            Os resultados atualizam em tempo real usando o motor oficial da IA.
+          </p>
+        </div>
+        <div class="fl-links">
+          <a class="fl-link" href="/preview/ai-analysis-ui">Analise textual</a>
+          <a class="fl-link" href="/preview/game-ai-ui">Game AI</a>
+          <a class="fl-link" href="/preview/robots-ai-ui">Robots AI</a>
+        </div>
+      </div>
+      <div id="fl-stats" class="fl-stats"></div>
+    </header>
+
+    <nav id="fl-tabs" class="fl-tab-bar"></nav>
+
+    <section id="fl-body" class="fl-body">
+      <p class="fl-empty">Carregando...</p>
+    </section>
+  </section>
+</main>
+{% endblock %}

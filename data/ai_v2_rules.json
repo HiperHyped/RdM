@@ -1,0 +1,2004 @@
+{
+  "version": "ai-rules-v2",
+  "variant_id": "tuned-balance-2026-03-18",
+  "based_on": "ai_v2_rules_original.json",
+  "schema_version": "declarative-formulas-v1",
+  "description": "Catalogo estrutural das regras da IA V2. Este arquivo separa sinais, formulas declarativas, pesos e limiares da implementacao em JavaScript, mantendo todos os parametros ligados aos quatro grupos do perfil: negociacao, visao, personalidade e habilidades.",
+  "normalization": {
+    "range": "0..1",
+    "planning_horizon_turns": {
+      "stored_range": "0..1",
+      "runtime_turns": "0..20"
+    },
+    "skill_noise": {
+      "source": "profile.skill.evaluation_noise",
+      "interpretation": "0 significa leitura estavel; 1 significa ruido maximo permitido pela regra local"
+    }
+  },
+  "formula_conventions": {
+    "principle": "Nenhuma formula numerica deve depender de strings avaliadas. Toda conta precisa estar decomposta em estrutura declarativa com pesos editaveis.",
+    "operators": [
+      "weighted_sum",
+      "weighted_sum_with_base",
+      "weighted_sum_with_noise",
+      "weighted_sum_with_context",
+      "normalized_ratio",
+      "price_multiplier",
+      "asset_kind_lookup"
+    ]
+  },
+  "signal_catalog": {
+    "buy_openness": {
+      "source": "profile.negotiation.buy_openness",
+      "group": "negotiation",
+      "description": "Agressividade para entrar em compras e perseguir ativos de terceiros."
+    },
+    "sell_openness": {
+      "source": "profile.negotiation.sell_openness",
+      "group": "negotiation",
+      "description": "Flexibilidade para monetizar ativos proprios."
+    },
+    "premium_tolerance": {
+      "source": "profile.negotiation.premium_tolerance",
+      "group": "negotiation",
+      "description": "Quanto do sobrepreco a IA tolera pagar por ativos estrategicos."
+    },
+    "discount_tolerance": {
+      "source": "profile.negotiation.discount_tolerance",
+      "group": "negotiation",
+      "description": "Quanto de desconto a IA tolera conceder ao vender."
+    },
+    "strategic_lock": {
+      "source": "profile.negotiation.strategic_lock",
+      "group": "negotiation",
+      "description": "Protecao patrimonial para pecas de conjunto, origem e ativos estruturais."
+    },
+    "desperation_discount": {
+      "source": "profile.negotiation.desperation_discount",
+      "group": "negotiation",
+      "description": "Quanto o aperto de caixa afrouxa o preco minimo de venda."
+    },
+    "focus_port": {
+      "source": "profile.vision.weight_port",
+      "group": "vision",
+      "description": "Peso dado a portos e origem."
+    },
+    "focus_permission": {
+      "source": "profile.vision.weight_permission",
+      "group": "vision",
+      "description": "Peso dado a permissoes e malha operacional."
+    },
+    "focus_toll": {
+      "source": "profile.vision.weight_toll",
+      "group": "vision",
+      "description": "Peso dado a pedagios e renda passiva."
+    },
+    "focus_monopoly": {
+      "source": "profile.vision.weight_monopoly",
+      "group": "vision",
+      "description": "Peso dado a fechar regioes e conjuntos."
+    },
+    "focus_origin_bonus": {
+      "source": "profile.vision.weight_origin_bonus",
+      "group": "vision",
+      "description": "Peso dado ao bonus de origem e sinergia com porto proprio."
+    },
+    "planning_horizon": {
+      "source": "profile.vision.planning_horizon_turns",
+      "group": "vision",
+      "description": "Alcance temporal do planejamento. No runtime corresponde a 0..20 turnos.",
+      "max_turns": 20
+    },
+    "cash_reserve_ratio": {
+      "source": "profile.personality.cash_reserve_ratio",
+      "group": "personality",
+      "description": "Caixa minimo desejado antes de comprar, negociar ou usar recurso tatico."
+    },
+    "risk_tolerance": {
+      "source": "profile.personality.risk_tolerance",
+      "group": "personality",
+      "description": "Disposicao para esticar caixa e aceitar variancia."
+    },
+    "impulsiveness": {
+      "source": "profile.personality.impulsiveness",
+      "group": "personality",
+      "description": "Peso de impulso de curto prazo na decisao."
+    },
+    "coupon_patience": {
+      "source": "profile.personality.coupon_patience",
+      "group": "personality",
+      "description": "Propensao a guardar cupons para contextos mais fortes."
+    },
+    "asset_attachment": {
+      "source": "profile.personality.asset_attachment",
+      "group": "personality",
+      "description": "Apego a manter ativos sob controle, mesmo quando sao vendaveis."
+    },
+    "foresight": {
+      "source": "profile.skill.foresight",
+      "group": "skill",
+      "description": "Qualidade de leitura de retorno futuro."
+    },
+    "skill_noise": {
+      "source": "profile.skill.evaluation_noise",
+      "group": "skill",
+      "description": "Ruido adicionado a decisoes baseadas em score."
+    },
+    "liquidity_discipline": {
+      "source": "profile.skill.liquidity_discipline",
+      "group": "skill",
+      "description": "Capacidade de respeitar caixa alvo antes de agir."
+    },
+    "combo_awareness": {
+      "source": "profile.skill.combo_awareness",
+      "group": "skill",
+      "description": "Leitura de sinergias de conjunto, origem, permissao e monopolio."
+    },
+    "timing_quality": {
+      "source": "profile.skill.timing_quality",
+      "group": "skill",
+      "description": "Qualidade de janela para hipotecar, resgatar, comprar e usar cupons."
+    }
+  },
+  "runtime_context_signals": {
+    "origin_control_gain_norm": {
+      "description": "Ganho normalizado de controle de origem trazido pela acao."
+    },
+    "region_completion_after_action_norm": {
+      "description": "Percentual normalizado de conjunto/regiao apos a acao."
+    },
+    "route_unlock_gain_norm": {
+      "description": "Ganho normalizado de rotas, ligacoes ou flexibilidade operacional."
+    },
+    "projected_income_norm": {
+      "description": "Retorno economico esperado, normalizado."
+    },
+    "cash_after_action": {
+      "description": "Caixa previsto apos a acao."
+    },
+    "reserve_cash_target_amount": {
+      "description": "Valor absoluto da reserva de caixa desejada."
+    },
+    "action_cost": {
+      "description": "Custo absoluto da acao."
+    },
+    "current_cash": {
+      "description": "Caixa atual do jogador."
+    },
+    "candidate_count": {
+      "description": "Quantidade de alternativas uteis abertas por uma acao de cupom."
+    },
+    "remaining_rounds": {
+      "description": "Rodadas restantes para cumprir o contrato atual."
+    },
+    "remaining_steps": {
+      "description": "Passos de rota restantes para concluir o objetivo atual."
+    },
+    "fuel_stops_remaining": {
+      "description": "Quantidade de postos ainda presentes na rota principal do contrato."
+    },
+    "mandatory_toll_flag": {
+      "description": "Indicador de que o contrato ainda exige pedagio obrigatorio."
+    },
+    "owner_present_flag": {
+      "description": "Indicador de que existe um dono recebendo cobranca ou comissao nesta acao."
+    },
+    "owner_monopoly_flag": {
+      "description": "Indicador de que o dono beneficiado tem monopolio relevante no contexto atual."
+    },
+    "freight_value": {
+      "description": "Valor bruto de frete em disputa na acao atual."
+    },
+    "coupon_age_turns": {
+      "description": "Quantidade de rodadas que o cupom atual ficou guardado na mao."
+    },
+    "coupon_expiration_turns": {
+      "description": "Prazo maximo em rodadas antes de o cupom expirar e voltar ao deck."
+    },
+    "turns_until_coupon_expiry": {
+      "description": "Rodadas restantes ate o vencimento do cupom atual."
+    },
+    "open_contract_slots_pressure": {
+      "description": "Pressao normalizada por falta de capacidade contratual."
+    },
+    "reachable_destinations_gain_norm": {
+      "description": "Aumento normalizado de cobertura geografica."
+    },
+    "contract_value_gain_norm": {
+      "description": "Aumento normalizado de valor na carteira de contratos."
+    },
+    "combo_break_loss_norm": {
+      "description": "Perda normalizada de sinergia ao desmontar um conjunto."
+    },
+    "combo_restore_gain_norm": {
+      "description": "Ganho normalizado de sinergia ao restaurar um ativo."
+    },
+    "bank_or_market_opportunity_norm": {
+      "description": "Tamanho normalizado de oportunidade estrutural disponivel agora."
+    },
+    "immediate_turn_swing_norm": {
+      "description": "Impacto normalizado desta rodada no placar economico."
+    },
+    "opponent_region_completion_norm": {
+      "description": "Progresso normalizado do oponente rumo a monopolio/regiao."
+    },
+    "opponent_income_swing_norm": {
+      "description": "Ganho normalizado de renda do oponente se nada for feito."
+    },
+    "self_loss_prevention_norm": {
+      "description": "Perda evitada normalizada para a propria posicao."
+    },
+    "cash_generated": {
+      "description": "Caixa normalizado levantado pela hipoteca."
+    },
+    "yield_recovery": {
+      "description": "Renda normalizada recuperada ao resgatar um ativo."
+    },
+    "late_game_keep_penalty": {
+      "description": "Penalidade contextual por abrir mao de ativo importante no fim do jogo."
+    },
+    "under_threat": {
+      "description": "Indicador contextual de ameaca financeira ou posicional."
+    },
+    "ahead_on_cash": {
+      "description": "Indicador contextual de sobra de caixa frente a mesa."
+    },
+    "late_game": {
+      "description": "Indicador contextual de fase tardia da partida."
+    },
+    "seller_lock": {
+      "description": "Resistencia percebida do vendedor no contexto atual."
+    },
+    "buyer_attachment": {
+      "description": "Apego do comprador a manter liquidez e patrimonio atuais."
+    },
+    "interest_score": {
+      "description": "Score de interesse ja consolidado para a negociacao."
+    },
+    "base_price": {
+      "description": "Preco base do ativo usado como ancora de negociacao."
+    }
+  },
+  "derived_signals": {
+    "asset_focus": {
+      "type": "asset_kind_lookup",
+      "description": "Converte o tipo do ativo no peso estrategico principal do perfil.",
+      "mapping": {
+        "port": {
+          "signal": "focus_port"
+        },
+        "permission": {
+          "signal": "focus_permission"
+        },
+        "toll": {
+          "signal": "focus_toll"
+        },
+        "other": {
+          "constant": 0.5
+        }
+      }
+    },
+    "origin_synergy": {
+      "type": "weighted_sum",
+      "description": "Mede o quanto o ativo reforca origem, porto proprio e ganho associado ao bonus de origem.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "focus_origin_bonus",
+          "weight": 0.5
+        },
+        {
+          "signal": "focus_port",
+          "weight": 0.3
+        },
+        {
+          "signal": "origin_control_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.2
+        }
+      ]
+    },
+    "monopoly_progress": {
+      "type": "weighted_sum",
+      "description": "Mede quanto a acao aproxima o fechamento ou a preservacao de um conjunto regional.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "focus_monopoly",
+          "weight": 0.55
+        },
+        {
+          "signal": "region_completion_after_action_norm",
+          "source": "runtime_context",
+          "weight": 0.3
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.15
+        }
+      ]
+    },
+    "permission_synergy": {
+      "type": "weighted_sum",
+      "description": "Mede o ganho de rede e de contratos destravados por uma permissao ou ativo conectado a ela.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "focus_permission",
+          "weight": 0.5
+        },
+        {
+          "signal": "route_unlock_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.25
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.25
+        }
+      ]
+    },
+    "yield_projection": {
+      "type": "weighted_sum",
+      "description": "Projeta retorno economico do ativo no horizonte relevante.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "projected_income_norm",
+          "source": "runtime_context",
+          "weight": 0.45
+        },
+        {
+          "signal": "planning_horizon",
+          "weight": 0.3
+        },
+        {
+          "signal": "foresight",
+          "weight": 0.25
+        }
+      ]
+    },
+    "cash_headroom": {
+      "type": "normalized_ratio",
+      "description": "Mede folga de caixa apos uma acao em relacao a reserva alvo.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "type": "weighted_sum",
+        "terms": [
+          {
+            "signal": "cash_after_action",
+            "source": "runtime_context",
+            "weight": 1.0
+          },
+          {
+            "signal": "reserve_cash_target_amount",
+            "source": "runtime_context",
+            "weight": -1.0
+          }
+        ]
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "signal": "action_cost",
+            "source": "runtime_context"
+          },
+          {
+            "constant": 1
+          }
+        ]
+      }
+    },
+    "cash_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede o aperto de caixa atual frente a necessidade imediata e reserva desejada.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "type": "weighted_sum",
+        "terms": [
+          {
+            "signal": "reserve_cash_target_amount",
+            "source": "runtime_context",
+            "weight": 1.0
+          },
+          {
+            "signal": "cash_after_action",
+            "source": "runtime_context",
+            "weight": -1.0
+          }
+        ]
+      },
+      "denominator": {
+    "candidate_count_norm": {
+      "type": "normalized_ratio",
+      "description": "Normaliza quantas alternativas uteis o cupom abre agora.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "candidate_count",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "constant": 3
+          },
+          {
+            "signal": "candidate_count",
+            "source": "runtime_context"
+          }
+        ]
+      }
+    },
+    "freight_value_norm": {
+      "type": "normalized_ratio",
+      "description": "Normaliza o valor economico imediato do frete em disputa contra a reserva alvo.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "freight_value",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "signal": "reserve_cash_target_amount",
+            "source": "runtime_context"
+          },
+          {
+            "constant": 120
+          }
+        ]
+      }
+    },
+    "action_cost_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede o tamanho relativo do custo evitado pelo cupom frente a reserva alvo.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "action_cost",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "signal": "reserve_cash_target_amount",
+            "source": "runtime_context"
+          },
+          {
+            "constant": 80
+          }
+        ]
+      }
+    },
+    "mandatory_toll_pressure": {
+      "type": "weighted_sum",
+      "description": "Mede o quanto a obrigacao de passar por um pedagio trava a rota atual.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "mandatory_toll_flag",
+          "source": "runtime_context",
+          "weight": 1.0
+        }
+      ]
+    },
+    "fuel_route_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede o quanto ainda existe custo de combustivel na rota do contrato.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "fuel_stops_remaining",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "constant": 3
+          },
+          {
+            "signal": "fuel_stops_remaining",
+            "source": "runtime_context"
+          }
+        ]
+      }
+    },
+    "remaining_steps_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede o tamanho bruto da rota ainda faltante.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "remaining_steps",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "constant": 8
+          },
+          {
+            "signal": "remaining_steps",
+            "source": "runtime_context"
+          }
+        ]
+      }
+    },
+    "remaining_round_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede se as rodadas restantes parecem curtas para a rota pendente.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "type": "weighted_sum",
+        "terms": [
+          {
+            "signal": "remaining_steps",
+            "source": "runtime_context",
+            "weight": 1.0
+          },
+          {
+            "signal": "mandatory_toll_flag",
+            "source": "runtime_context",
+            "weight": 2.0
+          }
+        ]
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "type": "weighted_sum",
+            "terms": [
+              {
+                "signal": "remaining_rounds",
+                "source": "runtime_context",
+                "weight": 3.0
+              }
+            ]
+          },
+          {
+            "constant": 1
+          }
+        ]
+      }
+    },
+    "contract_failure_risk": {
+      "type": "weighted_sum",
+      "description": "Mede o risco de o contrato atual falhar sem intervencao tatico-logistica.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "remaining_round_pressure",
+          "weight": 0.48
+        },
+        {
+          "signal": "remaining_steps_pressure",
+          "weight": 0.24
+        },
+        {
+          "signal": "mandatory_toll_pressure",
+          "weight": 0.14
+        },
+        {
+          "signal": "fuel_route_pressure",
+          "weight": 0.14
+        }
+      ]
+    },
+        "type": "max",
+        "candidates": [
+          {
+            "signal": "reserve_cash_target_amount",
+            "source": "runtime_context"
+          },
+          {
+            "constant": 1
+          }
+        ]
+      }
+    },
+    "permission_need": {
+      "type": "weighted_sum",
+      "description": "Mede urgencia de adquirir permissao extra para sustentar expansao operacional.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "open_contract_slots_pressure",
+          "source": "runtime_context",
+          "weight": 0.55
+        },
+        {
+          "signal": "focus_permission",
+          "weight": 0.25
+        },
+        {
+          "signal": "planning_horizon",
+          "weight": 0.1
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.1
+        }
+      ]
+    },
+    "network_synergy": {
+      "type": "weighted_sum",
+      "description": "Mede quanto a acao expande cobertura e flexibilidade de malha.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "route_unlock_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.4
+        },
+        {
+          "signal": "focus_permission",
+          "weight": 0.35
+        },
+        {
+          "signal": "focus_origin_bonus",
+          "weight": 0.25
+        }
+      ]
+    },
+    "coverage_gain": {
+      "type": "weighted_sum",
+      "description": "Mede crescimento de cobertura geografica e de destinos uteis.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "reachable_destinations_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.6
+        },
+        {
+          "signal": "route_unlock_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.4
+        }
+      ]
+    },
+    "contract_synergy": {
+      "type": "weighted_sum",
+      "description": "Mede melhora esperada na carteira de contratos pela nova permissao.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "contract_value_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.55
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.45
+        }
+      ]
+    },
+    "strategic_value": {
+      "type": "weighted_sum",
+      "description": "Mede valor estrutural do ativo para o vendedor atual.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "asset_focus",
+          "weight": 0.4
+        },
+        {
+          "signal": "monopoly_progress",
+          "weight": 0.3
+        },
+        {
+          "signal": "origin_synergy",
+          "weight": 0.15
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.15
+        }
+      ]
+    },
+    "combo_penalty": {
+      "type": "weighted_product",
+      "description": "Penalidade por desmontar sinergia ao hipotecar ou vender um ativo.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "factors": [
+        {
+          "signal": "combo_break_loss_norm",
+          "source": "runtime_context",
+          "weight": 1.0
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 1.0
+        }
+      ]
+    },
+    "combo_value": {
+      "type": "weighted_product",
+      "description": "Valor de sinergia restaurado ao resgatar um ativo.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "factors": [
+        {
+          "signal": "combo_restore_gain_norm",
+          "source": "runtime_context",
+          "weight": 1.0
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 1.0
+        }
+      ]
+    },
+    "asset_opportunity": {
+      "type": "weighted_sum",
+      "description": "Mede o tamanho da oportunidade estrutural imediata que um cupom pode acelerar.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "candidate_count_norm",
+          "weight": 0.35
+        },
+        {
+          "signal": "route_unlock_gain_norm",
+          "source": "runtime_context",
+          "weight": 0.25
+        },
+        {
+          "signal": "region_completion_after_action_norm",
+          "source": "runtime_context",
+          "weight": 0.2
+        },
+        {
+          "signal": "planning_horizon",
+          "weight": 0.1
+        },
+        {
+          "signal": "combo_awareness",
+          "weight": 0.1
+        }
+      ]
+    },
+    "turn_value": {
+      "type": "weighted_sum",
+      "description": "Mede o valor marginal de capturar vantagem nesta rodada em vez de esperar.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "freight_value_norm",
+          "weight": 0.55
+        },
+        {
+          "signal": "timing_quality",
+          "weight": 0.25
+        },
+        {
+          "signal": "risk_tolerance",
+          "weight": 0.2
+        }
+      ]
+    },
+    "opponent_monopoly_threat": {
+      "type": "weighted_sum",
+      "description": "Mede o risco de o oponente consolidar um conjunto forte sem intervencao.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "opponent_region_completion_norm",
+          "source": "runtime_context",
+          "weight": 0.45
+        },
+        {
+          "signal": "opponent_income_swing_norm",
+          "source": "runtime_context",
+          "weight": 0.25
+        },
+        {
+          "signal": "owner_monopoly_flag",
+          "source": "runtime_context",
+          "weight": 0.3
+        }
+      ]
+    },
+    "self_protection": {
+      "type": "weighted_sum",
+      "description": "Mede ganho defensivo imediato para a propria posicao.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "terms": [
+        {
+          "signal": "action_cost_pressure",
+          "weight": 0.6
+        },
+        {
+          "signal": "asset_attachment",
+          "weight": 0.25
+        },
+        {
+          "signal": "cash_pressure",
+          "weight": 0.15
+        }
+      ]
+    },
+    "coupon_age_pressure": {
+      "type": "normalized_ratio",
+      "description": "Mede a pressao de vencimento do cupom conforme ele envelhece na mao.",
+      "clamp": {
+        "min": 0,
+        "max": 1
+      },
+      "numerator": {
+        "signal": "coupon_age_turns",
+        "source": "runtime_context"
+      },
+      "denominator": {
+        "type": "max",
+        "candidates": [
+          {
+            "signal": "coupon_expiration_turns",
+            "source": "runtime_context"
+          },
+          {
+            "constant": 1
+          }
+        ]
+      }
+    }
+  },
+  "decision_families": {
+    "liquidity": {
+      "label": "Liquidez",
+      "goal": "Manter caixa funcional, evitar colapso e decidir quando hipotecar ou resgatar ativos.",
+      "tuning_notes": "Versao ajustada para reduzir viés de curto prazo na liquidez e aumentar o peso de skill e sinergia estrutural.",
+      "decisions": {
+        "reserve_cash_target": {
+          "mode": "formula",
+          "description": "Define o caixa alvo antes de compras, contraofertas, uso de cupons e resgates.",
+          "formula_spec": {
+            "type": "weighted_sum_with_context",
+            "base": 0.18,
+            "terms": [
+              {
+                "signal": "cash_reserve_ratio",
+                "weight": 0.32
+              },
+              {
+                "signal": "liquidity_discipline",
+                "weight": 0.24
+              },
+              {
+                "signal": "planning_horizon",
+                "weight": 0.15
+              },
+              {
+                "signal": "focus_origin_bonus",
+                "weight": 0.06
+              },
+              {
+                "signal": "focus_monopoly",
+                "weight": 0.08
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": -0.12,
+                "label": "risk_tolerance_relief"
+              }
+            ],
+            "context_adjustments": [
+              {
+                "signal": "under_threat",
+                "source": "runtime_context",
+                "weight": 0.16
+              },
+              {
+                "signal": "ahead_on_cash",
+                "source": "runtime_context",
+                "weight": -0.08
+              },
+              {
+                "signal": "late_game",
+                "source": "runtime_context",
+                "weight": 0.05
+              }
+            ],
+            "clamp": {
+              "min": 0.08,
+              "max": 0.72
+            }
+          }
+        },
+        "mortgage_candidate": {
+          "mode": "rank_then_select",
+          "description": "Escolhe o ativo menos estrategico para gerar caixa sob pressao.",
+          "ranking_formula": {
+            "type": "weighted_sum",
+            "select": "highest_score",
+            "terms": [
+              {
+                "signal": "cash_generated",
+                "source": "runtime_context",
+                "weight": 0.3
+              },
+              {
+                "signal": "asset_focus",
+                "weight": -0.22,
+                "label": "asset_focus_penalty"
+              },
+              {
+                "signal": "origin_synergy",
+                "weight": -0.14,
+                "label": "origin_synergy_penalty"
+              },
+              {
+                "signal": "combo_penalty",
+                "weight": -0.16
+              },
+              {
+                "signal": "asset_attachment",
+                "weight": -0.08,
+                "label": "asset_attachment_penalty"
+              },
+              {
+                "signal": "timing_quality",
+                "weight": 0.06,
+                "label": "timing_quality_bonus"
+              },
+              {
+                "signal": "late_game_keep_penalty",
+                "source": "runtime_context",
+                "weight": -0.05
+              }
+            ]
+          },
+          "thresholds": {
+            "must_raise_cash_gap_ratio": 0.12,
+            "skip_if_safe_ratio": 0.03
+          }
+        },
+        "redeem_candidate": {
+          "mode": "rank_then_select",
+          "description": "Escolhe o melhor ativo hipotecado para resgatar quando o caixa excede a reserva alvo.",
+          "ranking_formula": {
+            "type": "weighted_sum",
+            "select": "highest_score",
+            "terms": [
+              {
+                "signal": "asset_focus",
+                "weight": 0.28,
+                "label": "asset_focus_value"
+              },
+              {
+                "signal": "origin_synergy",
+                "weight": 0.14,
+                "label": "origin_synergy_value"
+              },
+              {
+                "signal": "combo_value",
+                "weight": 0.18
+              },
+              {
+                "signal": "yield_recovery",
+                "source": "runtime_context",
+                "weight": 0.18
+              },
+              {
+                "signal": "foresight",
+                "weight": 0.1,
+                "label": "foresight_bonus"
+              },
+              {
+                "signal": "timing_quality",
+                "weight": 0.08,
+                "label": "timing_quality_bonus"
+              },
+              {
+                "signal": "cash_pressure",
+                "weight": -0.2,
+                "label": "liquidity_penalty"
+              }
+            ]
+          },
+          "thresholds": {
+            "redeem": 0.57,
+            "stretch_redeem": 0.67
+          }
+        }
+      }
+    },
+    "acquisition": {
+      "label": "Compra e Expansao",
+      "goal": "Decidir compras do banco, compra de permissao extra e prioridade entre ativos disponiveis.",
+      "tuning_notes": "Versao ajustada para reduzir o peso do gosto bruto do perfil e valorizar mais sinergia real de tabuleiro.",
+      "decisions": {
+        "bank_property_purchase": {
+          "mode": "score_vs_threshold",
+          "description": "Decide se um ativo do banco vale o investimento no preco atual.",
+          "scoring_formula": {
+            "type": "weighted_sum_with_noise",
+            "terms": [
+              {
+                "signal": "asset_focus",
+                "weight": 0.2
+              },
+              {
+                "signal": "origin_synergy",
+                "weight": 0.14
+              },
+              {
+                "signal": "monopoly_progress",
+                "weight": 0.16
+              },
+              {
+                "signal": "permission_synergy",
+                "weight": 0.1
+              },
+              {
+                "signal": "yield_projection",
+                "weight": 0.1
+              },
+              {
+                "signal": "planning_horizon",
+                "weight": 0.08
+              },
+              {
+                "signal": "cash_headroom",
+                "weight": 0.16
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": 0.06
+              },
+              {
+                "signal": "impulsiveness",
+                "weight": 0.04,
+                "label": "impulse"
+              },
+              {
+                "signal": "foresight",
+                "weight": 0.08,
+                "label": "foresight_bonus"
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.08,
+                "label": "combo_awareness_bonus"
+              }
+            ],
+            "noise": {
+              "signal": "skill_noise",
+              "amplitude": 0.08
+            },
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          },
+          "thresholds": {
+            "buy": 0.58,
+            "stretch_buy": 0.68,
+            "deny": 0.42
+          },
+          "price_pressure": {
+            "reserve_cash_penalty": 0.22,
+            "late_game_relief": 0.05,
+            "premium_tolerance_cap": 0.18
+          }
+        },
+        "extra_permission_purchase": {
+          "mode": "score_vs_threshold",
+          "description": "Decide quando pagar por permissao adicional para ampliar capacidade contratual.",
+          "scoring_formula": {
+            "type": "weighted_sum_with_noise",
+            "terms": [
+              {
+                "signal": "permission_need",
+                "weight": 0.25
+              },
+              {
+                "signal": "network_synergy",
+                "weight": 0.2
+              },
+              {
+                "signal": "planning_horizon",
+                "weight": 0.12
+              },
+              {
+                "signal": "cash_headroom",
+                "weight": 0.16
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": 0.06
+              },
+              {
+                "signal": "foresight",
+                "weight": 0.1,
+                "label": "foresight_bonus"
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.1,
+                "label": "combo_awareness_bonus"
+              }
+            ],
+            "noise": {
+              "signal": "skill_noise",
+              "amplitude": 0.06
+            },
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          },
+          "thresholds": {
+            "buy": 0.6,
+            "stretch_buy": 0.7
+          }
+        },
+        "permission_selection": {
+          "mode": "rank_then_select",
+          "description": "Ordena permissoes candidatas pela combinacao de sinergia, origem, cobertura e risco.",
+          "ranking_formula": {
+            "type": "weighted_sum_with_noise",
+            "select": "highest_score",
+            "terms": [
+              {
+                "signal": "focus_permission",
+                "weight": 0.28,
+                "label": "permission_focus"
+              },
+              {
+                "signal": "focus_origin_bonus",
+                "weight": 0.16,
+                "label": "origin_bonus"
+              },
+              {
+                "signal": "coverage_gain",
+                "weight": 0.14
+              },
+              {
+                "signal": "contract_synergy",
+                "weight": 0.12
+              },
+              {
+                "signal": "planning_horizon",
+                "weight": 0.08
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": 0.04
+              },
+              {
+                "signal": "impulsiveness",
+                "weight": 0.04,
+                "label": "impulse"
+              },
+              {
+                "signal": "foresight",
+                "weight": 0.08,
+                "label": "foresight_bonus"
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.1,
+                "label": "combo_awareness_bonus"
+              }
+            ],
+            "noise": {
+              "signal": "skill_noise",
+              "amplitude": 0.05
+            },
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          }
+        }
+      }
+    },
+    "negotiation": {
+      "label": "Negociacao",
+      "goal": "Decidir interesse, faixa de preco, aceitacao, contraoferta e fechamento de compras e vendas entre jogadores.",
+      "tuning_notes": "Versao ajustada para reduzir rigidez excessiva do lado vendedor e deixar a leitura de negociacao humana menos assimetrica.",
+      "decisions": {
+        "profile_flags": {
+          "mode": "gate_flags",
+          "description": "Converte os parametros continuos de negociacao em bloqueios e forcas de mercado usados como gates do runtime.",
+          "thresholds": {
+            "trade_locked_buy_openness_max": 0.03,
+            "trade_locked_sell_openness_max": 0.03,
+            "trade_locked_strategic_lock_min": 0.95,
+            "buy_blocked_buy_openness_max": 0.03,
+            "buy_blocked_premium_tolerance_max": 0.12,
+            "sell_blocked_sell_openness_max": 0.03,
+            "sell_blocked_strategic_lock_min": 0.95,
+            "sell_blocked_discount_tolerance_max": 0.08,
+            "force_buy_buy_openness_min": 0.94,
+            "force_buy_premium_tolerance_min": 0.78,
+            "force_buy_strategic_lock_max": 0.18,
+            "force_sell_sell_openness_min": 0.92,
+            "force_sell_discount_tolerance_min": 0.78,
+            "force_sell_strategic_lock_max": 0.18,
+            "trade_forced_buy_openness_min": 0.9,
+            "trade_forced_sell_openness_min": 0.9,
+            "trade_forced_strategic_lock_max": 0.16
+          }
+        },
+        "owned_property_interest": {
+          "mode": "score_vs_threshold",
+          "description": "Decide se vale iniciar ou continuar uma negociacao por um ativo de outro jogador.",
+          "scoring_formula": {
+            "type": "weighted_sum_with_noise",
+            "terms": [
+              {
+                "signal": "buy_openness",
+                "weight": 0.18
+              },
+              {
+                "signal": "asset_focus",
+                "weight": 0.16
+              },
+              {
+                "signal": "origin_synergy",
+                "weight": 0.1
+              },
+              {
+                "signal": "monopoly_progress",
+                "weight": 0.12
+              },
+              {
+                "signal": "premium_tolerance",
+                "weight": 0.1
+              },
+              {
+                "signal": "cash_headroom",
+                "weight": 0.12
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": 0.06
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.08,
+                "label": "combo_awareness_bonus"
+              },
+              {
+                "signal": "timing_quality",
+                "weight": 0.06,
+                "label": "timing_quality_bonus"
+              },
+              {
+                "signal": "seller_lock",
+                "source": "runtime_context",
+                "weight": -0.16,
+                "label": "seller_lock_penalty"
+              },
+              {
+                "signal": "buyer_attachment",
+                "source": "runtime_context",
+                "weight": -0.08,
+                "label": "buyer_attachment_penalty"
+              }
+            ],
+            "noise": {
+              "signal": "skill_noise",
+              "amplitude": 0.07
+            },
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          },
+          "thresholds": {
+            "open_negotiation": 0.55,
+            "push_harder": 0.68,
+            "abandon": 0.41
+          }
+        },
+        "owned_property_price_band": {
+          "mode": "price_band",
+          "description": "Converte o interesse e o valor estrategico em preco maximo do comprador e minimo do vendedor.",
+          "price_formula": {
+            "buyer_max": {
+              "type": "price_multiplier",
+              "base": {
+                "signal": "base_price",
+                "source": "runtime_context"
+              },
+              "terms": [
+                {
+                  "signal": "interest_score",
+                  "source": "runtime_context",
+                  "weight": 0.26
+                },
+                {
+                  "signal": "premium_tolerance",
+                  "weight": 0.24
+                },
+                {
+                  "signal": "risk_tolerance",
+                  "weight": 0.08
+                },
+                {
+                  "signal": "timing_quality",
+                  "weight": 0.05
+                },
+                {
+                  "signal": "cash_pressure",
+                  "weight": -0.18,
+                  "label": "cash_pressure_penalty"
+                }
+              ]
+            },
+            "seller_min": {
+              "type": "price_multiplier",
+              "base": {
+                "signal": "base_price",
+                "source": "runtime_context"
+              },
+              "terms": [
+                {
+                  "signal": "strategic_value",
+                  "weight": 0.22
+                },
+                {
+                  "signal": "strategic_lock",
+                  "weight": 0.16
+                },
+                {
+                  "signal": "asset_attachment",
+                  "weight": 0.08
+                },
+                {
+                  "signal": "discount_tolerance",
+                  "weight": -0.16
+                },
+                {
+                  "signal": "desperation_discount",
+                  "weight": -0.14
+                },
+                {
+                  "signal": "timing_quality",
+                  "weight": 0.05
+                }
+              ]
+            }
+          },
+          "thresholds": {
+            "acceptable_overlap": 0.0,
+            "auto_accept_margin": 0.03,
+            "insult_reject_margin": -0.12
+          }
+        },
+        "human_buy_negotiation": {
+          "mode": "session_policy",
+          "description": "Controla o roteiro de uma negociacao em que o humano quer comprar do robo.",
+          "session_formula": {
+            "type": "weighted_sum",
+            "terms": [
+              {
+                "signal": "sell_openness",
+                "weight": 0.24
+              },
+              {
+                "signal": "discount_tolerance",
+                "weight": 0.16
+              },
+              {
+                "signal": "strategic_lock",
+                "weight": -0.18
+              },
+              {
+                "signal": "cash_reserve_ratio",
+                "weight": -0.1
+              },
+              {
+                "signal": "asset_attachment",
+                "weight": -0.12
+              },
+              {
+                "signal": "desperation_discount",
+                "weight": 0.14
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.07
+              },
+              {
+                "signal": "timing_quality",
+                "weight": 0.07
+              }
+            ],
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          },
+          "thresholds": {
+            "accept_offer": 0.62,
+            "counter_offer": 0.48,
+            "hard_reject": 0.34,
+            "insult_floor_gap": -0.14
+          },
+          "session_limits": {
+            "max_rounds": 4,
+            "late_round_concession": 0.04
+          },
+          "stance_thresholds": {
+            "irredutivel_strategic_lock_min": 0.84,
+            "irredutivel_cash_stress_max": 0.25,
+            "pressionado_cash_stress_min": 0.55,
+            "aberto_flexibility_min": 0.56,
+            "aberto_attachment_max": 0.28,
+            "duro_attachment_min": 0.46,
+            "duro_strategic_lock_min": 0.7
+          },
+          "offer_policy": {
+            "entry_cash_floor_ratio": 0.72,
+            "hard_lock_cash_stress_cap": 0.3,
+            "target_markup_base": 0.05,
+            "target_markup_session_penalty": 0.08,
+            "target_markup_attachment_weight": 0.05,
+            "target_markup_min": 0.05,
+            "target_markup_max": 0.18,
+            "ask_markup_base": 0.03,
+            "ask_markup_attachment_weight": 0.05,
+            "ask_markup_cash_stress_weight": -0.04,
+            "ask_markup_min": 0.02,
+            "ask_markup_max": 0.12,
+            "suggested_offer_discount_base": 0.08,
+            "suggested_offer_flexibility_weight": 0.08,
+            "suggested_offer_cash_stress_weight": 0.04,
+            "suggested_offer_discount_min": 0.08,
+            "suggested_offer_discount_max": 0.18,
+            "suggested_offer_floor_ratio": 0.82
+          },
+          "response_policy": {
+            "insult_private_floor_base": 0.9,
+            "insult_private_floor_attachment_weight": 0.05,
+            "insult_private_floor_cash_stress_weight": -0.08,
+            "insult_private_target_base": 0.8,
+            "insult_private_target_attachment_weight": 0.06,
+            "insult_private_target_cash_stress_weight": -0.08,
+            "insult_current_ask_base": 0.66,
+            "insult_current_ask_attachment_weight": 0.04,
+            "insult_current_ask_cash_stress_weight": -0.05,
+            "accept_private_target_base": 0.96,
+            "accept_flexibility_weight": -0.08,
+            "accept_cash_stress_weight": -0.06,
+            "accept_attachment_weight": 0.03,
+            "concession_base": 0.42,
+            "concession_flexibility_weight": 0.16,
+            "concession_cash_stress_weight": 0.14,
+            "concession_attachment_weight": -0.1,
+            "concession_min": 0.26,
+            "concession_max": 0.58,
+            "counter_step_base": 0.05,
+            "counter_step_cash_stress_weight": 0.03,
+            "counter_min_increment_ratio": 0.03
+          },
+          "dialogue": {
+            "opening_by_stance": {
+              "irredutivel": "{owner_name} nao costuma soltar {asset}. Se vier proposta, precisa ser muito forte.",
+              "pressionado": "{owner_name} topa conversar sobre {asset}, mas quer caixa de verdade.",
+              "aberto": "{owner_name} aceita conversar sobre {asset}, mas nao vai entregar barato.",
+              "duro": "{owner_name} trata {asset} como peca importante da companhia.",
+              "firme": "{owner_name} escuta proposta por {asset} se o valor fizer sentido."
+            },
+            "reply_by_reason": {
+              "accepted_current_offer": "Fechado. {asset} sai por $ {amount}.",
+              "accepted_counter_offer": "Fechado por $ {amount}. Nao abaixo disso.",
+              "matched_ask": "Fechamos por $ {amount}.",
+              "strategic_lock": "{owner_name} nao abre negociacao por {asset} agora.",
+              "cash_short": "Seu caixa ainda nao abre uma proposta crivel por {asset}.",
+              "lowball": "Essa proposta ficou baixa demais para {asset}.",
+              "final_refusal": "Por esse valor, {owner_name_lower} prefere manter {asset}.",
+              "cash_gap": "Seu caixa nao chega onde {owner_name_lower} aceitaria vender {asset}.",
+              "no_counter_window": "{owner_name} nao viu espaco para fechar {asset}.",
+              "human_declined": "Sem acordo. {asset} continua com {owner_name_lower}.",
+              "seller_closed_market": "{owner_name} nao abre negocio por {asset} nesta configuracao de mesa.",
+              "trade_locked": "{owner_name} nao abre negocio por {asset} nesta configuracao de mesa.",
+              "default": "{owner_name} preferiu manter {asset}."
+            },
+            "counter_offer_template": "Posso descer para {amount}, mas so fecho nesse patamar."
+          }
+        },
+        "human_sale_negotiation": {
+          "mode": "session_policy",
+          "description": "Controla o roteiro de uma negociacao em que o humano quer vender para o robo.",
+          "session_formula": {
+            "type": "weighted_sum",
+            "terms": [
+              {
+                "signal": "buy_openness",
+                "weight": 0.24
+              },
+              {
+                "signal": "premium_tolerance",
+                "weight": 0.16
+              },
+              {
+                "signal": "risk_tolerance",
+                "weight": 0.1
+              },
+              {
+                "signal": "cash_reserve_ratio",
+                "weight": -0.14
+              },
+              {
+                "signal": "foresight",
+                "weight": 0.12
+              },
+              {
+                "signal": "combo_awareness",
+                "weight": 0.12
+              },
+              {
+                "signal": "timing_quality",
+                "weight": 0.12
+              }
+            ],
+            "clamp": {
+              "min": 0,
+              "max": 1
+            }
+          },
+          "thresholds": {
+            "accept_offer": 0.64,
+            "counter_offer": 0.5,
+            "hard_reject": 0.36,
+            "insult_ceiling_gap": 0.16
+          },
+          "session_limits": {
+            "max_rounds": 4,
+            "late_round_premium_relief": 0.05
+          },
+          "stance_thresholds": {
+            "limitado_cash_stress_min": 0.58,
+            "forte_interest_min": 0.74,
+            "agressivo_aggression_min": 0.68
+          },
+          "offer_policy": {
+            "target_window_base": 0.42,
+            "target_window_aggression_weight": 0.12,
+            "target_window_cash_stress_weight": -0.1,
+            "target_window_min": 0.2,
+            "target_window_max": 0.7,
+            "opening_discount_base": 0.03,
+            "opening_discount_session_weight": 0.03,
+            "opening_discount_min": 0.02,
+            "opening_discount_max": 0.08,
+            "opening_list_ratio_base": 0.74,
+            "opening_list_aggression_weight": 0.08,
+            "opening_list_cash_stress_weight": -0.12,
+            "opening_list_ratio_min": 0.55,
+            "opening_list_ratio_max": 0.96,
+            "entry_target_ratio": 0.92,
+            "suggested_ask_step_ratio": 0.1,
+            "suggested_ask_ceiling_ratio": 0.06
+          },
+          "response_policy": {
+            "accept_bid_step_ratio": 0.08,
+            "concession_base": 0.42,
+            "concession_aggression_weight": 0.18,
+            "concession_cash_stress_weight": -0.12,
+            "concession_min": 0.24,
+            "concession_max": 0.56,
+            "counter_step_base": 0.04,
+            "counter_step_aggression_weight": 0.04
+          },
+          "dialogue": {
+            "opening_by_stance": {
+              "forte": "{buyer_name} quer mesmo {asset}, mas ainda tenta fechar por baixo do teto dele.",
+              "agressivo": "{buyer_name} veio para negociar {asset} com postura bem direta.",
+              "limitado": "{buyer_name} topa conversar sobre {asset}, mas o caixa esta apertado.",
+              "moderado": "{buyer_name} abriu conversa por {asset} e espera uma resposta sua."
+            },
+            "reply_by_reason": {
+              "accepted_current_bid": "Fechado. {buyer_name} leva {asset} por $ {amount}.",
+              "accepted_counter_ask": "{buyer_name} aceitou pagar $ {amount} por {asset}.",
+              "matched_bid": "Negocio fechado por $ {amount}.",
+              "cash_gap": "{buyer_name} nao chega nesse valor para {asset}.",
+              "high_ask": "{buyer_name} achou alto demais o pedido por {asset}.",
+              "final_refusal": "{buyer_name} desistiu de {asset} nesse patamar.",
+              "seller_declined": "Sem acordo. {asset} continua na sua companhia.",
+              "buyer_not_interested": "{buyer_name} nao abriu uma proposta seria por {asset}.",
+              "buyer_closed_market": "{buyer_name} nao negocia {asset} nesta configuracao de mesa.",
+              "trade_locked": "{buyer_name} nao negocia {asset} nesta configuracao de mesa.",
+              "default": "{buyer_name} preferiu nao fechar {asset}."
+            },
+            "counter_offer_template": "Posso subir para {amount}, mas esse e o meu limite agora."
+          }
+        }
+      }
+    },
+    "tactical_resources": {
+      "label": "Recursos Taticos",
+      "goal": "Decidir quando usar cupons e outros aceleradores situacionais.",
+      "tuning_notes": "Versao ajustada para reduzir conservadorismo em cupons estruturais e melhorar o uso de cupons de pico de renda.",
+      "decisions": {
+        "coupon_usage": {
+          "mode": "score_vs_threshold_by_coupon",
+          "description": "Avalia se o contexto atual justifica consumir o cupom ou guardalo para uma janela melhor.",
+          "noise": {
+            "signal": "skill_noise",
+            "amplitude": 0.06
+          },
+          "coupon_rules": {
+            "free_fuel": {
+              "description": "Usa abastecimento gratis na primeira oportunidade relevante, com pressao crescente se o cupom envelhecer na mao.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.78,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.22
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "free_port_stay": {
+              "description": "Zera estadia em porto na primeira oportunidade de cobranca, com pressao crescente se o cupom envelhecer.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.72,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.2
+                  },
+                  {
+                    "signal": "owner_present_flag",
+                    "source": "runtime_context",
+                    "weight": 0.08,
+                    "label": "owner_present_bonus"
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "free_toll": {
+              "description": "Zera pedagio na primeira cobranca elegivel, com pressao crescente se o cupom envelhecer.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.72,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.2
+                  },
+                  {
+                    "signal": "mandatory_toll_pressure",
+                    "weight": 0.14
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "free_fuel_contract": {
+              "description": "Ativa viagem de graca assim que a rota ainda tem combustivel relevante ou quando o cupom envelhece demais.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.32,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "fuel_route_pressure",
+                    "weight": 0.34
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.24
+                  },
+                  {
+                    "signal": "remaining_steps_pressure",
+                    "weight": 0.06
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "shortcut_ignore_toll": {
+              "description": "Atalho entra na primeira janela com pedagio obrigatorio, com pressao extra se o cupom envelhecer.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.28,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "mandatory_toll_pressure",
+                    "weight": 0.42
+                  },
+                  {
+                    "signal": "route_unlock_gain_norm",
+                    "source": "runtime_context",
+                    "weight": 0.12
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.18
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "reroute_same_value": {
+              "description": "Troca de rota entra na primeira janela em que haja destino equivalente melhor ou quando o cupom envelhecer.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.28,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "asset_opportunity",
+                    "weight": 0.36
+                  },
+                  {
+                    "signal": "route_unlock_gain_norm",
+                    "source": "runtime_context",
+                    "weight": 0.14
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.22
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "cancel_contract": {
+              "description": "Cancela contrato quando a primeira janela forte de fracasso aparecer ou quando o cupom envelhecer demais.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "signal": "contract_failure_risk",
+                    "weight": 0.52
+                  },
+                  {
+                    "signal": "remaining_steps_pressure",
+                    "weight": 0.12
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.36
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.5
+            },
+            "extended_contract_deadline": {
+              "description": "Estende prazo na primeira janela de aperto de prazo relevante ou quando o cupom envelhecer demais.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "signal": "contract_failure_risk",
+                    "weight": 0.42
+                  },
+                  {
+                    "signal": "remaining_round_pressure",
+                    "weight": 0.12
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.46
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.5
+            },
+            "double_freight": {
+              "description": "Dobra frete na primeira liquidacao elegivel, com pressao adicional se o cupom envelhecer.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.74,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "freight_value_norm",
+                    "weight": 0.08
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.18
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "anti_monopoly_owner_share": {
+              "description": "Bloqueia comissao monopolista na primeira liquidacao monopolista elegivel, com pressao adicional pela idade.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.72,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.18
+                  },
+                  {
+                    "signal": "owner_monopoly_flag",
+                    "source": "runtime_context",
+                    "weight": 0.1
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            },
+            "skip_owner_share": {
+              "description": "Bloqueia comissao simples na primeira liquidacao elegivel, com pressao adicional pela idade.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "constant": 0.72,
+                    "weight": 1.0
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.2
+                  },
+                  {
+                    "signal": "owner_present_flag",
+                    "source": "runtime_context",
+                    "weight": 0.08
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.45
+            }
+          }
+        }
+      }
+    }
+  },
+  "migration_notes": [
+    "Este arquivo agora e declarativo: sinais derivados e formulas de decisao estao modelados por estrutura, nao por strings executaveis.",
+    "O motor ai-policy-engine-v2.js consome diretamente as regras declarativas de coupon_usage por cupom especifico.",
+    "Cada decisao nova deve resolver primeiro os sinais declarados aqui, depois aplicar formula, ruido e limiares."
+  ]
+}

@@ -1,0 +1,617 @@
+{
+  "version": "ai-presets-v2",
+  "description": "Configuracao inicial dos presets da IA avancada V2. Todos os parametros numericos sao normalizados de 0 a 1. No caso do horizonte de planejamento, 0 representa 0 turnos e 1 representa 20 turnos de horizonte.",
+  "parameter_groups": {
+    "negotiation": {
+      "id": "negotiation",
+      "label": "Negociacao",
+      "description": "Controla o apetite do robo para iniciar, aceitar, precificar e travar negociacoes por ativos importantes.",
+      "parameters": [
+        {
+          "id": "buy_openness",
+          "label": "Abertura de compra",
+          "short_label": "buy",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a disposicao do robo para entrar em compras e perseguir ativos de outros jogadores. Valores altos tornam a IA mais ativa e insistente como compradora; valores baixos a deixam passiva e seletiva."
+        },
+        {
+          "id": "sell_openness",
+          "label": "Abertura de venda",
+          "short_label": "sell",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a disposicao do robo para vender ativos proprios. Valores altos tornam a carteira mais liquida e negociavel; valores baixos fazem a IA segurar seus ativos e recusar mais ofertas."
+        },
+        {
+          "id": "premium_tolerance",
+          "label": "Tolerancia a premio",
+          "short_label": "premium",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Indica o quanto a IA aceita pagar acima do valor-base quando enxerga ganho estrategico. Quanto maior esse numero, maior a chance de aceitar sobrepreco por uma peca considerada importante."
+        },
+        {
+          "id": "discount_tolerance",
+          "label": "Tolerancia a desconto",
+          "short_label": "discount",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Indica o quanto a IA aceita vender abaixo do valor-base. Valores altos tornam a venda mais flexivel em troca de caixa ou reposicionamento; valores baixos fazem a IA resistir a qualquer desconto."
+        },
+        {
+          "id": "strategic_lock",
+          "label": "Protecao estrategica",
+          "short_label": "lock",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Representa o quanto o robo protege ativos que considera estruturais para seu plano. Valores altos travam a negociacao de pecas-chave e reforcam comportamento patrimonial; valores baixos deixam a carteira mais negociavel."
+        },
+        {
+          "id": "desperation_discount",
+          "label": "Desconto sob pressao",
+          "short_label": "desperation",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o quanto a IA relaxa preco de venda quando precisa aliviar o caixa. Valores altos tornam o robo mais propenso a ceder em situacoes de aperto; valores baixos o mantem firme mesmo com pressao financeira."
+        }
+      ],
+      "presets": [
+        {
+          "id": "leiloeiro",
+          "label": "Leiloeiro",
+          "description": "Negociador maximalista. Entra em quase toda compra, aceita giro frequente de ativos e usa a mesa como mecanismo central de crescimento.",
+          "values": {
+            "buy_openness": 1.0,
+            "sell_openness": 0.9,
+            "premium_tolerance": 0.9,
+            "discount_tolerance": 0.9,
+            "strategic_lock": 0.0,
+            "desperation_discount": 0.8
+          }
+        },
+        {
+          "id": "comprador",
+          "label": "Comprador",
+          "description": "Perfil de aquisicao. Compra com agressividade, aceita pagar premio por ativos certos e reluta mais em se desfazer do que em comprar.",
+          "values": {
+            "buy_openness": 0.9,
+            "sell_openness": 0.3,
+            "premium_tolerance": 0.8,
+            "discount_tolerance": 0.2,
+            "strategic_lock": 0.3,
+            "desperation_discount": 0.1
+          }
+        },
+        {
+          "id": "intermediador",
+          "label": "Intermediador",
+          "description": "Perfil de giro. Compra e vende com mais equilibrio, aceita montar ponte de liquidez e costuma manter negociacao ativa em ambas as direcoes.",
+          "values": {
+            "buy_openness": 0.7,
+            "sell_openness": 0.8,
+            "premium_tolerance": 0.6,
+            "discount_tolerance": 0.7,
+            "strategic_lock": 0.2,
+            "desperation_discount": 0.3
+          }
+        },
+        {
+          "id": "equilibrado",
+          "label": "Equilibrado",
+          "description": "Perfil central da mesa. Negocia quando ve valor claro, sem hiperatividade nem fechamento extremo, e preserva opcionalidade de medio prazo.",
+          "values": {
+            "buy_openness": 0.7,
+            "sell_openness": 0.6,
+            "premium_tolerance": 0.6,
+            "discount_tolerance": 0.4,
+            "strategic_lock": 0.4,
+            "desperation_discount": 0.2
+          }
+        },
+        {
+          "id": "protetor",
+          "label": "Protetor",
+          "description": "Perfil de preservacao. Negocia pouco, protege ativos relevantes e evita ceder valor sem retorno estrategico muito claro.",
+          "values": {
+            "buy_openness": 0.1,
+            "sell_openness": 0.1,
+            "premium_tolerance": 0.4,
+            "discount_tolerance": 0.2,
+            "strategic_lock": 0.8,
+            "desperation_discount": 0.2
+          }
+        },
+        {
+          "id": "fechado",
+          "label": "Fechado",
+          "description": "Perfil de bloqueio. Quase nao entra em compras oportunistas, praticamente nao vende e trata ativos estruturais como indisponiveis para a mesa.",
+          "values": {
+            "buy_openness": 0.0,
+            "sell_openness": 0.0,
+            "premium_tolerance": 0.1,
+            "discount_tolerance": 0.0,
+            "strategic_lock": 1.0,
+            "desperation_discount": 0.0
+          }
+        }
+      ]
+    },
+    "vision": {
+      "id": "vision",
+      "label": "Visao",
+      "description": "Define para onde a IA direciona capital e atencao estrategica entre portos, permissoes, pedagios, monopolios, origem e horizonte de planejamento.",
+      "parameters": [
+        {
+          "id": "weight_port",
+          "label": "Prioridade de portos",
+          "short_label": "port",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Expressa o peso dado a compra e manutencao de portos. Valores altos fazem a IA enxergar mais valor em origem, embarque, frete e controle da malha fisica."
+        },
+        {
+          "id": "weight_permission",
+          "label": "Prioridade de permissoes",
+          "short_label": "permission",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Expressa o peso dado a ampliar ou preservar permissoes de frete. Valores altos aumentam o interesse em flexibilidade de contratos e em rotas mais rentaveis."
+        },
+        {
+          "id": "weight_toll",
+          "label": "Prioridade de pedagios",
+          "short_label": "toll",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Expressa o peso dado a renda passiva e controle de pontos de passagem. Valores altos fazem a IA valorizar mais pedagios como fonte recorrente de caixa e influencia territorial."
+        },
+        {
+          "id": "weight_monopoly",
+          "label": "Prioridade de monopolio",
+          "short_label": "monopoly",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Expressa o peso dado a fechar regioes e proteger conjuntos de ativos. Valores altos aumentam a disposicao para perseguir pecas complementares e evitar vender partes criticas do conjunto."
+        },
+        {
+          "id": "weight_origin_bonus",
+          "label": "Prioridade de origem",
+          "short_label": "origin",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Expressa o quanto a IA valoriza ganhos associados a ter a origem sob seu controle. Valores altos elevam a importancia de rotas, contratos e ativos que reforcam fretes ligados a porto proprio."
+        },
+        {
+          "id": "planning_horizon_turns",
+          "label": "Horizonte de planejamento",
+          "short_label": "horizon",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "description": "Representa o alcance temporal do planejamento. Valor 0 significa olhar apenas o presente imediato; valor 1 significa projetar cerca de 20 turnos a frente ao avaliar retorno, risco e sinergia."
+        }
+      ],
+      "presets": [
+        {
+          "id": "balanceado",
+          "label": "Balanceado",
+          "description": "Distribui atencao entre portos, permissoes, monopolios e retorno recorrente sem concentrar a estrategia em um unico eixo.",
+          "values": {
+            "weight_port": 0.6,
+            "weight_permission": 0.53,
+            "weight_toll": 0.47,
+            "weight_monopoly": 0.47,
+            "weight_origin_bonus": 0.6,
+            "planning_horizon_turns": 0.2
+          }
+        },
+        {
+          "id": "foco_portos",
+          "label": "Foco em Portos",
+          "description": "Prioriza portos e origem para acelerar ganho operacional de curto prazo e ocupar a malha principal antes dos demais.",
+          "values": {
+            "weight_port": 0.93,
+            "weight_permission": 0.27,
+            "weight_toll": 0.13,
+            "weight_monopoly": 0.2,
+            "weight_origin_bonus": 0.93,
+            "planning_horizon_turns": 0.1
+          }
+        },
+        {
+          "id": "foco_malha",
+          "label": "Foco em Malha",
+          "description": "Prioriza extensao de rede operacional por meio de permissoes e portos complementares, ampliando opcao de contratos e cobertura estrategica.",
+          "values": {
+            "weight_port": 0.73,
+            "weight_permission": 0.87,
+            "weight_toll": 0.13,
+            "weight_monopoly": 0.27,
+            "weight_origin_bonus": 0.87,
+            "planning_horizon_turns": 0.3
+          }
+        },
+        {
+          "id": "foco_pedagios",
+          "label": "Foco em Pedagios",
+          "description": "Prioriza renda recorrente e captura de passagem, aceitando construir uma estrategia mais paciente e territorial.",
+          "values": {
+            "weight_port": 0.2,
+            "weight_permission": 0.27,
+            "weight_toll": 0.93,
+            "weight_monopoly": 0.2,
+            "weight_origin_bonus": 0.2,
+            "planning_horizon_turns": 0.45
+          }
+        },
+        {
+          "id": "foco_monopolio",
+          "label": "Foco em Monopolio",
+          "description": "Prioriza completar regioes, defender pecas-chave e extrair valor estrutural de conjuntos completos em vez de ganhos taticos isolados.",
+          "values": {
+            "weight_port": 0.53,
+            "weight_permission": 0.2,
+            "weight_toll": 0.2,
+            "weight_monopoly": 0.93,
+            "weight_origin_bonus": 0.47,
+            "planning_horizon_turns": 0.55
+          }
+        },
+        {
+          "id": "foco_contrato",
+          "label": "Foco em Contrato",
+          "description": "Prioriza ativos que aumentam a qualidade e a recorrencia dos contratos, ligando origem, porto e permissao a ganho operacional direto.",
+          "values": {
+            "weight_port": 0.8,
+            "weight_permission": 0.53,
+            "weight_toll": 0.07,
+            "weight_monopoly": 0.4,
+            "weight_origin_bonus": 1.0,
+            "planning_horizon_turns": 0.25
+          }
+        }
+      ]
+    },
+    "personality": {
+      "id": "personality",
+      "label": "Personalidade",
+      "description": "Controla como a IA lida com caixa, risco, impulso, paciencia taticamente e apego ao proprio patrimonio.",
+      "parameters": [
+        {
+          "id": "cash_reserve_ratio",
+          "label": "Reserva de caixa",
+          "short_label": "reserve",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Controla o quanto a IA preserva liquidez antes de se comprometer com compras, cupons ou resgates. Valores altos tornam o robo mais prudente com caixa e menos exposto."
+        },
+        {
+          "id": "risk_tolerance",
+          "label": "Tolerancia a risco",
+          "short_label": "risk",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o conforto da IA para operar com pouca folga, assumir exposicao e aceitar jogadas mais agressivas. Valores altos deixam o robo ousado; valores baixos o deixam conservador."
+        },
+        {
+          "id": "impulsiveness",
+          "label": "Impulsividade",
+          "short_label": "impulse",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o peso de decisoes imediatistas frente a avaliacao fria. Valores altos favorecem acoes reativas e oportunistas; valores baixos favorecem disciplina e espera."
+        },
+        {
+          "id": "coupon_patience",
+          "label": "Paciencia com cupons",
+          "short_label": "patience",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a inclinacao para guardar cupons em busca de uma janela melhor. Valores altos tornam a IA mais paciente e seletiva; valores baixos a fazem gastar cupons cedo."
+        },
+        {
+          "id": "asset_attachment",
+          "label": "Apego aos ativos",
+          "short_label": "attachment",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o quanto a IA valoriza manter o proprio patrimonio sob controle, mesmo quando ha proposta financeiramente razoavel. Valores altos elevam a resistencia a vender pecas proprias."
+        }
+      ],
+      "presets": [
+        {
+          "id": "corsario",
+          "label": "Corsario",
+          "description": "Arrisca muito, gira rapido e aceita apertar caixa para ganhar posicao. Usa o tabuleiro com agressividade operacional.",
+          "values": {
+            "cash_reserve_ratio": 0.0,
+            "risk_tolerance": 0.9,
+            "impulsiveness": 0.8,
+            "coupon_patience": 0.2,
+            "asset_attachment": 0.2
+          }
+        },
+        {
+          "id": "oportunista",
+          "label": "Oportunista",
+          "description": "Busca janelas de valor com pouca rigidez patrimonial. Assume risco com alguma disciplina, mas continua voltado a capturar chances taticas.",
+          "values": {
+            "cash_reserve_ratio": 0.1,
+            "risk_tolerance": 0.7,
+            "impulsiveness": 0.6,
+            "coupon_patience": 0.3,
+            "asset_attachment": 0.3
+          }
+        },
+        {
+          "id": "equilibrado",
+          "label": "Temperado",
+          "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+          "values": {
+            "cash_reserve_ratio": 0.2,
+            "risk_tolerance": 0.5,
+            "impulsiveness": 0.4,
+            "coupon_patience": 0.5,
+            "asset_attachment": 0.5
+          }
+        },
+        {
+          "id": "tesoureiro",
+          "label": "Tesoureiro",
+          "description": "Protege liquidez, reduz exposicao e evita movimentos bruscos. Prefere crescer sem comprometer caixa e margem de seguranca.",
+          "values": {
+            "cash_reserve_ratio": 0.5,
+            "risk_tolerance": 0.2,
+            "impulsiveness": 0.1,
+            "coupon_patience": 0.6,
+            "asset_attachment": 0.4
+          }
+        },
+        {
+          "id": "patrimonialista",
+          "label": "Patrimonialista",
+          "description": "Valoriza a posse e a protecao do patrimonio. Assume pouco risco adicional se isso implicar perder ativos vistos como estruturais.",
+          "values": {
+            "cash_reserve_ratio": 0.3,
+            "risk_tolerance": 0.3,
+            "impulsiveness": 0.2,
+            "coupon_patience": 0.6,
+            "asset_attachment": 0.8
+          }
+        },
+        {
+          "id": "paciente",
+          "label": "Paciente",
+          "description": "Espera a melhor janela, conserva cupons e evita respostas precipitadas. Funciona bem em estrategias de preparacao e valorizacao lenta.",
+          "values": {
+            "cash_reserve_ratio": 0.4,
+            "risk_tolerance": 0.3,
+            "impulsiveness": 0.1,
+            "coupon_patience": 0.9,
+            "asset_attachment": 0.6
+          }
+        }
+      ]
+    },
+    "skill": {
+      "id": "skill",
+      "label": "Habilidades",
+      "description": "Controla a qualidade de leitura, a disciplina de execucao, a visao combinatoria, o tempo de acao e o ruido comportamental da IA.",
+      "parameters": [
+        {
+          "id": "foresight",
+          "label": "Antecipacao",
+          "short_label": "foresight",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a capacidade de projetar valor futuro, comparando ganhos imediatos com retorno acumulado nos turnos seguintes. Valores altos melhoram a leitura de medio e longo prazo."
+        },
+        {
+          "id": "evaluation_noise",
+          "label": "Ruido de avaliacao",
+          "short_label": "noise",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o quanto as decisoes da IA oscilam em torno do que seria a melhor escolha calculada. Valores altos tornam o robo mais irregular e menos consistente; valores baixos o tornam mais estavel e previsivel."
+        },
+        {
+          "id": "liquidity_discipline",
+          "label": "Disciplina de caixa",
+          "short_label": "discipline",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a capacidade de respeitar reserva financeira, frear compras no momento certo e manter margem para absorver risco futuro."
+        },
+        {
+          "id": "combo_awareness",
+          "label": "Leitura de combinacoes",
+          "short_label": "combo",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede o quanto a IA percebe sinergias entre portos, permissoes, monopolios, cupons e rotas. Valores altos melhoram decisoes que dependem de combinacao de ativos."
+        },
+        {
+          "id": "timing_quality",
+          "label": "Qualidade de timing",
+          "short_label": "timing",
+          "min": 0,
+          "max": 1,
+          "step": 0.1,
+          "description": "Mede a qualidade de executar a acao certa no momento certo. Valores altos reduzem desperdicio de janelas; valores baixos fazem a IA agir fora de hora com mais frequencia."
+        }
+      ],
+      "presets": [
+        {
+          "id": "iniciante",
+          "label": "Iniciante",
+          "description": "Baixa leitura de futuro, pouca disciplina e muito ruido. Erra mais a mao e alterna decisoes boas e ruins sem regularidade.",
+          "values": {
+            "foresight": 0.2,
+            "evaluation_noise": 1.0,
+            "liquidity_discipline": 0.3,
+            "combo_awareness": 0.2,
+            "timing_quality": 0.2
+          }
+        },
+        {
+          "id": "operacional",
+          "label": "Operacional",
+          "description": "Executa o basico com alguma ordem, mas ainda sofre oscilacoes relevantes de criterio e timing.",
+          "values": {
+            "foresight": 0.4,
+            "evaluation_noise": 0.7,
+            "liquidity_discipline": 0.5,
+            "combo_awareness": 0.4,
+            "timing_quality": 0.4
+          }
+        },
+        {
+          "id": "solido",
+          "label": "Solido",
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "values": {
+            "foresight": 0.5,
+            "evaluation_noise": 0.5,
+            "liquidity_discipline": 0.6,
+            "combo_awareness": 0.5,
+            "timing_quality": 0.5
+          }
+        },
+        {
+          "id": "analitico",
+          "label": "Analitico",
+          "description": "Le melhor o tabuleiro e erra menos por impulso. Usa mais leitura de futuro e disciplina para sustentar decisoes de medio prazo.",
+          "values": {
+            "foresight": 0.7,
+            "evaluation_noise": 0.3,
+            "liquidity_discipline": 0.8,
+            "combo_awareness": 0.6,
+            "timing_quality": 0.6
+          }
+        },
+        {
+          "id": "tatico",
+          "label": "Tatico",
+          "description": "Tem boa leitura de combinacoes e executa janelas com qualidade. Ainda aceita alguma variacao, mas ja opera com bem mais precisao.",
+          "values": {
+            "foresight": 0.6,
+            "evaluation_noise": 0.2,
+            "liquidity_discipline": 0.7,
+            "combo_awareness": 0.8,
+            "timing_quality": 0.8
+          }
+        },
+        {
+          "id": "elite",
+          "label": "Elite",
+          "description": "Alta consistencia, leitura forte de futuro, excelente disciplina e quase nenhuma oscilacao aleatoria de comportamento.",
+          "values": {
+            "foresight": 0.9,
+            "evaluation_noise": 0.0,
+            "liquidity_discipline": 0.9,
+            "combo_awareness": 0.9,
+            "timing_quality": 0.9
+          }
+        }
+      ]
+    }
+  },
+  "compatibility": {
+    "skill_aliases": {
+      "legacy_normal": "operacional",
+      "ai_easy": "iniciante",
+      "ai_normal": "solido",
+      "ai_hard": "tatico",
+      "ai_expert": "elite",
+      "stage6_standard": "solido",
+      "stage6_sharp": "tatico"
+    },
+    "archetypes": {
+      "legacy_open": {
+        "label": "Compatibilidade V2",
+        "description": "Perfil de compatibilidade para manter o fluxo atual do V2 enquanto a UI avancada ainda esta sendo refatorada.",
+        "negotiation_preset_id": "leiloeiro",
+        "vision_preset_id": "balanceado",
+        "personality_preset_id": "oportunista",
+        "skill_preset_id": "operacional"
+      },
+      "balanced_trader": {
+        "label": "Equilibrado",
+        "description": "Carteira balanceada entre crescimento operacional, caixa e consistencia de execucao.",
+        "negotiation_preset_id": "equilibrado",
+        "vision_preset_id": "balanceado",
+        "personality_preset_id": "equilibrado",
+        "skill_preset_id": "solido"
+      },
+      "open_profile": {
+        "label": "Perfil aberto",
+        "description": "Usa a mesa como mecanismo constante de troca e expansao, mantendo postura negociadora forte.",
+        "negotiation_preset_id": "leiloeiro",
+        "vision_preset_id": "balanceado",
+        "personality_preset_id": "oportunista",
+        "skill_preset_id": "operacional"
+      },
+      "closed_profile": {
+        "label": "Perfil fechado",
+        "description": "Protege o patrimonio e restringe fortemente negociacoes de compra e venda.",
+        "negotiation_preset_id": "fechado",
+        "vision_preset_id": "balanceado",
+        "personality_preset_id": "patrimonialista",
+        "skill_preset_id": "solido"
+      },
+      "port_sprinter": {
+        "label": "Foco em portos",
+        "description": "Pressiona aquisicao de portos e origem no inicio e no meio da partida.",
+        "negotiation_preset_id": "comprador",
+        "vision_preset_id": "foco_portos",
+        "personality_preset_id": "corsario",
+        "skill_preset_id": "operacional"
+      },
+      "cargo_planner": {
+        "label": "Foco em malha",
+        "description": "Expande malha de contratos e permissoes para ganhar amplitude operacional.",
+        "negotiation_preset_id": "intermediador",
+        "vision_preset_id": "foco_malha",
+        "personality_preset_id": "oportunista",
+        "skill_preset_id": "analitico"
+      },
+      "toll_broker": {
+        "label": "Foco em pedagios",
+        "description": "Constroi renda recorrente em pontos de passagem com mais paciencia e disciplina financeira.",
+        "negotiation_preset_id": "protetor",
+        "vision_preset_id": "foco_pedagios",
+        "personality_preset_id": "tesoureiro",
+        "skill_preset_id": "analitico"
+      },
+      "monopoly_hunter": {
+        "label": "Foco em monopolio",
+        "description": "Busca fechar regioes e defender ativos estruturais com alta regularidade de execucao.",
+        "negotiation_preset_id": "protetor",
+        "vision_preset_id": "foco_monopolio",
+        "personality_preset_id": "patrimonialista",
+        "skill_preset_id": "elite"
+      }
+    }
+  }
+}

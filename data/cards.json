@@ -250,6 +250,62 @@
     "text": "#FFFFFF"
   },
   {
+    "id": "contrato_cancelado",
+    "title": "Contrato Cancelado",
+    "description": "Você pode utilizar essa carta para cancelar um contrato desvantajoso!",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "cancel_contract"
+    },
+    "order": 19,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "contra_o_monopolio",
+    "title": "Contra o Monopólio",
+    "description": "Você pode utilizar essa carta para não pagar a comissão do dono do monopólio.",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "anti_monopoly_owner_share"
+    },
+    "order": 20,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "viagem_de_graca",
+    "title": "Viagem de Graça",
+    "description": "Você não paga abastecimento por todo o contrato.",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "free_fuel_contract"
+    },
+    "order": 21,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
+    "id": "prazo_estendido",
+    "title": "Prazo Estendido",
+    "description": "Você tem 6 rodadas para fazer o frete sem ônus.",
+    "effect_text": "Guarde até o uso",
+    "effect": {
+      "type": "coupon",
+      "coupon": "extended_contract_deadline"
+    },
+    "order": 22,
+    "category": "sorte",
+    "accent": "#18C43A",
+    "text": "#FFFFFF"
+  },
+  {
     "id": "motim",
     "title": "Motim",
     "description": "Sua tripulação está em motim!",
@@ -258,7 +314,7 @@
       "type": "pay_money",
       "amount": 40
     },
-    "order": 19,
+    "order": 23,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -272,7 +328,7 @@
       "type": "skip_turns",
       "turns": 1
     },
-    "order": 20,
+    "order": 24,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -286,7 +342,7 @@
       "type": "pay_money",
       "amount": 50
     },
-    "order": 21,
+    "order": 25,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -300,7 +356,7 @@
       "type": "skip_turns",
       "turns": 2
     },
-    "order": 22,
+    "order": 26,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -314,7 +370,7 @@
       "type": "move_steps",
       "steps": -7
     },
-    "order": 23,
+    "order": 27,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -328,7 +384,7 @@
       "type": "pay_money",
       "amount": 80
     },
-    "order": 24,
+    "order": 28,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -341,7 +397,7 @@
     "effect": {
       "type": "move_to_toll"
     },
-    "order": 25,
+    "order": 29,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -355,7 +411,7 @@
       "type": "move_ports",
       "offset": -1
     },
-    "order": 26,
+    "order": 30,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -369,7 +425,7 @@
       "type": "pay_money",
       "amount": 60
     },
-    "order": 27,
+    "order": 31,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -382,7 +438,7 @@
     "effect": {
       "type": "receive_half_current_freight"
     },
-    "order": 28,
+    "order": 32,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -396,7 +452,7 @@
       "type": "pay_money",
       "amount": 70
     },
-    "order": 29,
+    "order": 33,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -409,7 +465,7 @@
     "effect": {
       "type": "move_to_origin_port"
     },
-    "order": 30,
+    "order": 34,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -423,7 +479,7 @@
       "type": "skip_turns",
       "turns": 2
     },
-    "order": 31,
+    "order": 35,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -437,7 +493,7 @@
       "type": "move_steps",
       "steps": -8
     },
-    "order": 32,
+    "order": 36,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -451,7 +507,7 @@
       "type": "pay_money",
       "amount": 70
     },
-    "order": 33,
+    "order": 37,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -465,7 +521,7 @@
       "type": "skip_turns",
       "turns": 1
     },
-    "order": 34,
+    "order": 38,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"
@@ -479,7 +535,7 @@
       "type": "pay_each",
       "amount": 50
     },
-    "order": 35,
+    "order": 39,
     "category": "reves",
     "accent": "#F01B12",
     "text": "#FFFFFF"

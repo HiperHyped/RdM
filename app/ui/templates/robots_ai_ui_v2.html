@@ -1,0 +1,1531 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+<style>
+  .report-body {
+    overflow: auto;
+  }
+
+  .report-metric-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .report-metric-card {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .report-metric-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .report-metric-card-head strong {
+    color: #edf6ff;
+    font-size: 0.88rem;
+    font-weight: 800;
+  }
+
+  .report-metric-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+  }
+
+  .report-heatmap-shell {
+    border-radius: 16px;
+    background: rgba(5, 18, 31, 0.28);
+    overflow: hidden;
+  }
+
+  .report-heatmap {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-heatmap-divider {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-heatmap-row-label {
+    fill: #edf6ff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .report-heatmap-xlabel {
+    fill: rgba(214, 229, 245, 0.72);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .report-heatmap-cell {
+    stroke: rgba(5, 18, 31, 0.52);
+    stroke-width: 1;
+  }
+
+  .report-heatmap-value {
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .report-metric-number {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .report-holdings-grid {
+    gap: 16px;
+  }
+
+  .report-trend-card {
+    gap: 12px;
+  }
+
+  .report-step-chart-shell {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(5, 18, 31, 0.28);
+    overflow: hidden;
+  }
+
+  .report-legend-compact {
+    gap: 8px;
+  }
+
+  .report-legend-value {
+    margin-left: auto;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf6ff;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .report-step-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-step-grid-line {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-step-axis-label,
+  .report-step-xlabel {
+    fill: rgba(214, 229, 245, 0.72);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .report-step-series-line {
+    fill: none;
+    stroke-width: 3.25;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.22));
+  }
+
+
+  .report-count-spark-shell {
+    display: grid;
+    gap: 12px;
+  }
+
+  .report-count-scale-note {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .report-player-spark-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+  }
+
+  .report-player-spark-card {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+    background: rgba(5, 18, 31, 0.28);
+  }
+
+  .report-player-spark-head,
+  .report-player-spark-foot,
+  .report-player-spark-badges {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .report-player-spark-badges {
+    justify-content: flex-end;
+  }
+
+  .report-player-spark-value,
+  .report-player-spark-delta {
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .report-player-spark-value {
+    background: rgba(255, 255, 255, 0.08);
+    color: #edf6ff;
+  }
+
+  .report-player-spark-delta {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(214, 229, 245, 0.76);
+  }
+
+  .report-player-spark-delta.is-positive {
+    color: #75e693;
+  }
+
+  .report-player-spark-delta.is-negative {
+    color: #ff8b88;
+  }
+
+  .report-player-spark-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-player-spark-gridline {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-player-spark-area {
+    opacity: 0.18;
+  }
+
+  .report-player-spark-line {
+    fill: none;
+    stroke-width: 3.1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.24));
+  }
+
+  .report-player-spark-foot {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.67rem;
+    font-weight: 700;
+  }
+
+  .setup-advanced-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .setup-advanced-grid.is-hidden {
+    display: none;
+  }
+
+  .game-setup-field.is-hidden {
+    display: none;
+  }
+
+  .setup-advanced-card {
+    display: grid;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-advanced-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .setup-advanced-card-head strong {
+    color: #edf6ff;
+    font-size: 0.92rem;
+    font-weight: 800;
+  }
+
+  .setup-advanced-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .setup-advanced-select {
+    min-height: 42px;
+    width: 100%;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .setup-advanced-hint {
+    margin: 0;
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+
+  .setup-advanced-summary {
+    display: grid;
+    gap: 10px;
+  }
+
+  .setup-advanced-summary-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .setup-advanced-open {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(143, 215, 255, 0.24);
+    background: rgba(143, 215, 255, 0.12);
+    color: #e6f7ff;
+    font-size: 0.84rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .setup-advanced-open:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .setup-advanced-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .setup-advanced-summary-card {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-advanced-summary-card strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .setup-advanced-summary-card span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-editor-modal {
+    width: min(1200px, calc(100vw - 32px));
+    max-width: 1200px;
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: grid;
+    gap: 14px;
+  }
+
+  #setup-ai-editor-overlay {
+    z-index: 24;
+  }
+
+  .setup-ai-editor-head-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .setup-ai-editor-toolbar {
+    display: grid;
+    gap: 14px;
+  }
+
+  .setup-ai-editor-toolbar-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 14px;
+  }
+
+  .setup-ai-editor-toolbar-block {
+    display: grid;
+    gap: 10px;
+  }
+
+  .setup-ai-toolbar-counts {
+    align-items: stretch;
+  }
+
+  .setup-ai-editor-main {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 14px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .setup-ai-editor-side {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .setup-ai-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .setup-ai-preset-button {
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(215, 230, 245, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #edf6ff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .setup-ai-preset-button.is-active {
+    border-color: rgba(143, 215, 255, 0.26);
+    background: rgba(143, 215, 255, 0.16);
+    color: #ffffff;
+  }
+
+  .setup-ai-editor-summary {
+    display: grid;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-ai-editor-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: rgba(214, 229, 245, 0.78);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-editor-summary-row strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+  }
+
+  .setup-ai-parameter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-content: start;
+    overflow: hidden;
+  }
+
+  .setup-ai-parameter-card {
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .setup-ai-parameter-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .setup-ai-parameter-card-head strong {
+    color: #edf6ff;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .setup-ai-parameter-card-head span {
+    color: rgba(214, 229, 245, 0.68);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-parameter-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .setup-ai-slider-row {
+    display: grid;
+    gap: 4px;
+  }
+
+  .setup-ai-slider-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: rgba(214, 229, 245, 0.78);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .setup-ai-slider-top strong {
+    color: #edf6ff;
+    font-size: 0.76rem;
+  }
+
+  .setup-ai-slider {
+    width: 100%;
+    margin: 0;
+  }
+
+  @media (max-width: 1180px) {
+    .setup-ai-editor-toolbar-grid,
+    .setup-ai-editor-main,
+    .setup-ai-parameter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .setup-ai-editor-modal {
+      max-height: calc(100vh - 24px);
+    }
+  }
+
+  .report-milestone-table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .report-milestone-table thead th:first-child {
+    width: 92px;
+  }
+
+  .report-milestone-table thead th:first-child,
+  .report-milestone-table tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: rgba(6, 24, 41, 0.96);
+  }
+
+  .report-milestone-table thead th:first-child {
+    z-index: 3;
+  }
+
+  .report-milestone-player-head {
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+  }
+
+  .report-turn-pivot-cell {
+    vertical-align: top;
+  }
+
+  .report-milestone-player-col {
+    padding: 10px 8px;
+    vertical-align: top;
+  }
+
+  .report-milestone-cell {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    border-top: 3px solid var(--report-player-accent, #8fd7ff);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .report-milestone-primary,
+  .report-milestone-secondary {
+    display: grid;
+    gap: 8px;
+  }
+
+  .report-milestone-primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-milestone-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .report-milestone-stat {
+    display: grid;
+    gap: 3px;
+    padding: 8px 8px 9px;
+    border-radius: 12px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(5, 18, 31, 0.34);
+  }
+
+  .report-milestone-stat small {
+    color: rgba(214, 229, 245, 0.62);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .report-milestone-stat strong {
+    color: #edf6ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+
+  .report-milestone-stat-compact strong {
+    font-size: 1rem;
+  }
+
+  .report-milestone-stat.is-leading {
+    border-color: rgba(143, 215, 255, 0.5);
+    background: rgba(143, 215, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(143, 215, 255, 0.14);
+  }
+
+  .report-milestone-stat.tone-zero {
+    border-color: rgba(255, 93, 93, 0.34);
+    background: rgba(255, 93, 93, 0.12);
+  }
+
+  .report-milestone-stat.tone-zero strong {
+    color: #ff8b88;
+  }
+
+  .report-milestone-stat.tone-low {
+    border-color: rgba(255, 126, 68, 0.34);
+    background: rgba(255, 126, 68, 0.12);
+  }
+
+  .report-milestone-stat.tone-low strong {
+    color: #ffb179;
+  }
+
+  .report-milestone-stat.tone-mid {
+    border-color: rgba(255, 204, 74, 0.34);
+    background: rgba(255, 204, 74, 0.12);
+  }
+
+  .report-milestone-stat.tone-mid strong {
+    color: #ffd76e;
+  }
+
+  .report-milestone-stat.tone-high {
+    border-color: rgba(72, 212, 123, 0.34);
+    background: rgba(72, 212, 123, 0.12);
+  }
+
+  .report-milestone-stat.tone-high strong {
+    color: #78e59a;
+  }
+
+
+
+  .preview-rival-name-stack {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .preview-rival-name-stack strong {
+    font-size: 0.95rem;
+    line-height: 1.08;
+  }
+
+  .preview-rival-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(143, 215, 255, 0.2);
+    background: rgba(143, 215, 255, 0.12);
+    color: #d9f2ff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .preview-rival-profile-prefix {
+    text-transform: uppercase;
+    flex: 0 0 auto;
+  }
+
+  .preview-rival-profile-value {
+    text-transform: lowercase;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* AI SETUP UI REFRESH */
+  .setup-ai-counts-five {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .setup-ai-mode-toggle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setup-ai-mode-note {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .game-setup-field.is-disabled {
+    opacity: 0.42;
+  }
+
+  .game-setup-field.is-disabled .game-setup-count,
+  .game-setup-field.is-disabled .settings-choice {
+    cursor: not-allowed;
+  }
+
+  .game-setup-field.is-disabled .settings-note {
+    color: rgba(214, 229, 245, 0.42);
+  }
+
+  .game-setup-count:disabled {
+    opacity: 0.46;
+    cursor: not-allowed;
+  }
+
+  .setup-ai-editor-modal {
+    width: min(1068px, calc(100vw - 14px));
+    max-width: 1068px;
+    height: auto;
+    max-height: calc(100vh - 14px);
+    gap: 8px;
+    padding: 14px;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  .setup-ai-editor-heading {
+    margin: 0;
+    color: #f0b429;
+    font-size: 0.86rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .setup-ai-editor-head-actions {
+    gap: 8px;
+  }
+
+  .setup-ai-editor-layout {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 8px;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .setup-ai-editor-workspace {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 6px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .setup-ai-section-title {
+    margin: 0;
+  }
+
+  .setup-ai-section-note {
+    margin: -3px 0 2px;
+    color: rgba(214, 229, 245, 0.62);
+    font-size: 0.66rem;
+    line-height: 1.28;
+  }
+
+  .setup-ai-toolbar-counts,
+  .setup-ai-robot-tabs {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 7px;
+    justify-content: stretch;
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  .setup-ai-robot-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow: hidden;
+    border-color: rgba(215, 230, 245, 0.14);
+    color: var(--setup-ai-robot-text, #edf6ff);
+    background:
+      linear-gradient(180deg, rgba(17, 34, 50, 0.98) 0%, rgba(17, 34, 50, 0.94) 100%),
+      linear-gradient(90deg, var(--setup-ai-robot-accent-soft, rgba(143, 215, 255, 0.24)) 0%, rgba(143, 215, 255, 0.04) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  }
+
+  .setup-ai-robot-tab.is-active {
+    border-color: var(--setup-ai-robot-accent, #8fd7ff);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 0 1px var(--setup-ai-robot-accent, #8fd7ff);
+  }
+
+  .setup-ai-robot-tab-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--setup-ai-robot-accent, #8fd7ff);
+    box-shadow: 0 0 0 1px rgba(6, 17, 26, 0.55), 0 0 10px var(--setup-ai-robot-accent-soft, rgba(143, 215, 255, 0.24));
+    flex: 0 0 auto;
+  }
+
+  .setup-ai-robot-tab-index {
+    line-height: 1;
+  }
+
+  .setup-ai-robot-tab.is-all {
+    gap: 0;
+  }
+
+  .setup-ai-robot-tab-label {
+    line-height: 1;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+  }
+
+  .setup-ai-family-card {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 6px;
+    min-height: 0;
+  }
+
+  .setup-ai-family-presets {
+    display: grid;
+    gap: 5px;
+    align-content: start;
+  }
+
+  .setup-ai-preset-button,
+  .setup-ai-market-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    min-height: 34px;
+    width: 100%;
+    padding: 6px 9px;
+    text-align: left;
+    font-size: 0.7rem;
+    border-radius: 13px;
+  }
+
+  .setup-ai-button-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .setup-ai-button-help,
+  .setup-ai-inline-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 999px;
+    border: 1px solid rgba(240, 180, 41, 0.32);
+    background: rgba(240, 180, 41, 0.12);
+    color: #ffd879;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: help;
+    flex: 0 0 auto;
+  }
+
+  .setup-ai-button-help::after,
+  .setup-ai-inline-help::after {
+    content: attr(data-help);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    width: 220px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(5, 18, 31, 0.96);
+    color: #edf6ff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: normal;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 120ms ease, transform 120ms ease;
+    z-index: 4;
+  }
+
+  .setup-ai-button-help:hover::after,
+  .setup-ai-button-help:focus-visible::after,
+  .setup-ai-inline-help:hover::after,
+  .setup-ai-inline-help:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .setup-ai-editor-description,
+  .setup-ai-editor-summary {
+    display: none !important;
+  }
+
+  .setup-ai-parameter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: hidden;
+    align-content: stretch;
+    justify-content: stretch;
+    min-height: 0;
+    padding-right: 0;
+  }
+
+  .setup-ai-parameter-card {
+    min-height: 0;
+    padding: 5px 9px 7px;
+    gap: 2px;
+    border-radius: 15px;
+    overflow: visible;
+  }
+
+  .setup-ai-family-panel {
+    height: 100%;
+  }
+
+  .setup-ai-parameter-card-head {
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 0;
+  }
+
+  .setup-ai-parameter-card-head strong {
+    font-size: 0.92rem;
+  }
+
+  .setup-ai-group-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    max-width: none;
+    color: #edf6ff;
+    font-size: inherit;
+    font-weight: 800;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .setup-ai-parameter-card-head > span:not(.setup-ai-group-title) {
+    max-width: 180px;
+    text-align: right;
+    font-size: 0.62rem;
+    line-height: 1.25;
+  }
+
+  .setup-ai-group-description {
+    margin: 1px 0 3px;
+    color: rgba(214, 229, 245, 0.62);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.22;
+  }
+
+  .setup-ai-parameter-list {
+    gap: 0;
+    overflow: visible;
+    justify-items: stretch;
+  }
+
+  .setup-ai-slider-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 180px) 32px;
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+    min-height: 26px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .setup-ai-slider-shell {
+    display: flex;
+    align-items: center;
+    grid-column: 2;
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .setup-ai-slider-top {
+    display: none;
+    font-size: 0.64rem;
+    min-height: 14px;
+  }
+
+  .setup-ai-slider-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    grid-column: 1;
+    min-width: 0;
+    color: rgba(214, 229, 245, 0.78);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.08;
+  }
+
+  .setup-ai-slider-row > strong {
+    grid-column: 3;
+    min-width: 32px;
+    text-align: right;
+    color: #edf6ff;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.08;
+  }
+
+  .setup-ai-slider {
+    --setup-ai-fill: 0%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+    cursor: pointer;
+  }
+
+  .setup-ai-slider:focus {
+    outline: none;
+  }
+
+  .setup-ai-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent calc(var(--setup-ai-step-percent, 10%) - 1px),
+        rgba(255, 255, 255, 0.28) calc(var(--setup-ai-step-percent, 10%) - 1px),
+        rgba(255, 255, 255, 0.28) var(--setup-ai-step-percent, 10%)
+      ),
+      linear-gradient(90deg, #f0b429 0%, #ffc84d var(--setup-ai-fill), rgba(255, 255, 255, 0.26) var(--setup-ai-fill), rgba(255, 255, 255, 0.26) 100%);
+  }
+
+  .setup-ai-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+    border-radius: 999px;
+    border: 2px solid #ffcf63;
+    background: #f0b429;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+
+  .setup-ai-slider::-moz-range-track {
+    height: 4px;
+    border: 0;
+    border-radius: 999px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent calc(var(--setup-ai-step-percent, 10%) - 1px),
+        rgba(255, 255, 255, 0.28) calc(var(--setup-ai-step-percent, 10%) - 1px),
+        rgba(255, 255, 255, 0.28) var(--setup-ai-step-percent, 10%)
+      ),
+      rgba(255, 255, 255, 0.26);
+  }
+
+  .setup-ai-slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: #f0b429;
+  }
+
+  .setup-ai-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffcf63;
+    border-radius: 999px;
+    background: #f0b429;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+
+  @media (max-width: 1180px) {
+    .setup-ai-editor-modal {
+      height: auto;
+    }
+
+    .setup-ai-editor-layout {
+      overflow: hidden;
+    }
+
+    .setup-ai-parameter-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+    }
+
+    .setup-ai-robot-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .setup-ai-family-card {
+      grid-template-columns: 1fr;
+    }
+
+    .setup-ai-slider-shell {
+      width: 100%;
+    }
+  }
+  /* AI SETUP UI REFRESH END */
+
+</style>
+{% endblock %}
+
+{% block body %}
+<main class="game-preview-shell">
+  <div id="game-preview-map" class="game-preview-map"></div>
+  <svg id="game-preview-routes" class="game-preview-routes" aria-hidden="true"></svg>
+  <svg id="game-preview-nodes" class="game-preview-nodes" aria-hidden="true"></svg>
+  <div id="game-preview-ships" class="game-preview-ships" aria-hidden="true"></div>
+  <div id="game-preview-hitlayer" class="game-preview-hitlayer" aria-hidden="true"></div>
+
+  <div id="game-log-overlay" class="report-overlay is-hidden" aria-hidden="true">
+    <section class="report-modal report-modal-log" aria-labelledby="log-title">
+      <div class="report-head">
+        <div>
+          <p class="eyebrow">Log</p>
+          <h2 id="log-title">Historico da simulacao</h2>
+        </div>
+        <button id="log-close-button" type="button" class="settings-close-button" aria-label="Fechar log">Fechar</button>
+      </div>
+      <div class="log-body">
+        <section id="game-action-log" class="game-action-log is-modal" aria-live="polite">
+          <p class="eyebrow">Acoes do turno</p>
+          <div id="game-action-feed" class="game-action-feed"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="game-pause-indicator" class="game-pause-indicator is-hidden" aria-live="polite" aria-label="Jogo pausado">
+    <span>||</span>
+  </div>
+
+  <div id="game-settings-overlay" class="settings-overlay is-hidden" aria-hidden="true">
+    <section class="settings-modal" aria-labelledby="settings-title">
+      <div class="settings-head">
+        <div>
+          <p class="eyebrow">Configuracoes</p>
+          <h2 id="settings-title">Ajustes da partida</h2>
+        </div>
+        <button id="settings-close-button" type="button" class="settings-close-button" aria-label="Fechar configuracoes">Fechar</button>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-row">
+          <div class="settings-row-top">
+            <span class="settings-label">Modo de log</span>
+            <strong id="settings-log-mode-value" class="settings-value">Por jogador</strong>
+          </div>
+          <div class="settings-choice-group" role="radiogroup" aria-label="Modo de log">
+            <label class="settings-choice" for="settings-log-mode-global">
+              <input id="settings-log-mode-global" type="radio" name="settings-log-mode" value="global" />
+              <span>Geral</span>
+            </label>
+            <label class="settings-choice" for="settings-log-mode-player">
+              <input id="settings-log-mode-player" type="radio" name="settings-log-mode" value="player" checked />
+              <span>Por jogador</span>
+            </label>
+          </div>
+          <span class="settings-note">Escolha entre acompanhar os stacks locais sobre cada balao ou usar a janela central aberta pelo botao Log.</span>
+        </div>
+
+        <label class="settings-row" for="settings-cpu-speed">
+          <div class="settings-row-top">
+            <span class="settings-label">Velocidade dos robos</span>
+            <strong id="settings-cpu-speed-value" class="settings-value">50,00x</strong>
+          </div>
+          <input id="settings-cpu-speed" class="settings-slider" type="range" min="0.1" max="50" step="0.1" value="50" />
+          <span class="settings-note">Quanto maior, mais rapido o jogo executa as acoes automaticas dos robos.</span>
+        </label>
+
+        <label class="settings-row" for="settings-log-lifetime">
+          <div class="settings-row-top">
+            <span class="settings-label">Tempo dos logs</span>
+            <strong id="settings-log-lifetime-value" class="settings-value">12 s</strong>
+          </div>
+          <input id="settings-log-lifetime" class="settings-slider" type="range" min="4" max="30" step="1" value="12" />
+          <span class="settings-note">Controla por quanto tempo os logs ficam visiveis, tanto na janela Log quanto no modo por jogador.</span>
+        </label>
+
+        <div class="settings-row">
+          <div class="settings-row-top">
+            <span class="settings-label">Segundo plano</span>
+            <strong id="settings-background-mode-value" class="settings-value">Ligado</strong>
+          </div>
+          <div class="settings-choice-group" role="radiogroup" aria-label="Execucao em segundo plano">
+            <label class="settings-choice" for="settings-background-mode-off">
+              <input id="settings-background-mode-off" type="radio" name="settings-background-mode" value="off" />
+              <span>Desligado</span>
+            </label>
+            <label class="settings-choice" for="settings-background-mode-on">
+              <input id="settings-background-mode-on" type="radio" name="settings-background-mode" value="on" checked />
+              <span>Ligado</span>
+            </label>
+          </div>
+          <span class="settings-note">Continua a simulacao quando a aba fica em segundo plano.</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="game-report-overlay" class="report-overlay is-hidden" aria-hidden="true">
+    <section class="report-modal" aria-labelledby="report-title">
+      <div class="report-head">
+        <div>
+          <p class="eyebrow">Relatorios</p>
+          <h2 id="report-title">Painel da simulacao</h2>
+        </div>
+        <button id="report-close-button" type="button" class="settings-close-button" aria-label="Fechar relatorio">Fechar</button>
+      </div>
+      <div id="report-tabs" class="report-tabs" role="tablist" aria-label="Relatorios disponiveis"></div>
+      <div id="report-body" class="report-body"></div>
+    </section>
+  </div>
+
+  <div id="property-inspector-overlay" class="property-inspector-overlay is-hidden" aria-hidden="true">
+    <div id="property-inspector-stage" class="property-inspector-stage"></div>
+  </div>
+
+  <div id="game-setup-overlay" class="game-setup-overlay">
+    <section class="game-setup-modal" aria-labelledby="game-setup-title">
+      <p class="eyebrow">Inicio da partida</p>
+      <h1 id="game-setup-title">Configure a mesa de robos</h1>
+
+      <form id="game-setup-form" class="game-setup-form">
+        <div class="game-setup-field">
+          <span>Numero de robos</span>
+          <div id="setup-rival-counts" class="game-setup-counts setup-ai-counts-five"></div>
+        </div>
+
+        <div id="setup-ai-advanced-field" class="game-setup-field">
+          <span>Modo de configuracao da IA</span>
+          <div id="setup-ai-advanced-toggle" class="settings-choice-group setup-ai-mode-toggle"></div>
+        </div>
+
+        <div id="setup-ai-difficulty-field" class="game-setup-field">
+          <span>Dificuldade geral da IA</span>
+          <div id="setup-ai-difficulties" class="game-setup-counts"></div>
+        </div>
+
+        <div id="setup-ai-profile-mode-field" class="game-setup-field">
+          <span>Perfis dos robos</span>
+          <div id="setup-ai-profile-modes" class="game-setup-counts"></div>
+        </div>
+
+        <div class="game-setup-actions">
+          <button id="setup-continue-button" type="button" class="game-setup-start">Continuar</button>
+          <button id="setup-load-button" type="button" class="game-setup-start">Carregar</button>
+          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+    <div id="setup-ai-editor-overlay" class="settings-overlay is-hidden" aria-hidden="true">
+    <section class="settings-modal setup-ai-editor-modal" aria-labelledby="setup-ai-editor-title">
+      <div class="settings-head">
+        <h2 id="setup-ai-editor-title" class="setup-ai-editor-heading">Configuracoes iniciais avancadas</h2>
+        <div class="setup-ai-editor-head-actions">
+          <button id="setup-ai-editor-disable-button" type="button" class="settings-close-button" aria-label="Voltar ao modo basico">Modo basico</button>
+          <button id="setup-ai-editor-close-button" type="button" class="settings-close-button" aria-label="Fechar editor de perfis">Fechar</button>
+        </div>
+      </div>
+      <div class="setup-ai-editor-layout">
+        <section class="setup-ai-editor-workspace">
+          <div>
+            <p class="eyebrow setup-ai-section-title">Robos</p>
+            <div id="setup-ai-robot-tabs" class="game-setup-counts setup-ai-toolbar-counts setup-ai-robot-tabs"></div>
+          </div>
+          <div id="setup-ai-parameter-grid" class="setup-ai-parameter-grid"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="preview-left-stack">
+    <section class="preview-panel preview-contract">
+      <div class="preview-contract-topline">
+        <div class="preview-contract-head-actions">
+          <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
+          <button id="preview-load-button" type="button" class="preview-ghost-button" aria-label="Carregar">&#128194;</button>
+          <button id="preview-save-button" type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
+          <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
+          <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
+          <button id="preview-log-button" type="button" class="preview-ghost-button" aria-label="Log">&#128221;</button>
+        </div>
+        <h1 id="preview-turn">Turno 01</h1>
+      </div>
+    </section>
+
+    <section class="preview-panel preview-company is-hidden" aria-hidden="true">
+      <div class="preview-section-head">
+        <div>
+          <p class="eyebrow">Companhia em foco</p>
+          <h2 id="preview-human-name">Mesa de Robos</h2>
+        </div>
+        <span id="preview-human-port" class="preview-soft-badge">--</span>
+      </div>
+
+      <p id="preview-cash" class="preview-money">$ 1.960</p>
+      <div class="preview-company-list">
+        <div class="preview-company-row">
+          <span>Porto atual</span>
+          <strong id="preview-company-location">--</strong>
+        </div>
+        <div class="preview-company-row">
+          <span>Permissao ativa</span>
+          <strong id="preview-company-active-permission">--</strong>
+        </div>
+        <div class="preview-company-row">
+          <span>Permissoes</span>
+          <div id="preview-company-permissions" class="preview-inline-list"></div>
+        </div>
+        <div class="preview-company-row">
+          <span>Titulos e pedagios</span>
+          <div id="preview-company-properties" class="preview-inline-list"></div>
+        </div>
+        <div class="preview-company-row">
+          <span>Situacao</span>
+          <strong id="preview-company-status">aguardando primeiro turno</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="permission-draw-overlay" class="permission-draw-overlay is-hidden">
+    <section class="permission-draw-modal" aria-labelledby="permission-draw-title">
+      <div class="permission-draw-head">
+        <div>
+          <p class="eyebrow">Primeiro turno</p>
+          <h2 id="permission-draw-title">Sorteio da permissao de frete</h2>
+        </div>
+      </div>
+      <p id="permission-draw-copy" class="body-copy compact permission-draw-copy">Embaralhe para sortear sua primeira permissao.</p>
+      <div id="permission-draw-stage" class="permission-draw-stage" aria-live="polite"></div>
+      <div class="permission-draw-footer">
+        <p id="permission-draw-result" class="permission-draw-result">Pressione Enter ou clique para embaralhar.</p>
+        <button id="start-permission-draw" type="button" class="permission-draw-button">Sortear</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="port-draw-overlay" class="port-draw-overlay is-hidden">
+    <section class="port-draw-modal" aria-labelledby="port-draw-title">
+      <div class="port-draw-head">
+        <div>
+          <p id="port-draw-eyebrow" class="eyebrow">Primeiro turno</p>
+          <h2 id="port-draw-title">Sorteio de porto</h2>
+        </div>
+        <span id="port-draw-active" class="port-draw-badge">Aguardando sorteio</span>
+      </div>
+      <p id="port-draw-copy" class="body-copy compact port-draw-copy">Embaralhe para sortear a carta.</p>
+      <div id="port-draw-stage" class="port-draw-stage" aria-live="polite"></div>
+      <div id="port-draw-extra" class="port-draw-extra is-hidden">
+        <p id="port-draw-extra-copy" class="port-draw-extra-copy"></p>
+        <div class="port-draw-extra-actions">
+          <button id="port-draw-extra-primary" type="button" class="port-draw-extra-button primary">Confirmar</button>
+          <button id="port-draw-extra-secondary" type="button" class="port-draw-extra-button secondary is-hidden">Cancelar</button>
+        </div>
+      </div>
+      <div class="port-draw-footer">
+        <p id="port-draw-result" class="port-draw-result">Pressione Enter ou clique para embaralhar.</p>
+        <button id="port-draw-button" type="button" class="port-draw-button">Sortear</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="movement-dice-overlay" class="movement-dice-overlay is-hidden">
+    <section class="movement-dice-modal" aria-labelledby="movement-dice-title">
+      <div class="movement-dice-head">
+        <div>
+          <p class="eyebrow">Movimentacao</p>
+          <h2 id="movement-dice-title">Rolar os dados</h2>
+        </div>
+        <span id="movement-dice-active" class="movement-dice-badge">Aguardando rolagem</span>
+      </div>
+      <p class="body-copy compact movement-dice-copy">Pressione Enter ou clique para rolar.</p>
+      <div id="movement-dice-stage" class="movement-dice-stage" aria-live="polite"></div>
+      <div class="movement-dice-footer">
+        <p id="movement-dice-result" class="movement-dice-result">Pressione Enter ou clique para rolar.</p>
+        <button id="movement-dice-button" type="button" class="movement-dice-button">Rolar Dados</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="chance-draw-overlay" class="chance-draw-overlay is-hidden">
+    <section class="chance-draw-modal" aria-labelledby="chance-draw-title">
+      <div class="chance-draw-head">
+        <div>
+          <p class="eyebrow">Sorte / Reves</p>
+          <h2 id="chance-draw-title">Sortear uma carta</h2>
+        </div>
+        <span id="chance-draw-active" class="chance-draw-badge">Aguardando sorteio</span>
+      </div>
+      <p id="chance-draw-copy" class="body-copy compact chance-draw-copy">Embaralhe para revelar uma carta.</p>
+      <div id="chance-draw-stage" class="chance-draw-stage" aria-live="polite"></div>
+      <div class="chance-draw-footer">
+        <p id="chance-draw-result" class="chance-draw-result">Pressione Enter ou clique para sortear.</p>
+        <button id="chance-draw-button" type="button" class="chance-draw-button">Sortear</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="decision-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal" aria-labelledby="decision-title">
+      <p class="eyebrow">Resolucao</p>
+      <h2 id="decision-title">Confirmar acao</h2>
+      <p id="decision-copy" class="body-copy compact">Descricao da acao.</p>
+      <div id="decision-card-stage" class="decision-card-stage is-hidden"></div>
+      <div class="decision-actions">
+        <button id="decision-primary" type="button" class="decision-button primary">Continuar</button>
+        <button id="decision-secondary" type="button" class="decision-button secondary is-hidden">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="save-name-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal save-name-modal" aria-labelledby="save-name-title">
+      <p class="eyebrow">Salvar partida</p>
+      <h2 id="save-name-title">Nome do arquivo</h2>
+      <p id="save-name-copy" class="body-copy compact">Edite o nome do save ou pressione Enter para usar o nome sugerido.</p>
+      <label class="save-name-field" for="save-name-input">
+        <span>Arquivo</span>
+        <input id="save-name-input" class="save-name-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="decision-actions">
+        <button id="save-name-primary" type="button" class="decision-button primary">Salvar</button>
+        <button id="save-name-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="load-browser-overlay" class="decision-overlay is-hidden" aria-hidden="true">
+    <section class="decision-modal load-browser-modal" aria-labelledby="load-browser-title">
+      <p class="eyebrow">Carregar partida</p>
+      <h2 id="load-browser-title">Saves compativeis</h2>
+      <p id="load-browser-copy" class="body-copy compact">Navegue pelos saves compativeis desta tela e valide o arquivo antes do restore completo.</p>
+      <div class="load-browser-toolbar">
+        <span id="load-browser-status" class="load-browser-status">Buscando saves...</span>
+        <button id="load-browser-refresh" type="button" class="decision-button secondary load-browser-refresh">Atualizar</button>
+      </div>
+      <div class="load-browser-shell">
+        <div id="load-browser-list" class="load-browser-list"></div>
+        <div id="load-browser-detail" class="load-browser-detail"></div>
+      </div>
+      <div class="decision-actions">
+        <button id="load-browser-primary" type="button" class="decision-button primary">Carregar</button>
+        <button id="load-browser-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="preview-panel preview-rivals">
+    <div id="preview-rival-list" class="preview-rival-grid"></div>
+  </section>
+</main>
+
+<script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
+<script src="{{ request.url_for('static', path='js/save-browser.js') }}?v=save-browser-v1"></script>
+<script id="rdm-ai-v2-config" type="application/json">{{ ai_v2_config | tojson }}</script>
+<script id="rdm-ai-v2-rules" type="application/json">{{ ai_v2_rules | tojson }}</script>
+<script>
+  window.__RDM_AI_V2_CONFIG__ = JSON.parse(document.getElementById('rdm-ai-v2-config').textContent);
+  window.__RDM_AI_V2_RULES__ = JSON.parse(document.getElementById('rdm-ai-v2-rules').textContent);
+</script>
+<script src="{{ request.url_for('static', path='js/ai-profiles-v2.js') }}?v=ai-profiles-v2-v1"></script>
+<script src="{{ request.url_for('static', path='js/ai-policy-engine-v2.js') }}?v=ai-policy-engine-v2-v1"></script>
+<script src="{{ request.url_for('static', path='js/robots-ai-ui-v2.js') }}?v=robots-ai-ui-v2-v1"></script>
+{% endblock %}
+
+
+

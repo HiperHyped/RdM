@@ -1,4 +1,5 @@
 ﻿const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
+const DEFAULT_PERMISSION_STYLE = { accent: '#17C51A', text: '#FFFFFF' };
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -80,6 +81,21 @@ const state = {
   decision: {
     resolver: null,
   },
+  saveName: {
+    resolver: null,
+    suggestedName: '',
+    wasPaused: false,
+  },
+  loadBrowser: {
+    resolver: null,
+    runtime: 'game-ui',
+    items: [],
+    selectedFileName: '',
+    selectedSave: null,
+    loading: false,
+    error: '',
+    wasPaused: false,
+  },
   permissionChoice: {
     resolver: null,
     playerId: '',
@@ -136,6 +152,8 @@ const state = {
   },
 };
 
+let saveBrowser = null;
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -166,6 +184,8 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
+    'save-name-overlay',
+    'load-browser-overlay',
     'permission-choice-overlay',
     'property-inspector-overlay',
     'game-settings-overlay',
@@ -494,6 +514,28 @@ function setText(id, value) {
   if (node) node.textContent = value;
 }
 
+function findPermissionCatalogCard(permission) {
+  const normalizedKey = String(permission?.kind || permission?.id || '').trim().toLowerCase();
+  if (!normalizedKey) return null;
+  return (state.freightPermissionCards || []).find((card) => String(card?.kind || card?.id || '').trim().toLowerCase() === normalizedKey) || null;
+}
+
+function normalizePermissionState(permission) {
+  if (!permission) return null;
+  const source = findPermissionCatalogCard(permission);
+  return {
+    ...(source || {}),
+    ...permission,
+    id: permission.id || source?.id || null,
+    kind: permission.kind || source?.kind || permission.id || null,
+    title: permission.title || source?.title || '--',
+    accent: permission.accent || source?.accent || DEFAULT_PERMISSION_STYLE.accent,
+    text: permission.text || source?.text || DEFAULT_PERMISSION_STYLE.text,
+    purchase_price: Number(permission.purchase_price || source?.purchase_price || 0),
+    mortgaged: Boolean(permission.mortgaged),
+  };
+}
+
 function setHtml(id, value) {
   const node = byId(id);
   if (node) node.innerHTML = value;
@@ -694,10 +736,14 @@ function couponLabelFromCode(code) {
     shortcut_ignore_toll: 'Atalho',
     free_toll: 'Pedagio Livre',
     free_fuel: 'Gasolina Livre',
+    free_fuel_contract: 'Viagem de Graca',
+    extended_contract_deadline: 'Prazo Estendido',
     double_freight: 'Lucro Extra',
     free_port_stay: 'Porto Livre',
     skip_owner_share: 'Quebra de Contrato',
+    anti_monopoly_owner_share: 'Contra o Monopolio',
     reroute_same_value: 'Mudanca de Rota',
+    cancel_contract: 'Contrato Cancelado',
     double_dice_once: 'Dados x2',
   };
   return labels[code] || code || 'Cupom';
@@ -863,6 +909,15 @@ function fuelStopCost(node) {
 async function resolveFuelStopForPlayer(player, node) {
   if (!player || node?.kind !== 'fuel') {
     return { paid: 0, usedCoupon: false, note: '', statusLabel: player?.status_label || '--' };
+  }
+
+  if (player?.active_contract?.free_fuel_for_contract) {
+    return {
+      paid: 0,
+      usedCoupon: true,
+      note: `${playerActionName(player)} seguiu com Viagem de Graca e nao pagou abastecimento em ${player.location_label}.`,
+      statusLabel: player.status_label || 'viagem de graca',
+    };
   }
 
   const amount = fuelStopCost(node);
@@ -1053,13 +1108,27 @@ function syncActivePermissionAfterEconomyChange(player) {
   if (!player) return;
   const available = availablePermissionRecords(player);
   const active = activePermissionRecord(player);
-  if (active) return;
+  if (active) {
+    player.active_permission_id = active.id;
+    player.active_permission_label = active.title;
+    player.ship_type = active.kind;
+    player.ship_type_label = active.title;
+    player.ship_visible = Boolean(player.ship_type && player.board_node_id);
+    if (player.active_contract && !player.active_contract.completed) {
+      player.active_contract.cargo_label = active.title;
+    }
+    return;
+  }
   if (available.length) {
     const next = available[0];
     player.active_permission_id = next.id;
     player.active_permission_label = next.title;
     player.ship_type = next.kind;
     player.ship_type_label = next.title;
+    player.ship_visible = Boolean(player.ship_type && player.board_node_id);
+    if (player.active_contract && !player.active_contract.completed) {
+      player.active_contract.cargo_label = next.title;
+    }
     return;
   }
   player.active_permission_id = null;
@@ -1088,6 +1157,38 @@ function setActivePermissionForPlayer(player, permissionId, { statusLabel = null
   renderHud();
   renderShipOverlay();
   return { permission, changed };
+}
+
+function hydrateLoadedPlayerState(player) {
+  if (!player) return;
+  syncActivePermissionAfterEconomyChange(player);
+
+  if (player.board_node_id && state.nodesById[player.board_node_id]) {
+    setPlayerNode(player, player.board_node_id);
+  } else {
+    const currentLocationNodeId = getPropertyNode(player.location_code)?.id || '';
+    if (currentLocationNodeId) {
+      setPlayerNode(player, currentLocationNodeId);
+    } else {
+      player.ship_visible = Boolean(player.ship_type && player.board_node_id);
+    }
+  }
+
+  if (!player.active_contract) return;
+
+  const contract = ensurePlayerContractDraft(player);
+  contract.target_rounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  if (!contract.cargo_label || contract.cargo_label === '--' || contract.cargo_label === 'Sem carga') {
+    contract.cargo_label = player.active_permission_label || 'Sem carga';
+  }
+  if (!contract.deadline_progress || contract.deadline_progress === '--') {
+    const roundsElapsed = Math.max(0, Number(contract.rounds_elapsed || 0));
+    contract.deadline_progress = `${Math.min(roundsElapsed, contract.target_rounds)}/${contract.target_rounds}`;
+  }
+  if (!contract.deadline_label || contract.deadline_label === '--') {
+    contract.deadline_label = contract.deadline_progress;
+  }
+  syncContractRouteProgress(player, player.board_node_id ? [player.board_node_id] : []);
 }
 
 function contractPermissionChoicesForOrigin(player, originCode = null) {
@@ -1497,19 +1598,20 @@ function cargoIconMarkup(kind, className) {
 }
 
 function permissionMiniMarkup(permission) {
-  const mortgaged = Boolean(permission?.mortgaged);
+  const normalized = normalizePermissionState(permission) || permission || {};
+  const mortgaged = Boolean(normalized?.mortgaged);
   return `
-    <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
+    <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${normalized.accent}; --permission-text:${normalized.text};">
       
-      <header class="preview-permission-mini-head">${permission.title}</header>
+      <header class="preview-permission-mini-head">${normalized.title}</header>
       <div class="preview-permission-mini-row top">
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
       </div>
       <div class="preview-permission-mini-body">Permissao</div>
       <div class="preview-permission-mini-row bottom">
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
       </div>
     </article>
   `;
@@ -1739,13 +1841,15 @@ function contractSummaryMarkup(player, contract) {
       </div>
     `;
   }
-  if (!contract || !player?.active_permission_label || player.active_permission_label === '--') {
+  if (!contract) {
     return `
       <div class="preview-rival-contract-line is-empty">
         <span class="preview-rival-contract-muted">primeiro turno pendente</span>
       </div>
     `;
   }
+  const cargoLabel = contract.cargo_label || player?.active_permission_label || 'Sem carga';
+  const cargoIcon = player?.active_permission_id ? cargoIconMarkup(player.active_permission_id, 'preview-rival-contract-cargo-icon') : '';
   const tone = contractDeadlineTone(contract);
   const lastRollIsDouble = Array.isArray(player?.last_roll)
     && player.last_roll.length === 2
@@ -1760,7 +1864,7 @@ function contractSummaryMarkup(player, contract) {
     : '';
   return `
     <div class="preview-rival-contract-line">
-      <span class="preview-rival-contract-cargo">${cargoIconMarkup(player.active_permission_id, 'preview-rival-contract-cargo-icon')}${player.active_permission_label}</span>
+      <span class="preview-rival-contract-cargo">${cargoIcon}${cargoLabel}</span>
       <span class="preview-rival-contract-turns is-${tone}">(${contract.deadline_progress || '0/4'}) turnos</span>
       <span class="preview-rival-contract-freight">${contract.freight_label || 'Sem frete'}</span>
     </div>
@@ -1788,12 +1892,19 @@ function miniHandMinVisible(strip) {
 function layoutMiniHand(strip) {
   if (!strip || strip.classList.contains('is-empty')) return;
   const items = [...strip.children].filter((node) => node.nodeType === 1);
+  items.forEach((item, index) => {
+    item.style.zIndex = item.classList.contains('is-selected') ? String(items.length + 2) : String(index + 1);
+  });
   if (items.length <= 1) {
     strip.style.setProperty('--stack-overlap', '0px');
     return;
   }
 
-  const availableWidth = Math.floor(strip.clientWidth || strip.getBoundingClientRect().width || 0);
+  const computed = window.getComputedStyle(strip);
+  const paddingLeft = parseFloat(computed.paddingLeft || '0') || 0;
+  const paddingRight = parseFloat(computed.paddingRight || '0') || 0;
+  const rawWidth = strip.clientWidth || strip.getBoundingClientRect().width || 0;
+  const availableWidth = Math.floor(Math.max(0, rawWidth - paddingLeft - paddingRight));
   const itemWidth = Math.ceil(items[0].getBoundingClientRect().width || items[0].offsetWidth || 0);
   if (!availableWidth || !itemWidth) return;
 
@@ -2074,6 +2185,7 @@ function ensurePlayerContractDraft(player) {
       target_rounds: state.rules.target_rounds || 4,
       toll_passed: false,
       toll_requirement_waived: false,
+      free_fuel_for_contract: false,
       route_stage: 'to_toll',
       completed: false,
       note: 'Contrato em montagem.',
@@ -2085,6 +2197,146 @@ function ensurePlayerContractDraft(player) {
       : '0/4';
   }
   return player.active_contract;
+}
+
+function shouldAutoUseCancelContractCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return false;
+  const targetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  const remainingRounds = Math.max(0, targetRounds - roundsElapsed);
+  const routeContext = buildContractRouteContext(player);
+  const remainingSteps = Math.max(0, (routeContext?.forwardPath?.length || 1) - 1);
+  const baseFreightValue = Number(contract.base_freight_value || contract.freight_value || 0);
+  if (remainingRounds === 0 && remainingSteps > 0) return true;
+  if (!contract.toll_passed && remainingRounds <= 1 && remainingSteps > 6) return true;
+  return remainingSteps > 9 && baseFreightValue <= 120;
+}
+
+function shouldAutoUseFreeFuelContractCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed || contract.free_fuel_for_contract) return false;
+  const routeContext = buildContractRouteContext(player);
+  return (routeContext?.forwardPath || []).some((nodeId) => state.nodesById[nodeId]?.kind === 'fuel');
+}
+
+function shouldAutoUseExtendedDeadlineCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return false;
+  const currentTargetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  if (currentTargetRounds >= 6) return false;
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  const remainingRounds = Math.max(0, currentTargetRounds - roundsElapsed);
+  const routeContext = buildContractRouteContext(player);
+  const remainingSteps = Math.max(0, (routeContext?.forwardPath?.length || 1) - 1);
+  if (roundsElapsed >= currentTargetRounds) return true;
+  if (remainingRounds <= 1 && remainingSteps > 2) return true;
+  return remainingSteps > Math.max(5, remainingRounds * 3);
+}
+
+function originMonopolyOwnerForContract(player, contract) {
+  if (!player || !contract) return null;
+  const originOwner = ownerPlayerOf(contract.origin || '');
+  const originCard = getPropertyCard(contract.origin || '');
+  if (!originOwner || originOwner.id === player.id || originOwner.bankrupt || !originCard || isPropertyMortgaged(contract.origin || '')) {
+    return null;
+  }
+  return playerHasRegionMonopoly(originOwner, originCard.continent) ? originOwner : null;
+}
+
+async function maybeUseCancelContractCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'cancel_contract');
+  if (!player || !contract || contract.completed || !coupon) return null;
+
+  if (player.is_human) {
+    const choice = await openDecisionModal({
+      title: 'Contrato Cancelado',
+      copy: `Cancelar o contrato atual ${contract.origin || '--'} -> ${contract.mandatory_toll || '--'} -> ${contract.destination || '--'} e abrir um novo agora?`,
+      primaryLabel: 'Cancelar contrato',
+      secondaryLabel: 'Manter contrato',
+      cardCode: contract.origin || '',
+    });
+    if (choice !== 'primary') return null;
+  } else if (!shouldAutoUseCancelContractCoupon(player)) {
+    return null;
+  }
+
+  const previousRoute = `${contract.origin || '--'} -> ${contract.mandatory_toll || '--'} -> ${contract.destination || '--'}`;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Cancelou o contrato ${previousRoute} para abrir um novo.`,
+    statusLabel: 'contrato cancelado',
+    action: 'Contrato cancelado',
+  });
+  player.active_contract = null;
+  player.needs_new_contract = false;
+  const currentCard = getPropertyCard(player.location_code || '');
+  await runContractOpeningForPlayer(player, {
+    phaseLabel: player.is_human ? 'Novo contrato' : `${player.name}: novo contrato`,
+    needsPermission: !(player.permissions || []).length,
+    originMode: currentCard?.kind === 'port' ? 'current' : 'draw',
+  });
+  return { note: `${playerActionName(player)} cancelou o contrato atual e abriu um novo.` };
+}
+
+async function maybeUseFreeFuelContractCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'free_fuel_contract');
+  if (!player || !contract || contract.completed || contract.free_fuel_for_contract || !coupon) return null;
+
+  if (player.is_human) {
+    const choice = await openDecisionModal({
+      title: 'Viagem de Graca',
+      copy: `Ativar Viagem de Graca para nao pagar abastecimentos durante todo o contrato ate ${contract.destination || '--'}?`,
+      primaryLabel: 'Ativar Viagem de Graca',
+      secondaryLabel: 'Guardar cupom',
+      cardCode: contract.destination || contract.origin || '',
+    });
+    if (choice !== 'primary') return null;
+  } else if (!shouldAutoUseFreeFuelContractCoupon(player)) {
+    return null;
+  }
+
+  contract.free_fuel_for_contract = true;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Ativou abastecimento gratis ate o fim do contrato ${contract.destination || '--'}.`,
+    statusLabel: 'viagem de graca',
+    action: 'Viagem de graca ativada',
+  });
+  return { note: `${playerActionName(player)} ativou Viagem de Graca para o contrato atual.` };
+}
+
+async function maybeUseExtendedDeadlineCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'extended_contract_deadline');
+  if (!player || !contract || contract.completed || !coupon) return null;
+
+  const currentTargetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  if (currentTargetRounds >= 6) return null;
+
+  if (player.is_human) {
+    const choice = await openDecisionModal({
+      title: 'Prazo Estendido',
+      copy: `Ativar Prazo Estendido para ampliar o prazo deste contrato ate ${contract.destination || '--'} de ${currentTargetRounds} para 6 rodadas?`,
+      primaryLabel: 'Ativar Prazo Estendido',
+      secondaryLabel: 'Guardar cupom',
+      cardCode: contract.destination || contract.origin || '',
+    });
+    if (choice !== 'primary') return null;
+  } else if (!shouldAutoUseExtendedDeadlineCoupon(player)) {
+    return null;
+  }
+
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  contract.target_rounds = 6;
+  contract.deadline_label = `${roundsElapsed} / 6`;
+  contract.deadline_progress = `${roundsElapsed}/6`;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Ampliou o prazo do contrato ${contract.destination || '--'} para 6 rodadas sem mudar bonus e onus por rodada.`,
+    statusLabel: 'prazo estendido',
+    action: 'Prazo estendido ativado',
+  });
+  return { note: `${playerActionName(player)} ampliou para 6 rodadas o prazo do contrato atual.` };
 }
 
 function ensureHumanContractDraft() {
@@ -2865,6 +3117,18 @@ async function maybeUseRerouteCoupon(player) {
 async function maybeUseTurnStartCoupons(player) {
   if (!player?.active_contract || player.active_contract.completed) return false;
   let usedAny = false;
+  if (await maybeUseCancelContractCoupon(player)) {
+    usedAny = true;
+  }
+  if (!player?.active_contract || player.active_contract.completed) {
+    return usedAny;
+  }
+  if (await maybeUseExtendedDeadlineCoupon(player)) {
+    usedAny = true;
+  }
+  if (await maybeUseFreeFuelContractCoupon(player)) {
+    usedAny = true;
+  }
   if (await maybeUseShortcutIgnoreTollCoupon(player)) {
     usedAny = true;
   }
@@ -3399,6 +3663,11 @@ function triggerEnterOnOverlay() {
     const button = getChanceDrawButton();
     if (button && !button.disabled && !state.chanceDraw.revealOnly) { button.click(); return true; }
   }
+  if (saveBrowser?.triggerEnterOnOverlay?.()) return true;
+  if (!getSaveNameOverlay()?.classList.contains('is-hidden')) {
+    const button = getSaveNamePrimary();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
   if (!getPermissionChoiceOverlay()?.classList.contains('is-hidden')) {
     const button = getPermissionChoiceStage()?.querySelector('.permission-choice-card.is-current, .permission-choice-card');
     if (button && !button.disabled) { button.click(); return true; }
@@ -3638,6 +3907,23 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
   });
   if (usedDoubleFreight) {
     modifiers.freightMultiplier = 2;
+  }
+
+  const monopolyOwner = originMonopolyOwnerForContract(player, contract);
+  if (monopolyOwner) {
+    const usedAntiMonopolyOwnerShare = await maybeSpendCoupon(player, 'anti_monopoly_owner_share', {
+      title: 'Contra o Monopolio',
+      copy: `Usar Contra o Monopolio para impedir a comissao de ${monopolyOwner.name} sobre este contrato monopolista?`,
+      primaryLabel: 'Usar Contra o Monopolio',
+      secondaryLabel: 'Pagar comissao',
+      cardCode: contract.origin,
+      detail: `Bloqueou a comissao do dono do monopolio ${monopolyOwner.name} neste contrato.`,
+      statusLabel: 'monopolio bloqueado',
+    });
+    if (usedAntiMonopolyOwnerShare) {
+      modifiers.waiveOriginShare = true;
+      return modifiers;
+    }
   }
 
   const originOwner = ownerPlayerOf(contract.origin || '');
@@ -4093,14 +4379,24 @@ function closeDecision(result = 'primary') {
   if (resolver) resolver(result);
 }
 
-function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, cardCode = '' } = {}) {
+function openDecisionModal({ eyebrowLabel = 'Resolucao', title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, hideTitle = false, copyIsHtml = false, cardCode = '' } = {}) {
+  const modal = getDecisionOverlay()?.querySelector('.decision-modal') || null;
+  const eyebrow = getDecisionOverlay()?.querySelector('.eyebrow') || null;
   const titleNode = getDecisionTitle();
   const copyNode = getDecisionCopy();
   const cardStage = getDecisionCardStage();
   const primary = getDecisionPrimary();
   const secondary = getDecisionSecondary();
-  if (titleNode) titleNode.textContent = title || 'Confirmar acao';
-  if (copyNode) copyNode.textContent = copy || '';
+  if (modal) modal.classList.toggle('is-inline-confirm', Boolean(hideSecondary && !cardCode));
+  if (eyebrow) eyebrow.textContent = eyebrowLabel || 'Resolucao';
+  if (titleNode) {
+    titleNode.textContent = hideTitle ? '' : (title || 'Confirmar acao');
+    titleNode.classList.toggle('is-hidden', hideTitle);
+  }
+  if (copyNode) {
+    if (copyIsHtml) copyNode.innerHTML = copy || '';
+    else copyNode.textContent = copy || '';
+  }
   if (cardStage) {
     const card = cardCode ? getPropertyCard(cardCode) : null;
     cardStage.innerHTML = card ? propertyInspectorMarkup(card) : '';
@@ -4118,6 +4414,82 @@ function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryL
   setDecisionVisible(true);
   return new Promise((resolve) => {
     state.decision.resolver = resolve;
+  });
+}
+
+function buildSuggestedSaveName(date = new Date()) {
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `game_${year}_${month}_${day}_-_${hour}_${minute}_${second}`;
+}
+
+function getSaveNameOverlay() { return byId('save-name-overlay'); }
+function getSaveNameTitle() { return byId('save-name-title'); }
+function getSaveNameCopy() { return byId('save-name-copy'); }
+function getSaveNameInput() { return byId('save-name-input'); }
+function getSaveNamePrimary() { return byId('save-name-primary'); }
+function getSaveNameSecondary() { return byId('save-name-secondary'); }
+
+function setSaveNameVisible(visible) {
+  const overlay = getSaveNameOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+}
+
+function closeSaveName(result = 'primary') {
+  const input = getSaveNameInput();
+  const resolver = state.saveName.resolver;
+  const fallback = state.saveName.suggestedName || buildSuggestedSaveName();
+  const shouldResume = !state.saveName.wasPaused;
+  setSaveNameVisible(false);
+  state.saveName.resolver = null;
+  state.saveName.suggestedName = '';
+  state.saveName.wasPaused = false;
+  if (input) input.onkeydown = null;
+  if (shouldResume) setPaused(false);
+  if (resolver) resolver(result === 'primary' ? (String(input?.value || '').trim() || fallback) : null);
+}
+
+function openSaveNameModal({ title = 'Nome do arquivo', copy = 'Edite o nome do save ou pressione Enter para usar o nome sugerido.', suggestedName = '' } = {}) {
+  const resolvedSuggestedName = String(suggestedName || '').trim() || buildSuggestedSaveName();
+  const titleNode = getSaveNameTitle();
+  const copyNode = getSaveNameCopy();
+  const input = getSaveNameInput();
+  const primary = getSaveNamePrimary();
+  const secondary = getSaveNameSecondary();
+  if (titleNode) titleNode.textContent = title;
+  if (copyNode) copyNode.textContent = copy;
+  if (input) {
+    input.value = resolvedSuggestedName;
+    input.onkeydown = (event) => {
+      if (event.key === 'Enter' && !event.repeat) {
+        event.preventDefault();
+        closeSaveName('primary');
+        return;
+      }
+      if (event.key === 'Escape' && !event.repeat) {
+        event.preventDefault();
+        closeSaveName('secondary');
+      }
+    };
+  }
+  if (primary) primary.onclick = () => closeSaveName('primary');
+  if (secondary) secondary.onclick = () => closeSaveName('secondary');
+  state.saveName.suggestedName = resolvedSuggestedName;
+  state.saveName.wasPaused = state.view.paused;
+  setPaused(true);
+  setSaveNameVisible(true);
+  window.requestAnimationFrame(() => {
+    if (!input) return;
+    input.focus();
+    input.select();
+  });
+  return new Promise((resolve) => {
+    state.saveName.resolver = resolve;
   });
 }
 
@@ -5741,6 +6113,200 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+function buildCurrentSetupDefaults() {
+  const company = (state.players || []).find((player) => player?.is_human) || null;
+  const rivalCount = (state.players || []).filter((player) => !player?.is_human).length || state.setup.rivalCount || 5;
+  return {
+    company_name: String(state.setup.companyName || company?.name || 'Minha Companhia'),
+    human_color_id: String(state.setup.selectedColorId || company?.color_id || state.playerColors[0]?.id || ''),
+    rival_count: Number(rivalCount),
+  };
+}
+
+function buildActiveActionFeedSnapshot() {
+  return pruneActionFeed().map((entry) => ({
+    id: entry.id,
+    playerId: entry.playerId,
+    playerName: entry.playerName,
+    action: entry.action,
+    detail: entry.detail,
+    turnLabel: entry.turnLabel,
+    createdAt: entry.createdAt,
+    expiresAt: entry.expiresAt,
+    color: entry.color,
+    glow: entry.glow,
+  }));
+}
+
+function buildPermissionSaveSnapshot(permission) {
+  const normalized = normalizePermissionState(permission);
+  if (!normalized) return null;
+  return {
+    id: normalized.id,
+    kind: normalized.kind,
+    title: normalized.title,
+    accent: normalized.accent,
+    text: normalized.text,
+    purchase_price: Number(normalized.purchase_price || 0),
+    mortgaged: Boolean(normalized.mortgaged),
+  };
+}
+
+function buildPlayerSaveSnapshot(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    is_human: Boolean(player.is_human),
+    color_id: player.color_id,
+    color_hex: player.color_hex,
+    cash: Number(player.cash || 0),
+    cash_display: player.cash_display,
+    location_code: player.location_code || null,
+    location_label: player.location_label || '--',
+    board_node_id: player.board_node_id || null,
+    ship_type: player.ship_type || null,
+    ship_type_label: player.ship_type_label || '--',
+    active_permission_id: player.active_permission_id || null,
+    active_permission_label: player.active_permission_label || '--',
+    permissions: (player.permissions || []).map(buildPermissionSaveSnapshot).filter(Boolean),
+    property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
+    coupons: Array.isArray(player.coupons) ? player.coupons : [],
+    monopoly_regions: monopolyRegionsForPlayer(player),
+    active_contract: player.active_contract || null,
+    status_label: player.status_label || '--',
+    skip_turns: Number(player.skip_turns || 0),
+    needs_new_contract: Boolean(player.needs_new_contract),
+    bankrupt: Boolean(player.bankrupt),
+    last_roll: player.last_roll || null,
+  };
+}
+
+function buildMortgagedPropertyCodesSnapshot() {
+  return [...(state.portCards || []), ...(state.tollCards || [])]
+    .filter((card) => card?.mortgaged)
+    .map((card) => String(card.code || '').toUpperCase());
+}
+
+function buildSaveSnapshot() {
+  return {
+    schema: 'rdm-ui-save-v1',
+    session: state.session || null,
+    setup_defaults: buildCurrentSetupDefaults(),
+    players: (state.players || []).map(buildPlayerSaveSnapshot),
+    chance_deck: state.chanceDeck || { draw_pile: [], discard_pile: [], held_card_ids: [] },
+    mortgaged_property_codes: buildMortgagedPropertyCodesSnapshot(),
+    active_action_feed: buildActiveActionFeedSnapshot(),
+  };
+}
+
+function buildLoadBootstrapPayload(snapshot) {
+  const mortgagedCodes = new Set((snapshot?.mortgaged_property_codes || []).map((code) => String(code || '').toUpperCase()));
+  return {
+    player_colors: state.playerColors || [],
+    rules: state.rules || {},
+    port_cards: (state.portCards || []).map((card) => ({
+      ...card,
+      mortgaged: mortgagedCodes.has(String(card?.code || '').toUpperCase()),
+    })),
+    toll_cards: (state.tollCards || []).map((card) => ({
+      ...card,
+      mortgaged: mortgagedCodes.has(String(card?.code || '').toUpperCase()),
+    })),
+    chance_cards: state.chanceCards || [],
+    chance_deck: snapshot?.chance_deck || { draw_pile: [], discard_pile: [], held_card_ids: [] },
+    freight_permission_cards: state.freightPermissionCards || [],
+    players: snapshot?.players || [],
+    assets: state.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} },
+    distances: state.distances || {},
+    session: snapshot?.session || null,
+    active_contract: (snapshot?.players || []).find((player) => player?.is_human)?.active_contract || null,
+    setup_defaults: snapshot?.setup_defaults || buildCurrentSetupDefaults(),
+  };
+}
+
+function restoreActionFeedFromSnapshot(entries = []) {
+  const now = Date.now();
+  const lifetimeMs = currentLogLifetimeMs();
+  state.actionFeed = (entries || []).slice(0, 18).map((entry, index) => ({
+    ...entry,
+    id: entry?.id || `restored-${now}-${index}`,
+    createdAt: now - (index * 40),
+    expiresAt: now + lifetimeMs - (index * 40),
+  })).filter((entry) => (entry.expiresAt || 0) > now);
+}
+
+async function loadGameFromSavePayload(payload) {
+  const snapshot = payload?.record?.snapshot;
+  if (!snapshot || snapshot.schema !== 'rdm-ui-save-v1') {
+    throw new Error('Invalid save snapshot.');
+  }
+
+  state.setup.started = false;
+  state.setup.submitting = false;
+
+  const bootstrapPayload = buildLoadBootstrapPayload(snapshot);
+  applyBootstrapPayload(bootstrapPayload);
+  populateSetupFromPayload(bootstrapPayload);
+  restoreActionFeedFromSnapshot(snapshot.active_action_feed || []);
+  state.setup.started = true;
+  updateSetupStartButton();
+  setSetupOverlayVisible(false);
+  await renderMap();
+  renderHud();
+  renderActionFeed();
+  renderPropertyInspector();
+  setPaused(true);
+}
+
+async function saveCurrentGame() {
+  const button = byId('preview-save-button');
+  if (button?.disabled) return;
+
+  const saveLabel = await openSaveNameModal({ suggestedName: buildSuggestedSaveName() });
+  if (!saveLabel) return;
+
+  const previousLabel = button?.getAttribute('aria-label') || 'Salvar';
+  if (button) {
+    button.disabled = true;
+    button.setAttribute('aria-label', 'Salvando');
+  }
+
+  try {
+    const snapshot = buildSaveSnapshot();
+    const response = await fetchJson('/api/saves/game', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        variant: 'game-ui',
+        label: saveLabel,
+        snapshot,
+      }),
+    });
+    if (button && response?.save?.file_name) {
+      button.title = `Ultimo save: ${response.save.file_name}`;
+    }
+    await openDecisionModal({
+      title: 'Partida salva',
+      eyebrowLabel: 'Salvamento de partida',
+      copy: `Arquivo ${response?.save?.label || response?.save?.save_id || 'Save'} salvo.`,
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+  } catch (_error) {
+    await openDecisionModal({
+      title: 'Falha ao salvar',
+      copy: 'Nao foi possivel salvar a partida.',
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.setAttribute('aria-label', previousLabel);
+    }
+  }
+}
+
 function applyMapPayload(payload) {
   state.nodes = payload.nodes || [];
   state.projectedNodes = payload.projected_nodes || payload.nodes || [];
@@ -5775,11 +6341,11 @@ function applyBootstrapPayload(payload) {
     bankrupt: false,
     ...player,
     property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
-    permissions: (player.permissions || []).map((permission) => ({
+    permissions: (player.permissions || []).map((permission) => normalizePermissionState({
       ...permission,
       purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
-      mortgaged: false,
-    })),
+      mortgaged: Boolean(permission.mortgaged),
+    })).filter(Boolean),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
     skip_turns: player.skip_turns || 0,
@@ -5796,7 +6362,7 @@ function applyBootstrapPayload(payload) {
         }
       : player.active_contract,
   }));
-  state.players.forEach((player) => syncActivePermissionAfterEconomyChange(player));
+  state.players.forEach((player) => hydrateLoadedPlayerState(player));
   state.assets = payload.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} };
   state.distances = payload.distances || {};
   state.session = payload.session || null;
@@ -5839,10 +6405,9 @@ function renderSetupColorGrid() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `game-setup-color${state.setup.selectedColorId === color.id ? ' is-active' : ''}`;
-    button.innerHTML = `
-      <span class="game-setup-swatch" style="background:${color.hex}"></span>
-      <span class="game-setup-color-label">${color.label}</span>
-    `;
+    button.setAttribute('aria-label', color.label || color.id || 'Cor');
+    button.title = color.label || color.id || 'Cor';
+    button.innerHTML = `<span class="game-setup-swatch" style="background:${color.hex}"></span>`;
     button.addEventListener('click', () => {
       state.setup.selectedColorId = color.id;
       renderSetupColorGrid();
@@ -6272,11 +6837,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = byId('game-setup-form');
   const layer = getHitLayer();
 
+  saveBrowser = window.createSaveBrowserController?.({
+    state,
+    byId,
+    fetchJson,
+    setPaused,
+    openDecisionModal,
+    runtime: 'game-ui',
+    onLoad: loadGameFromSavePayload,
+    onAfterSuccess: async () => {
+      if (state.setup.started && !state.flow.turnCycleRunning) {
+        runSubsequentTurnCycle().catch(() => {});
+      }
+    },
+    confirmEyebrow: 'Carregamento de Arquivo',
+    confirmTitle: 'Carregamento de Arquivo',
+    confirmCopyBuilder: (payload) => `Arquivo <strong>${String(payload?.meta?.file_name || payload?.meta?.label || 'selecionado').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</strong> carregado com sucesso.`,
+  }) || null;
+
   form?.addEventListener('submit', (event) => {
     submitSetupSelection(event).catch(() => {
       state.setup.submitting = false;
       updateSetupStartButton();
     });
+  });
+  byId('setup-continue-button')?.addEventListener('click', () => {
+    saveBrowser?.loadLatestCompatibleSave().catch(() => {});
+  });
+  byId('setup-load-button')?.addEventListener('click', () => {
+    saveBrowser?.browseCompatibleSaves().catch(() => {});
   });
 
   byId('start-permission-draw')?.addEventListener('click', startPermissionDraw);
@@ -6323,6 +6912,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   byId('preview-settings-button')?.addEventListener('click', () => {
     openSettingsOverlay();
+  });
+  byId('preview-load-button')?.addEventListener('click', () => {
+    saveBrowser?.browseCompatibleSaves().catch(() => {});
+  });
+  byId('preview-save-button')?.addEventListener('click', () => {
+    saveCurrentGame().catch(() => {});
   });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();

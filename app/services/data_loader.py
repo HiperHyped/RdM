@@ -17,6 +17,21 @@ def load_player_colors(data_dir: Path | None = None) -> list[dict[str, Any]]:
     return load_json(base / "player_colors.json")
 
 
+def load_ai_v2_config(data_dir: Path | None = None) -> dict[str, Any]:
+    base = data_dir or DATA_DIR
+    return load_json(base / "ai_v2_presets.json")
+
+
+def load_ai_v2_rules_config(data_dir: Path | None = None) -> dict[str, Any]:
+    base = data_dir or DATA_DIR
+    return load_json(base / "ai_v2_rules.json")
+
+
+def load_ai_v2_rules_original_config(data_dir: Path | None = None) -> dict[str, Any]:
+    base = data_dir or DATA_DIR
+    return load_json(base / "ai_v2_rules_original.json")
+
+
 def load_game_rules(data_dir: Path | None = None) -> GameRules:
     base = data_dir or DATA_DIR
     payload = load_json(base / "rules_v2.json")

@@ -1,0 +1,1000 @@
+{
+  "label": "robots_2026_03_17_-_17_24_01",
+  "mode": "robots",
+  "save_id": "20260317T202403235752Z-robots-ai-ui-robots-2026-03-17-17-24-01",
+  "saved_at": "2026-03-17T20:24:03.235752Z",
+  "snapshot": {
+    "active_action_feed": [
+      {
+        "action": "Contrato concluido",
+        "color": "#eab308",
+        "createdAt": 1773779040854,
+        "detail": "$ 15 liquidos (onus $ 40 | comissao do porto inicial $ 15 para Jogador 1).",
+        "expiresAt": 1773779052854,
+        "glow": "#f3d370",
+        "id": "1773779040854-9402c6fa6bb74",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 92"
+      },
+      {
+        "action": "Recebeu comissao do porto inicial",
+        "color": "#2563eb",
+        "createdAt": 1773779040854,
+        "detail": "MAN: $ 15 de Jogador 2.",
+        "expiresAt": 1773779052854,
+        "glow": "#81a5f3",
+        "id": "1773779040854-5ca2f119ca2cc",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 92"
+      },
+      {
+        "action": "Rev\u00e9s: Piratas",
+        "color": "#2563eb",
+        "createdAt": 1773779040726,
+        "detail": "Pagou $ 70.",
+        "expiresAt": 1773779052726,
+        "glow": "#81a5f3",
+        "id": "1773779040726-4fbee3086e2c48",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 92"
+      },
+      {
+        "action": "Carta: pagamento ao banco",
+        "color": "#2563eb",
+        "createdAt": 1773779040707,
+        "detail": "Pagou $ 70 ao banco.",
+        "expiresAt": 1773779052707,
+        "glow": "#81a5f3",
+        "id": "1773779040707-743a421e5ff8b8",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 92"
+      },
+      {
+        "action": "Sorte: Sardinhas",
+        "color": "#eab308",
+        "createdAt": 1773779040497,
+        "detail": "Recebeu $ 50.",
+        "expiresAt": 1773779052497,
+        "glow": "#f3d370",
+        "id": "1773779040497-2a5c5755d5939",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 91"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#2563eb",
+        "createdAt": 1773779040496,
+        "detail": "Pagou $ 20 ao banco.",
+        "expiresAt": 1773779052496,
+        "glow": "#81a5f3",
+        "id": "1773779040496-12dce1e4f51138",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 91"
+      },
+      {
+        "action": "Sorte: Corrente a favor",
+        "color": "#eab308",
+        "createdAt": 1773779040491,
+        "detail": "Moveu novamente 7 casa(s). Jogador 2 usou Porto Livre em NYC e nao pagou estadia a Jogador 1.",
+        "expiresAt": 1773779052491,
+        "glow": "#f3d370",
+        "id": "1773779040491-24b6a33043ce68",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 90"
+      },
+      {
+        "action": "Cupom usado",
+        "color": "#eab308",
+        "createdAt": 1773779040491,
+        "detail": "Porto Livre: Zerou a estadia de NYC que seria paga a Jogador 1.",
+        "expiresAt": 1773779052491,
+        "glow": "#f3d370",
+        "id": "1773779040491-7637521e57ed78",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 90"
+      },
+      {
+        "action": "Rev\u00e9s: Ped\u00e1gio Extra",
+        "color": "#2563eb",
+        "createdAt": 1773779040488,
+        "detail": "Foi para o pedagio SUZ. Jogador 1 pagou $ 10 ao banco em SUZ.",
+        "expiresAt": 1773779052488,
+        "glow": "#81a5f3",
+        "id": "1773779040488-83280bcf09362",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 90"
+      },
+      {
+        "action": "Pedagio ao banco",
+        "color": "#2563eb",
+        "createdAt": 1773779040488,
+        "detail": "SUZ: $ 10.",
+        "expiresAt": 1773779052488,
+        "glow": "#81a5f3",
+        "id": "1773779040488-da369cfb2c4a58",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 90"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#eab308",
+        "createdAt": 1773779040480,
+        "detail": "Pagou $ 15 ao banco.",
+        "expiresAt": 1773779052480,
+        "glow": "#f3d370",
+        "id": "1773779040480-bfce3b1fc33278",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 89"
+      },
+      {
+        "action": "Sorte: Aposta",
+        "color": "#2563eb",
+        "createdAt": 1773779040478,
+        "detail": "Recebeu $ 50 de 1 jogador(es).",
+        "expiresAt": 1773779052478,
+        "glow": "#81a5f3",
+        "id": "1773779040478-58ba3f440cfc98",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 89"
+      },
+      {
+        "action": "Carta: recebimento",
+        "color": "#2563eb",
+        "createdAt": 1773779040477,
+        "detail": "$ 50 de Jogador 2.",
+        "expiresAt": 1773779052477,
+        "glow": "#81a5f3",
+        "id": "1773779040477-7600f89283757",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 89"
+      },
+      {
+        "action": "Carta: pagamento",
+        "color": "#eab308",
+        "createdAt": 1773779040477,
+        "detail": "$ 50 para Jogador 1.",
+        "expiresAt": 1773779052477,
+        "glow": "#f3d370",
+        "id": "1773779040477-7f4c41b4e741d",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 89"
+      },
+      {
+        "action": "Recebeu estadia",
+        "color": "#2563eb",
+        "createdAt": 1773779040470,
+        "detail": "JED: $ 10 de Jogador 2.",
+        "expiresAt": 1773779052470,
+        "glow": "#81a5f3",
+        "id": "1773779040470-c703c4b2acdc98",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 88"
+      },
+      {
+        "action": "Estadia ao dono",
+        "color": "#eab308",
+        "createdAt": 1773779040470,
+        "detail": "JED: $ 10 para Jogador 1.",
+        "expiresAt": 1773779052470,
+        "glow": "#f3d370",
+        "id": "1773779040470-0541474b34e5c",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 88"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#2563eb",
+        "createdAt": 1773779040467,
+        "detail": "Pagou $ 20 ao banco.",
+        "expiresAt": 1773779052467,
+        "glow": "#81a5f3",
+        "id": "1773779040467-6d126d1bd74ff",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 88"
+      },
+      {
+        "action": "Destino definido",
+        "color": "#2563eb",
+        "createdAt": 1773779040465,
+        "detail": "CAR | $ 120",
+        "expiresAt": 1773779052465,
+        "glow": "#81a5f3",
+        "id": "1773779040465-827e247371fb5",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 88"
+      }
+    ],
+    "ai": {
+      "aiDifficultyId": "normal",
+      "aiProfileModeId": "balanced",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [
+        "pedagio_extra",
+        "porto_livre",
+        "corrente_a_favor",
+        "sardinhas",
+        "piratas"
+      ],
+      "draw_pile": [
+        "atalho",
+        "iceberg",
+        "bermudas",
+        "manutencao_total",
+        "time_campeao",
+        "lula_gigante",
+        "atlantida",
+        "baleias",
+        "pedagio_livre",
+        "alfandega",
+        "greve",
+        "banco_de_gelo",
+        "vazamento",
+        "atraso_de_entrega",
+        "naufrago",
+        "maelstrom",
+        "ataque_submarino",
+        "nautilus",
+        "tempestade",
+        "vento_a_favor",
+        "aposta",
+        "mudanca_de_rota",
+        "desastre_maritimo",
+        "sabotagem",
+        "gasolina_livre",
+        "motim",
+        "reliquias",
+        "nova_especie"
+      ],
+      "held_card_ids": [
+        "quebra_de_contrato",
+        "lucro_extra"
+      ]
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 120,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "5 / 4",
+          "deadline_progress": "5/4",
+          "destination": "CAR",
+          "distance_label": "Distancia 4",
+          "distance_value": 4,
+          "freight_label": "Frete $ 120",
+          "freight_value": 120,
+          "mandatory_toll": "SUZ",
+          "note": "Rev\u00e9s: Piratas. Jogador 1 pagou $ 70.",
+          "origin": "NYC",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 5,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 120,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "ai": {
+          "archetype_id": "port_sprinter",
+          "manual_profile": true,
+          "profile_id": "port_sprinter",
+          "profile_label": "Foco em portos",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "acquisitive_market",
+              "personality_preset_id": "bold_operator",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "stage6_standard",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": "port_sprint"
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0.18,
+              "discount_tolerance": 0,
+              "id": "acquisitive_market",
+              "label": "Comprador Agressivo",
+              "premium_tolerance": 0,
+              "sell_openness": 0,
+              "strategic_lock": 0
+            },
+            "personality": {
+              "asset_attachment": 0.32,
+              "cash_reserve_ratio": 0.08,
+              "coupon_patience": 0.26,
+              "id": "bold_operator",
+              "impulsiveness": 0.74,
+              "label": "Operador Audaz",
+              "risk_tolerance": 0.84
+            },
+            "skill": {
+              "combo_awareness": 0.52,
+              "evaluation_noise": 0.08,
+              "foresight": 0.04,
+              "id": "ai_normal",
+              "label": "Normal",
+              "liquidity_discipline": 0.56,
+              "timing_quality": 0.44
+            },
+            "vision": {
+              "id": "port_sprint",
+              "label": "Sprint de Portos",
+              "planning_horizon_turns": 2,
+              "weight_monopoly": 0.18,
+              "weight_origin_bonus": 1,
+              "weight_permission": 0.22,
+              "weight_port": 1,
+              "weight_toll": 0.08
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.04,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "stage6_standard"
+        },
+        "bankrupt": false,
+        "board_node_id": "chance-012",
+        "cash": 302,
+        "cash_display": "$ 302",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupons": [
+          {
+            "kind": "double_freight",
+            "label": "Lucro Extra",
+            "source_card_id": "lucro_extra"
+          }
+        ],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          2,
+          1
+        ],
+        "location_code": null,
+        "location_label": "Sorte / Reves",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "MAN",
+          "CAR",
+          "REC",
+          "BUE",
+          "VAN",
+          "TOK",
+          "LON",
+          "AUC",
+          "GUA",
+          "DAR",
+          "SRI",
+          "NYC",
+          "LAG",
+          "SPE",
+          "JED"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 0,
+        "status_label": "pagou $ 70"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 70,
+          "cargo_label": "Autom\u00f3veis",
+          "completed": true,
+          "deadline_label": "6 / 4",
+          "deadline_progress": "6/4",
+          "destination": "VAL",
+          "distance_label": "Distancia 14",
+          "distance_value": 14,
+          "freight_label": "Frete $ 70",
+          "freight_value": 15,
+          "mandatory_toll": "SUZ",
+          "note": "O navio chegou em VAL depois de passar por SUZ e recebeu $ 15 ($ 70 - onus $ 40).",
+          "origin": "MAN",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 6,
+          "route_stage": "arrived",
+          "settlement_adjustment": -40,
+          "settlement_value": 15,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cars",
+        "ai": {
+          "archetype_id": "closed_profile",
+          "manual_profile": true,
+          "profile_id": "closed_profile",
+          "profile_label": "Perfil fechado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "closed_profile",
+              "negotiation_preset_id": "balanced_market",
+              "personality_preset_id": "cautious_operator",
+              "setup_archetype_id": "closed_profile",
+              "setup_customized": true,
+              "skill_preset_id": "stage6_standard",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": "balanced_growth"
+            },
+            "negotiation": {
+              "buy_blocked": 1,
+              "buy_openness": 0.08,
+              "desperation_discount": 0,
+              "discount_tolerance": 0.02,
+              "id": "balanced_market",
+              "label": "Mercado Equilibrado",
+              "premium_tolerance": 0.18,
+              "sell_blocked": 1,
+              "sell_openness": 0.02,
+              "strategic_lock": 1,
+              "trade_locked": 1
+            },
+            "personality": {
+              "asset_attachment": 0.64,
+              "cash_reserve_ratio": 0.32,
+              "coupon_patience": 0.58,
+              "id": "cautious_operator",
+              "impulsiveness": 0.16,
+              "label": "Operador Cauteloso",
+              "risk_tolerance": 0.28
+            },
+            "skill": {
+              "combo_awareness": 0.52,
+              "evaluation_noise": 0.08,
+              "foresight": 0.42,
+              "id": "ai_normal",
+              "label": "Normal",
+              "liquidity_discipline": 0.56,
+              "timing_quality": 0.44
+            },
+            "vision": {
+              "id": "balanced_growth",
+              "label": "Crescimento Balanceado",
+              "planning_horizon_turns": 4,
+              "weight_monopoly": 0.7,
+              "weight_origin_bonus": 0.9,
+              "weight_permission": 0.8,
+              "weight_port": 0.9,
+              "weight_toll": 0.7
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "stage6_standard"
+        },
+        "bankrupt": false,
+        "board_node_id": "val",
+        "cash": 1577,
+        "cash_display": "$ 1.577",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupons": [
+          {
+            "kind": "skip_owner_share",
+            "label": "Quebra de Contrato",
+            "source_card_id": "quebra_de_contrato"
+          }
+        ],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          4,
+          6
+        ],
+        "location_code": "VAL",
+        "location_label": "VAL",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": true,
+        "permissions": [
+          {
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Autom\u00f3veis"
+          }
+        ],
+        "property_codes": [
+          "DAK",
+          "LAX",
+          "HKG",
+          "GIO",
+          "MUM",
+          "SYD",
+          "JAK",
+          "VAL",
+          "ATE",
+          "DUB"
+        ],
+        "ship_type": "cars",
+        "ship_type_label": "Autom\u00f3veis",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 15"
+      }
+    ],
+    "report": {
+      "activeKey": "cash-by-turn",
+      "milestones": [
+        {
+          "label": "Turno 05",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 830,
+              "id": "cpu-1",
+              "patrimony_total": 3870,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1613,
+              "id": "cpu-2",
+              "patrimony_total": 3953,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 5
+        },
+        {
+          "label": "Turno 10",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 558,
+              "id": "cpu-1",
+              "patrimony_total": 4298,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 720,
+              "id": "cpu-2",
+              "patrimony_total": 3910,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 10
+        },
+        {
+          "label": "Turno 20",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1589,
+              "id": "cpu-1",
+              "patrimony_total": 6199,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 1262,
+              "id": "cpu-2",
+              "patrimony_total": 5272,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 20
+        },
+        {
+          "label": "Turno 30",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1574,
+              "id": "cpu-1",
+              "patrimony_total": 6184,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 708,
+              "id": "cpu-2",
+              "patrimony_total": 5518,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 30
+        },
+        {
+          "label": "Turno 40",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 821,
+              "id": "cpu-1",
+              "patrimony_total": 6441,
+              "permission_count": 1,
+              "property_count": 10,
+              "title_count": 10,
+              "toll_count": 0
+            },
+            {
+              "cash": 237,
+              "id": "cpu-2",
+              "patrimony_total": 5807,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 40
+        },
+        {
+          "label": "Turno 50",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 581,
+              "id": "cpu-1",
+              "patrimony_total": 6601,
+              "permission_count": 1,
+              "property_count": 11,
+              "title_count": 11,
+              "toll_count": 0
+            },
+            {
+              "cash": 1260,
+              "id": "cpu-2",
+              "patrimony_total": 6830,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 50
+        },
+        {
+          "label": "Turno 60",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 367,
+              "id": "cpu-1",
+              "patrimony_total": 7267,
+              "permission_count": 1,
+              "property_count": 13,
+              "title_count": 13,
+              "toll_count": 0
+            },
+            {
+              "cash": 1160,
+              "id": "cpu-2",
+              "patrimony_total": 6730,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 60
+        },
+        {
+          "label": "Turno 70",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1082,
+              "id": "cpu-1",
+              "patrimony_total": 7982,
+              "permission_count": 1,
+              "property_count": 13,
+              "title_count": 13,
+              "toll_count": 0
+            },
+            {
+              "cash": 1519,
+              "id": "cpu-2",
+              "patrimony_total": 7089,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 70
+        },
+        {
+          "label": "Turno 80",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 730,
+              "id": "cpu-1",
+              "patrimony_total": 8000,
+              "permission_count": 1,
+              "property_count": 14,
+              "title_count": 14,
+              "toll_count": 0
+            },
+            {
+              "cash": 1634,
+              "id": "cpu-2",
+              "patrimony_total": 7684,
+              "permission_count": 1,
+              "property_count": 10,
+              "title_count": 10,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 80
+        },
+        {
+          "label": "Turno 90",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 377,
+              "id": "cpu-1",
+              "patrimony_total": 8087,
+              "permission_count": 1,
+              "property_count": 15,
+              "title_count": 15,
+              "toll_count": 0
+            },
+            {
+              "cash": 1512,
+              "id": "cpu-2",
+              "patrimony_total": 7562,
+              "permission_count": 1,
+              "property_count": 10,
+              "title_count": 10,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 90
+        }
+      ]
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "port_sprinter",
+        "manual_profile": true,
+        "name": "Jogador 1",
+        "profile_id": "port_sprinter",
+        "profile_label": "Foco em portos",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.04,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "stage6_standard"
+      },
+      "cpu-2": {
+        "archetype_id": "closed_profile",
+        "manual_profile": true,
+        "name": "Jogador 2",
+        "profile_id": "closed_profile",
+        "profile_label": "Perfil fechado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "stage6_standard"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Nova rodada",
+      "active_player_id": "cpu-1",
+      "dice": [
+        0,
+        0
+      ],
+      "note": "A rodada 93 vai comecar.",
+      "phase": "Turno 93",
+      "turn_label": "Turno 93",
+      "turn_number": 93
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": true,
+      "ai_difficulty": "normal",
+      "ai_manual_profiles": [
+        "port_sprinter",
+        "closed_profile"
+      ],
+      "ai_manual_robot_configs": [
+        {
+          "archetypeId": "port_sprinter",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "acquisitive_market",
+              "personality_preset_id": "bold_operator",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "stage6_standard",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": "port_sprint"
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0.18,
+              "discount_tolerance": 0,
+              "id": "acquisitive_market",
+              "label": "Comprador Agressivo",
+              "premium_tolerance": 0,
+              "sell_openness": 0,
+              "strategic_lock": 0
+            },
+            "personality": {
+              "asset_attachment": 0.32,
+              "cash_reserve_ratio": 0.08,
+              "coupon_patience": 0.26,
+              "id": "bold_operator",
+              "impulsiveness": 0.74,
+              "label": "Operador Audaz",
+              "risk_tolerance": 0.84
+            },
+            "skill": {
+              "combo_awareness": 0.52,
+              "evaluation_noise": 0.08,
+              "foresight": 0.04,
+              "id": "ai_normal",
+              "label": "Normal",
+              "liquidity_discipline": 0.56,
+              "timing_quality": 0.44
+            },
+            "vision": {
+              "id": "port_sprint",
+              "label": "Sprint de Portos",
+              "planning_horizon_turns": 2,
+              "weight_monopoly": 0.18,
+              "weight_origin_bonus": 1,
+              "weight_permission": 0.22,
+              "weight_port": 1,
+              "weight_toll": 0.08
+            }
+          }
+        },
+        {
+          "archetypeId": "closed_profile",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "closed_profile",
+              "negotiation_preset_id": "balanced_market",
+              "personality_preset_id": "cautious_operator",
+              "setup_archetype_id": "closed_profile",
+              "setup_customized": true,
+              "skill_preset_id": "stage6_standard",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": "balanced_growth"
+            },
+            "negotiation": {
+              "buy_blocked": 1,
+              "buy_openness": 0.08,
+              "desperation_discount": 0,
+              "discount_tolerance": 0.02,
+              "id": "balanced_market",
+              "label": "Mercado Equilibrado",
+              "premium_tolerance": 0.18,
+              "sell_blocked": 1,
+              "sell_openness": 0.02,
+              "strategic_lock": 1,
+              "trade_locked": 1
+            },
+            "personality": {
+              "asset_attachment": 0.64,
+              "cash_reserve_ratio": 0.32,
+              "coupon_patience": 0.58,
+              "id": "cautious_operator",
+              "impulsiveness": 0.16,
+              "label": "Operador Cauteloso",
+              "risk_tolerance": 0.28
+            },
+            "skill": {
+              "combo_awareness": 0.52,
+              "evaluation_noise": 0.08,
+              "foresight": 0.42,
+              "id": "ai_normal",
+              "label": "Normal",
+              "liquidity_discipline": 0.56,
+              "timing_quality": 0.44
+            },
+            "vision": {
+              "id": "balanced_growth",
+              "label": "Crescimento Balanceado",
+              "planning_horizon_turns": 4,
+              "weight_monopoly": 0.7,
+              "weight_origin_bonus": 0.9,
+              "weight_permission": 0.8,
+              "weight_port": 0.9,
+              "weight_toll": 0.7
+            }
+          }
+        }
+      ],
+      "ai_profile_mode": "balanced",
+      "ai_profile_order": [
+        "balanced_trader"
+      ],
+      "robot_count": 2
+    }
+  },
+  "variant": "robots-ai-ui",
+  "version": 1
+}

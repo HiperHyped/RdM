@@ -1,0 +1,5468 @@
+{
+  "label": "robots_2026_03_18_-_00_41_30",
+  "mode": "robots",
+  "save_id": "20260318T034132596324Z-robots-ai-ui-robots-2026-03-18-00-41-30",
+  "saved_at": "2026-03-18T03:41:32.596324Z",
+  "snapshot": {
+    "active_action_feed": [],
+    "ai": {
+      "aiDifficultyId": "normal",
+      "aiProfileModeId": "balanced",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [
+        "piratas",
+        "vento_a_favor",
+        "tempestade",
+        "lula_gigante",
+        "greve",
+        "alfandega",
+        "atalho",
+        "sabotagem",
+        "motim",
+        "reliquias",
+        "vazamento",
+        "maelstrom",
+        "time_campeao",
+        "naufrago",
+        "nova_especie"
+      ],
+      "draw_pile": [
+        "gasolina_livre",
+        "bermudas",
+        "nautilus",
+        "aposta",
+        "pedagio_extra",
+        "ataque_submarino",
+        "baleias",
+        "iceberg",
+        "atlantida",
+        "sardinhas",
+        "desastre_maritimo",
+        "manutencao_total",
+        "mudanca_de_rota",
+        "corrente_a_favor",
+        "atraso_de_entrega",
+        "banco_de_gelo"
+      ],
+      "held_card_ids": [
+        "contrato_cancelado",
+        "contra_o_monopolio",
+        "viagem_de_graca",
+        "lucro_extra",
+        "quebra_de_contrato",
+        "pedagio_livre",
+        "porto_livre"
+      ]
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 252,
+          "cargo_label": "Autom\u00f3veis",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "MUM",
+          "distance_label": "Distancia 6",
+          "distance_value": 6,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 252",
+          "freight_value": 252,
+          "mandatory_toll": "GIB",
+          "note": "Jogador 1 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "GIO",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 252,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cars",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-004",
+        "cash": 336104,
+        "cash_display": "$ 336.104",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupons": [],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          2,
+          3
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          }
+        ],
+        "property_codes": [
+          "MAN",
+          "GUA",
+          "SUZ",
+          "GIO",
+          "GIB"
+        ],
+        "ship_type": "cars",
+        "ship_type_label": "Autom\u00f3veis",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 120,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "SRI",
+          "distance_label": "Distancia 4",
+          "distance_value": 4,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 120",
+          "freight_value": 120,
+          "mandatory_toll": "GIB",
+          "note": "Jogador 2 parou em MUM, que ja pertence a sua companhia.",
+          "origin": "JAK",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 120,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "mum",
+        "cash": 324762,
+        "cash_display": "$ 324.762",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupons": [
+          {
+            "kind": "free_fuel_contract",
+            "label": "Viagem de Gra\u00e7a",
+            "source_card_id": "viagem_de_graca"
+          },
+          {
+            "kind": "double_freight",
+            "label": "Lucro Extra",
+            "source_card_id": "lucro_extra"
+          }
+        ],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          6,
+          3
+        ],
+        "location_code": "MUM",
+        "location_label": "MUM",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          }
+        ],
+        "property_codes": [
+          "SHA",
+          "REC",
+          "MUM",
+          "LON",
+          "JAK"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 0,
+        "status_label": "porto proprio MUM"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 560,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "MAZ",
+          "distance_label": "Distancia 14",
+          "distance_value": 14,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 560",
+          "freight_value": 560,
+          "mandatory_toll": "PAN",
+          "note": "Jogador 3 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "SRI",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 560,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-113",
+        "cash": 308736,
+        "cash_display": "$ 308.736",
+        "color_hex": "#22c55e",
+        "color_id": "green",
+        "coupons": [
+          {
+            "kind": "skip_owner_share",
+            "label": "Quebra de Contrato",
+            "source_card_id": "quebra_de_contrato"
+          },
+          {
+            "kind": "free_toll",
+            "label": "Ped\u00e1gio Livre",
+            "source_card_id": "pedagio_livre"
+          },
+          {
+            "kind": "free_port_stay",
+            "label": "Porto Livre",
+            "source_card_id": "porto_livre"
+          }
+        ],
+        "id": "cpu-3",
+        "is_human": false,
+        "last_roll": [
+          3,
+          5
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 3",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          }
+        ],
+        "property_codes": [
+          "RIO",
+          "NYC",
+          "SRI"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 720,
+          "cargo_label": "Cruzeiro",
+          "completed": false,
+          "deadline_label": "5 / 4",
+          "deadline_progress": "5/4",
+          "destination": "GIO",
+          "distance_label": "Distancia 15",
+          "distance_value": 15,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 720",
+          "freight_value": 720,
+          "mandatory_toll": "CAP",
+          "note": "Sorte: Nova Esp\u00e9cie. Jogador 4 recebeu $ 55.",
+          "origin": "LAX",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 5,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 720,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cruise",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "chance-011",
+        "cash": 338138,
+        "cash_display": "$ 338.138",
+        "color_hex": "#ef4444",
+        "color_id": "red",
+        "coupons": [],
+        "id": "cpu-4",
+        "is_human": false,
+        "last_roll": [
+          4,
+          3
+        ],
+        "location_code": null,
+        "location_label": "Sorte / Reves",
+        "monopoly_regions": [],
+        "name": "Jogador 4",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "HOU",
+          "VAN",
+          "AUC",
+          "ATE",
+          "SPE"
+        ],
+        "ship_type": "cruise",
+        "ship_type_label": "Cruzeiro",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 55"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 975,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "SYD",
+          "distance_label": "Distancia 13",
+          "distance_value": 13,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 975",
+          "freight_value": 975,
+          "mandatory_toll": "USH",
+          "note": "Jogador 5 parou em Abastecimento 10 e pagou $ 10 ao banco.",
+          "origin": "DUB",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 975,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-070",
+        "cash": 332701,
+        "cash_display": "$ 332.701",
+        "color_hex": "#f97316",
+        "color_id": "orange",
+        "coupons": [
+          {
+            "kind": "cancel_contract",
+            "label": "Contrato Cancelado",
+            "source_card_id": "contrato_cancelado"
+          }
+        ],
+        "id": "cpu-5",
+        "is_human": false,
+        "last_roll": [
+          3,
+          1
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 10",
+        "monopoly_regions": [],
+        "name": "Jogador 5",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          }
+        ],
+        "property_codes": [
+          "JED",
+          "PAN",
+          "BUE",
+          "DAK",
+          "LAX",
+          "LAG",
+          "DUB"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 10"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 1176,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "HOU",
+          "distance_label": "Distancia 21",
+          "distance_value": 21,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 1.176",
+          "freight_value": 1176,
+          "mandatory_toll": "SIN",
+          "note": "Jogador 6 negociou e comprou o pedagio SIN de Jogador 3 por $ 2.331.",
+          "origin": "SYD",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 1176,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "sin",
+        "cash": 341845,
+        "cash_display": "$ 341.845",
+        "color_hex": "#a855f7",
+        "color_id": "purple",
+        "coupons": [
+          {
+            "kind": "anti_monopoly_owner_share",
+            "label": "Contra o Monop\u00f3lio",
+            "source_card_id": "contra_o_monopolio"
+          }
+        ],
+        "id": "cpu-6",
+        "is_human": false,
+        "last_roll": [
+          6,
+          5
+        ],
+        "location_code": "SIN",
+        "location_label": "SIN",
+        "monopoly_regions": [],
+        "name": "Jogador 6",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          }
+        ],
+        "property_codes": [
+          "CAP",
+          "HAM",
+          "MAZ",
+          "CAR",
+          "VAL",
+          "USH",
+          "TOK",
+          "DAR",
+          "HKG",
+          "SYD",
+          "SIN"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 0,
+        "status_label": "comprou SIN"
+      }
+    ],
+    "report": {
+      "activeKey": "cash-by-turn",
+      "milestones": [
+        {
+          "label": "Turno 05",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 784,
+              "id": "cpu-1",
+              "patrimony_total": 5134,
+              "permission_count": 1,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 2022,
+              "id": "cpu-2",
+              "patrimony_total": 4022,
+              "permission_count": 1,
+              "property_count": 0,
+              "title_count": 0,
+              "toll_count": 0
+            },
+            {
+              "cash": 1120,
+              "id": "cpu-3",
+              "patrimony_total": 3890,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1534,
+              "id": "cpu-4",
+              "patrimony_total": 4364,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1415,
+              "id": "cpu-5",
+              "patrimony_total": 4175,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1466,
+              "id": "cpu-6",
+              "patrimony_total": 3896,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 5
+        },
+        {
+          "label": "Turno 10",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1488,
+              "id": "cpu-1",
+              "patrimony_total": 5128,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1487,
+              "id": "cpu-2",
+              "patrimony_total": 3917,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 607,
+              "id": "cpu-3",
+              "patrimony_total": 4037,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1358,
+              "id": "cpu-4",
+              "patrimony_total": 4898,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1272,
+              "id": "cpu-5",
+              "patrimony_total": 4482,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 787,
+              "id": "cpu-6",
+              "patrimony_total": 4027,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 10
+        },
+        {
+          "label": "Turno 20",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2456,
+              "id": "cpu-1",
+              "patrimony_total": 6606,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1715,
+              "id": "cpu-2",
+              "patrimony_total": 4505,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1073,
+              "id": "cpu-3",
+              "patrimony_total": 4173,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1056,
+              "id": "cpu-4",
+              "patrimony_total": 5036,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1328,
+              "id": "cpu-5",
+              "patrimony_total": 4548,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 213,
+              "id": "cpu-6",
+              "patrimony_total": 4223,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 20
+        },
+        {
+          "label": "Turno 30",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1775,
+              "id": "cpu-1",
+              "patrimony_total": 7165,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 1386,
+              "id": "cpu-2",
+              "patrimony_total": 4936,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1279,
+              "id": "cpu-3",
+              "patrimony_total": 5049,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 581,
+              "id": "cpu-4",
+              "patrimony_total": 6311,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1801,
+              "id": "cpu-5",
+              "patrimony_total": 5461,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1667,
+              "id": "cpu-6",
+              "patrimony_total": 5077,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 30
+        },
+        {
+          "label": "Turno 40",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 501,
+              "id": "cpu-1",
+              "patrimony_total": 8661,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 2370,
+              "id": "cpu-2",
+              "patrimony_total": 5470,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1375,
+              "id": "cpu-3",
+              "patrimony_total": 5245,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1520,
+              "id": "cpu-4",
+              "patrimony_total": 6380,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 640,
+              "id": "cpu-5",
+              "patrimony_total": 5510,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 42,
+              "id": "cpu-6",
+              "patrimony_total": 5872,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 40
+        },
+        {
+          "label": "Turno 50",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1181,
+              "id": "cpu-1",
+              "patrimony_total": 9761,
+              "permission_count": 2,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 1568,
+              "id": "cpu-2",
+              "patrimony_total": 5808,
+              "permission_count": 1,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 2285,
+              "id": "cpu-3",
+              "patrimony_total": 5775,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 983,
+              "id": "cpu-4",
+              "patrimony_total": 6233,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 791,
+              "id": "cpu-5",
+              "patrimony_total": 6711,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1624,
+              "id": "cpu-6",
+              "patrimony_total": 7644,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 50
+        },
+        {
+          "label": "Turno 60",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1313,
+              "id": "cpu-1",
+              "patrimony_total": 11383,
+              "permission_count": 3,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 2382,
+              "id": "cpu-2",
+              "patrimony_total": 6482,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1905,
+              "id": "cpu-3",
+              "patrimony_total": 6605,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1089,
+              "id": "cpu-4",
+              "patrimony_total": 6599,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 942,
+              "id": "cpu-5",
+              "patrimony_total": 7182,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 2002,
+              "id": "cpu-6",
+              "patrimony_total": 8882,
+              "permission_count": 2,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 60
+        },
+        {
+          "label": "Turno 70",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 4297,
+              "id": "cpu-1",
+              "patrimony_total": 14027,
+              "permission_count": 3,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 998,
+              "id": "cpu-2",
+              "patrimony_total": 7388,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 2915,
+              "id": "cpu-3",
+              "patrimony_total": 7255,
+              "permission_count": 2,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 1039,
+              "id": "cpu-4",
+              "patrimony_total": 7009,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 325,
+              "id": "cpu-5",
+              "patrimony_total": 7035,
+              "permission_count": 2,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 1038,
+              "id": "cpu-6",
+              "patrimony_total": 9398,
+              "permission_count": 3,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 70
+        },
+        {
+          "label": "Turno 80",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2880,
+              "id": "cpu-1",
+              "patrimony_total": 15000,
+              "permission_count": 4,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 1367,
+              "id": "cpu-2",
+              "patrimony_total": 7867,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 821,
+              "id": "cpu-3",
+              "patrimony_total": 7641,
+              "permission_count": 3,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 959,
+              "id": "cpu-4",
+              "patrimony_total": 7349,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 1820,
+              "id": "cpu-5",
+              "patrimony_total": 8410,
+              "permission_count": 2,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 3596,
+              "id": "cpu-6",
+              "patrimony_total": 10676,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 80
+        },
+        {
+          "label": "Turno 90",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2172,
+              "id": "cpu-1",
+              "patrimony_total": 15752,
+              "permission_count": 4,
+              "property_count": 10,
+              "title_count": 9,
+              "toll_count": 1
+            },
+            {
+              "cash": 2189,
+              "id": "cpu-2",
+              "patrimony_total": 8569,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 564,
+              "id": "cpu-3",
+              "patrimony_total": 7744,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1575,
+              "id": "cpu-4",
+              "patrimony_total": 7545,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 3270,
+              "id": "cpu-5",
+              "patrimony_total": 8960,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 3548,
+              "id": "cpu-6",
+              "patrimony_total": 12658,
+              "permission_count": 3,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 90
+        },
+        {
+          "label": "Turno 100",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2826,
+              "id": "cpu-1",
+              "patrimony_total": 17166,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 1057,
+              "id": "cpu-2",
+              "patrimony_total": 9847,
+              "permission_count": 3,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 914,
+              "id": "cpu-3",
+              "patrimony_total": 8214,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 998,
+              "id": "cpu-4",
+              "patrimony_total": 7338,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 1645,
+              "id": "cpu-5",
+              "patrimony_total": 9645,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 5853,
+              "id": "cpu-6",
+              "patrimony_total": 12993,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 100
+        },
+        {
+          "label": "Turno 120",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 5517,
+              "id": "cpu-1",
+              "patrimony_total": 19427,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 1435,
+              "id": "cpu-2",
+              "patrimony_total": 12175,
+              "permission_count": 4,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 1345,
+              "id": "cpu-3",
+              "patrimony_total": 8595,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 2262,
+              "id": "cpu-4",
+              "patrimony_total": 8592,
+              "permission_count": 2,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 2338,
+              "id": "cpu-5",
+              "patrimony_total": 10428,
+              "permission_count": 3,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 2135,
+              "id": "cpu-6",
+              "patrimony_total": 13725,
+              "permission_count": 4,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 120
+        },
+        {
+          "label": "Turno 140",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 10453,
+              "id": "cpu-1",
+              "patrimony_total": 23653,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 2619,
+              "id": "cpu-2",
+              "patrimony_total": 13369,
+              "permission_count": 4,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 166,
+              "id": "cpu-3",
+              "patrimony_total": 9806,
+              "permission_count": 3,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 1087,
+              "id": "cpu-4",
+              "patrimony_total": 9867,
+              "permission_count": 3,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 3844,
+              "id": "cpu-5",
+              "patrimony_total": 11284,
+              "permission_count": 3,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 4292,
+              "id": "cpu-6",
+              "patrimony_total": 14392,
+              "permission_count": 4,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 140
+        },
+        {
+          "label": "Turno 160",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 11104,
+              "id": "cpu-1",
+              "patrimony_total": 25904,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 7004,
+              "id": "cpu-2",
+              "patrimony_total": 16554,
+              "permission_count": 4,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 5299,
+              "id": "cpu-3",
+              "patrimony_total": 11999,
+              "permission_count": 3,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 2893,
+              "id": "cpu-4",
+              "patrimony_total": 10453,
+              "permission_count": 3,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 579,
+              "id": "cpu-5",
+              "patrimony_total": 14299,
+              "permission_count": 4,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 1648,
+              "id": "cpu-6",
+              "patrimony_total": 15228,
+              "permission_count": 4,
+              "property_count": 10,
+              "title_count": 9,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 160
+        },
+        {
+          "label": "Turno 180",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 11635,
+              "id": "cpu-1",
+              "patrimony_total": 27315,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 7500,
+              "id": "cpu-2",
+              "patrimony_total": 18690,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 3590,
+              "id": "cpu-3",
+              "patrimony_total": 13250,
+              "permission_count": 3,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 2314,
+              "id": "cpu-4",
+              "patrimony_total": 12254,
+              "permission_count": 3,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 2401,
+              "id": "cpu-5",
+              "patrimony_total": 17611,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 8,
+              "toll_count": 1
+            },
+            {
+              "cash": 6011,
+              "id": "cpu-6",
+              "patrimony_total": 18281,
+              "permission_count": 4,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 180
+        },
+        {
+          "label": "Turno 200",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 14225,
+              "id": "cpu-1",
+              "patrimony_total": 28215,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 7807,
+              "id": "cpu-2",
+              "patrimony_total": 19377,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 2108,
+              "id": "cpu-3",
+              "patrimony_total": 15948,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 513,
+              "id": "cpu-4",
+              "patrimony_total": 13813,
+              "permission_count": 3,
+              "property_count": 10,
+              "title_count": 8,
+              "toll_count": 2
+            },
+            {
+              "cash": 7469,
+              "id": "cpu-5",
+              "patrimony_total": 18749,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 4494,
+              "id": "cpu-6",
+              "patrimony_total": 20464,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 200
+        },
+        {
+          "label": "Turno 250",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 22749,
+              "id": "cpu-1",
+              "patrimony_total": 36119,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 12153,
+              "id": "cpu-2",
+              "patrimony_total": 23753,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 2660,
+              "id": "cpu-3",
+              "patrimony_total": 19810,
+              "permission_count": 5,
+              "property_count": 10,
+              "title_count": 8,
+              "toll_count": 2
+            },
+            {
+              "cash": 5935,
+              "id": "cpu-4",
+              "patrimony_total": 19135,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 9786,
+              "id": "cpu-5",
+              "patrimony_total": 24516,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 13544,
+              "id": "cpu-6",
+              "patrimony_total": 27444,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 250
+        },
+        {
+          "label": "Turno 300",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 28982,
+              "id": "cpu-1",
+              "patrimony_total": 41332,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 15966,
+              "id": "cpu-2",
+              "patrimony_total": 28596,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 12412,
+              "id": "cpu-3",
+              "patrimony_total": 27622,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 7622,
+              "id": "cpu-4",
+              "patrimony_total": 24162,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            },
+            {
+              "cash": 15318,
+              "id": "cpu-5",
+              "patrimony_total": 28558,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 19819,
+              "id": "cpu-6",
+              "patrimony_total": 33799,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 300
+        },
+        {
+          "label": "Turno 350",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 29601,
+              "id": "cpu-1",
+              "patrimony_total": 43701,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 18287,
+              "id": "cpu-2",
+              "patrimony_total": 32767,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 22378,
+              "id": "cpu-3",
+              "patrimony_total": 34348,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 18073,
+              "id": "cpu-4",
+              "patrimony_total": 32043,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 18252,
+              "id": "cpu-5",
+              "patrimony_total": 31712,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 21304,
+              "id": "cpu-6",
+              "patrimony_total": 39274,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 350
+        },
+        {
+          "label": "Turno 400",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 36157,
+              "id": "cpu-1",
+              "patrimony_total": 47417,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 20521,
+              "id": "cpu-2",
+              "patrimony_total": 36031,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 21030,
+              "id": "cpu-3",
+              "patrimony_total": 36980,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 26367,
+              "id": "cpu-4",
+              "patrimony_total": 40457,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 24091,
+              "id": "cpu-5",
+              "patrimony_total": 37701,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            },
+            {
+              "cash": 30453,
+              "id": "cpu-6",
+              "patrimony_total": 47983,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 400
+        },
+        {
+          "label": "Turno 450",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 39990,
+              "id": "cpu-1",
+              "patrimony_total": 51570,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 22984,
+              "id": "cpu-2",
+              "patrimony_total": 43544,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 6,
+              "toll_count": 3
+            },
+            {
+              "cash": 28470,
+              "id": "cpu-3",
+              "patrimony_total": 40920,
+              "permission_count": 5,
+              "property_count": 2,
+              "title_count": 1,
+              "toll_count": 1
+            },
+            {
+              "cash": 36251,
+              "id": "cpu-4",
+              "patrimony_total": 50671,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 25889,
+              "id": "cpu-5",
+              "patrimony_total": 41679,
+              "permission_count": 5,
+              "property_count": 11,
+              "title_count": 10,
+              "toll_count": 1
+            },
+            {
+              "cash": 38772,
+              "id": "cpu-6",
+              "patrimony_total": 51922,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 450
+        },
+        {
+          "label": "Turno 500",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 39426,
+              "id": "cpu-1",
+              "patrimony_total": 54176,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 32551,
+              "id": "cpu-2",
+              "patrimony_total": 48161,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 29727,
+              "id": "cpu-3",
+              "patrimony_total": 43347,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 42812,
+              "id": "cpu-4",
+              "patrimony_total": 61772,
+              "permission_count": 5,
+              "property_count": 10,
+              "title_count": 7,
+              "toll_count": 3
+            },
+            {
+              "cash": 35174,
+              "id": "cpu-5",
+              "patrimony_total": 46344,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 41122,
+              "id": "cpu-6",
+              "patrimony_total": 54962,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 500
+        },
+        {
+          "label": "Turno 550",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 41926,
+              "id": "cpu-1",
+              "patrimony_total": 58876,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 35298,
+              "id": "cpu-2",
+              "patrimony_total": 51688,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 35349,
+              "id": "cpu-3",
+              "patrimony_total": 46899,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 58857,
+              "id": "cpu-4",
+              "patrimony_total": 71247,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 39235,
+              "id": "cpu-5",
+              "patrimony_total": 54395,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 45448,
+              "id": "cpu-6",
+              "patrimony_total": 60958,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 550
+        },
+        {
+          "label": "Turno 600",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 56933,
+              "id": "cpu-1",
+              "patrimony_total": 68133,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 41757,
+              "id": "cpu-2",
+              "patrimony_total": 54937,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 37694,
+              "id": "cpu-3",
+              "patrimony_total": 50794,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            },
+            {
+              "cash": 57059,
+              "id": "cpu-4",
+              "patrimony_total": 74999,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 42934,
+              "id": "cpu-5",
+              "patrimony_total": 61934,
+              "permission_count": 5,
+              "property_count": 10,
+              "title_count": 7,
+              "toll_count": 3
+            },
+            {
+              "cash": 51171,
+              "id": "cpu-6",
+              "patrimony_total": 66701,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 600
+        },
+        {
+          "label": "Turno 650",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 58319,
+              "id": "cpu-1",
+              "patrimony_total": 73399,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 42458,
+              "id": "cpu-2",
+              "patrimony_total": 60098,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 42099,
+              "id": "cpu-3",
+              "patrimony_total": 54819,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 64125,
+              "id": "cpu-4",
+              "patrimony_total": 79255,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 57774,
+              "id": "cpu-5",
+              "patrimony_total": 69354,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 56557,
+              "id": "cpu-6",
+              "patrimony_total": 74357,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 650
+        },
+        {
+          "label": "Turno 700",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 68323,
+              "id": "cpu-1",
+              "patrimony_total": 80823,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 50455,
+              "id": "cpu-2",
+              "patrimony_total": 63795,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 42596,
+              "id": "cpu-3",
+              "patrimony_total": 59476,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 70071,
+              "id": "cpu-4",
+              "patrimony_total": 83211,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 60425,
+              "id": "cpu-5",
+              "patrimony_total": 75075,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 63266,
+              "id": "cpu-6",
+              "patrimony_total": 82706,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 4,
+              "toll_count": 3
+            }
+          ],
+          "turnNumber": 700
+        },
+        {
+          "label": "Turno 750",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 71667,
+              "id": "cpu-1",
+              "patrimony_total": 83047,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 54303,
+              "id": "cpu-2",
+              "patrimony_total": 67953,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 49159,
+              "id": "cpu-3",
+              "patrimony_total": 65279,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 73627,
+              "id": "cpu-4",
+              "patrimony_total": 86817,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 63560,
+              "id": "cpu-5",
+              "patrimony_total": 85110,
+              "permission_count": 5,
+              "property_count": 13,
+              "title_count": 9,
+              "toll_count": 4
+            },
+            {
+              "cash": 72071,
+              "id": "cpu-6",
+              "patrimony_total": 86131,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 750
+        },
+        {
+          "label": "Turno 800",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 74406,
+              "id": "cpu-1",
+              "patrimony_total": 87196,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 58138,
+              "id": "cpu-2",
+              "patrimony_total": 74578,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 58835,
+              "id": "cpu-3",
+              "patrimony_total": 72425,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 72838,
+              "id": "cpu-4",
+              "patrimony_total": 88728,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 82004,
+              "id": "cpu-5",
+              "patrimony_total": 96424,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 71938,
+              "id": "cpu-6",
+              "patrimony_total": 88758,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 800
+        },
+        {
+          "label": "Turno 850",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 75949,
+              "id": "cpu-1",
+              "patrimony_total": 93149,
+              "permission_count": 5,
+              "property_count": 10,
+              "title_count": 8,
+              "toll_count": 2
+            },
+            {
+              "cash": 66388,
+              "id": "cpu-2",
+              "patrimony_total": 81328,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 60603,
+              "id": "cpu-3",
+              "patrimony_total": 75933,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 82925,
+              "id": "cpu-4",
+              "patrimony_total": 96735,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 87955,
+              "id": "cpu-5",
+              "patrimony_total": 102335,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 1,
+              "toll_count": 2
+            },
+            {
+              "cash": 78762,
+              "id": "cpu-6",
+              "patrimony_total": 93052,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 850
+        },
+        {
+          "label": "Turno 900",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 87448,
+              "id": "cpu-1",
+              "patrimony_total": 99498,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 68461,
+              "id": "cpu-2",
+              "patrimony_total": 88071,
+              "permission_count": 6,
+              "property_count": 11,
+              "title_count": 9,
+              "toll_count": 2
+            },
+            {
+              "cash": 68142,
+              "id": "cpu-3",
+              "patrimony_total": 81292,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 83125,
+              "id": "cpu-4",
+              "patrimony_total": 98675,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 92091,
+              "id": "cpu-5",
+              "patrimony_total": 105551,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 84799,
+              "id": "cpu-6",
+              "patrimony_total": 100929,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 900
+        },
+        {
+          "label": "Turno 950",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 91372,
+              "id": "cpu-1",
+              "patrimony_total": 103252,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 79875,
+              "id": "cpu-2",
+              "patrimony_total": 95295,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 72790,
+              "id": "cpu-3",
+              "patrimony_total": 86980,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 90887,
+              "id": "cpu-4",
+              "patrimony_total": 105327,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 91958,
+              "id": "cpu-5",
+              "patrimony_total": 107818,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 90977,
+              "id": "cpu-6",
+              "patrimony_total": 109137,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 950
+        },
+        {
+          "label": "Turno 1000",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 90923,
+              "id": "cpu-1",
+              "patrimony_total": 105303,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 83227,
+              "id": "cpu-2",
+              "patrimony_total": 100797,
+              "permission_count": 6,
+              "property_count": 10,
+              "title_count": 9,
+              "toll_count": 1
+            },
+            {
+              "cash": 81262,
+              "id": "cpu-3",
+              "patrimony_total": 92972,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 97740,
+              "id": "cpu-4",
+              "patrimony_total": 113360,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 104925,
+              "id": "cpu-5",
+              "patrimony_total": 118095,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 94925,
+              "id": "cpu-6",
+              "patrimony_total": 112425,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1000
+        },
+        {
+          "label": "Turno 1050",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 102864,
+              "id": "cpu-1",
+              "patrimony_total": 114364,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 90248,
+              "id": "cpu-2",
+              "patrimony_total": 107198,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 80877,
+              "id": "cpu-3",
+              "patrimony_total": 95697,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 2,
+              "toll_count": 2
+            },
+            {
+              "cash": 100887,
+              "id": "cpu-4",
+              "patrimony_total": 119377,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            },
+            {
+              "cash": 107616,
+              "id": "cpu-5",
+              "patrimony_total": 120316,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 102519,
+              "id": "cpu-6",
+              "patrimony_total": 118009,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1050
+        },
+        {
+          "label": "Turno 1100",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 106900,
+              "id": "cpu-1",
+              "patrimony_total": 120860,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 94341,
+              "id": "cpu-2",
+              "patrimony_total": 111271,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 89906,
+              "id": "cpu-3",
+              "patrimony_total": 101056,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 107884,
+              "id": "cpu-4",
+              "patrimony_total": 125254,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 111747,
+              "id": "cpu-5",
+              "patrimony_total": 125587,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 107006,
+              "id": "cpu-6",
+              "patrimony_total": 123706,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1100
+        },
+        {
+          "label": "Turno 1150",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 115114,
+              "id": "cpu-1",
+              "patrimony_total": 126734,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 101261,
+              "id": "cpu-2",
+              "patrimony_total": 116811,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 94055,
+              "id": "cpu-3",
+              "patrimony_total": 106445,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 117187,
+              "id": "cpu-4",
+              "patrimony_total": 130407,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 115806,
+              "id": "cpu-5",
+              "patrimony_total": 132256,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            },
+            {
+              "cash": 110185,
+              "id": "cpu-6",
+              "patrimony_total": 130905,
+              "permission_count": 6,
+              "property_count": 10,
+              "title_count": 7,
+              "toll_count": 3
+            }
+          ],
+          "turnNumber": 1150
+        },
+        {
+          "label": "Turno 1200",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 118106,
+              "id": "cpu-1",
+              "patrimony_total": 129986,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 103371,
+              "id": "cpu-2",
+              "patrimony_total": 119461,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 97195,
+              "id": "cpu-3",
+              "patrimony_total": 111085,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 116577,
+              "id": "cpu-4",
+              "patrimony_total": 136617,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 5,
+              "toll_count": 3
+            },
+            {
+              "cash": 126521,
+              "id": "cpu-5",
+              "patrimony_total": 139711,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            },
+            {
+              "cash": 121978,
+              "id": "cpu-6",
+              "patrimony_total": 136838,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1200
+        },
+        {
+          "label": "Turno 1250",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 119869,
+              "id": "cpu-1",
+              "patrimony_total": 131629,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 113456,
+              "id": "cpu-2",
+              "patrimony_total": 130246,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 8,
+              "toll_count": 1
+            },
+            {
+              "cash": 106536,
+              "id": "cpu-3",
+              "patrimony_total": 120606,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 123804,
+              "id": "cpu-4",
+              "patrimony_total": 141754,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 130501,
+              "id": "cpu-5",
+              "patrimony_total": 144161,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 126387,
+              "id": "cpu-6",
+              "patrimony_total": 142107,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1250
+        },
+        {
+          "label": "Turno 1300",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 127318,
+              "id": "cpu-1",
+              "patrimony_total": 138558,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 118020,
+              "id": "cpu-2",
+              "patrimony_total": 133930,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 114126,
+              "id": "cpu-3",
+              "patrimony_total": 125326,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 127508,
+              "id": "cpu-4",
+              "patrimony_total": 148888,
+              "permission_count": 6,
+              "property_count": 12,
+              "title_count": 9,
+              "toll_count": 3
+            },
+            {
+              "cash": 136126,
+              "id": "cpu-5",
+              "patrimony_total": 151866,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 135069,
+              "id": "cpu-6",
+              "patrimony_total": 149549,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 1300
+        },
+        {
+          "label": "Turno 1350",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 129372,
+              "id": "cpu-1",
+              "patrimony_total": 143902,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 123506,
+              "id": "cpu-2",
+              "patrimony_total": 138266,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 118309,
+              "id": "cpu-3",
+              "patrimony_total": 130309,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 143240,
+              "id": "cpu-4",
+              "patrimony_total": 157590,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 143468,
+              "id": "cpu-5",
+              "patrimony_total": 158948,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 136465,
+              "id": "cpu-6",
+              "patrimony_total": 155295,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1350
+        },
+        {
+          "label": "Turno 1400",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 137509,
+              "id": "cpu-1",
+              "patrimony_total": 149049,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 126615,
+              "id": "cpu-2",
+              "patrimony_total": 141385,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 120505,
+              "id": "cpu-3",
+              "patrimony_total": 135965,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 144453,
+              "id": "cpu-4",
+              "patrimony_total": 161323,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 150341,
+              "id": "cpu-5",
+              "patrimony_total": 166511,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 146282,
+              "id": "cpu-6",
+              "patrimony_total": 161422,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1400
+        },
+        {
+          "label": "Turno 1450",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 141002,
+              "id": "cpu-1",
+              "patrimony_total": 152612,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 131197,
+              "id": "cpu-2",
+              "patrimony_total": 145647,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 127061,
+              "id": "cpu-3",
+              "patrimony_total": 141671,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 149822,
+              "id": "cpu-4",
+              "patrimony_total": 165972,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 153680,
+              "id": "cpu-5",
+              "patrimony_total": 170900,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 3,
+              "toll_count": 3
+            },
+            {
+              "cash": 152052,
+              "id": "cpu-6",
+              "patrimony_total": 167962,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1450
+        },
+        {
+          "label": "Turno 1500",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 148396,
+              "id": "cpu-1",
+              "patrimony_total": 159126,
+              "permission_count": 5,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 136925,
+              "id": "cpu-2",
+              "patrimony_total": 152455,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 130318,
+              "id": "cpu-3",
+              "patrimony_total": 146518,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 154313,
+              "id": "cpu-4",
+              "patrimony_total": 174003,
+              "permission_count": 6,
+              "property_count": 11,
+              "title_count": 9,
+              "toll_count": 2
+            },
+            {
+              "cash": 164036,
+              "id": "cpu-5",
+              "patrimony_total": 177986,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 155436,
+              "id": "cpu-6",
+              "patrimony_total": 171286,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1500
+        },
+        {
+          "label": "Turno 1550",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 153456,
+              "id": "cpu-1",
+              "patrimony_total": 165276,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 140612,
+              "id": "cpu-2",
+              "patrimony_total": 158552,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 138831,
+              "id": "cpu-3",
+              "patrimony_total": 154961,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 165019,
+              "id": "cpu-4",
+              "patrimony_total": 183069,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 168867,
+              "id": "cpu-5",
+              "patrimony_total": 182137,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 161899,
+              "id": "cpu-6",
+              "patrimony_total": 176639,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 1550
+        },
+        {
+          "label": "Turno 1600",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 155143,
+              "id": "cpu-1",
+              "patrimony_total": 171443,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            },
+            {
+              "cash": 149866,
+              "id": "cpu-2",
+              "patrimony_total": 165896,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 148759,
+              "id": "cpu-3",
+              "patrimony_total": 161099,
+              "permission_count": 6,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 170677,
+              "id": "cpu-4",
+              "patrimony_total": 187957,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 173686,
+              "id": "cpu-5",
+              "patrimony_total": 187236,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            },
+            {
+              "cash": 165952,
+              "id": "cpu-6",
+              "patrimony_total": 182402,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1600
+        },
+        {
+          "label": "Turno 1650",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 164841,
+              "id": "cpu-1",
+              "patrimony_total": 176951,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 152044,
+              "id": "cpu-2",
+              "patrimony_total": 168424,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 153304,
+              "id": "cpu-3",
+              "patrimony_total": 168554,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 177168,
+              "id": "cpu-4",
+              "patrimony_total": 192428,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 178323,
+              "id": "cpu-5",
+              "patrimony_total": 192863,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 170721,
+              "id": "cpu-6",
+              "patrimony_total": 189131,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1650
+        },
+        {
+          "label": "Turno 1700",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 167388,
+              "id": "cpu-1",
+              "patrimony_total": 181568,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 154823,
+              "id": "cpu-2",
+              "patrimony_total": 172433,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 161915,
+              "id": "cpu-3",
+              "patrimony_total": 175435,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 184164,
+              "id": "cpu-4",
+              "patrimony_total": 199764,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 184160,
+              "id": "cpu-5",
+              "patrimony_total": 198940,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 181126,
+              "id": "cpu-6",
+              "patrimony_total": 197386,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 1700
+        },
+        {
+          "label": "Turno 1750",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 172942,
+              "id": "cpu-1",
+              "patrimony_total": 186792,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 162456,
+              "id": "cpu-2",
+              "patrimony_total": 176786,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 163169,
+              "id": "cpu-3",
+              "patrimony_total": 180789,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 190906,
+              "id": "cpu-4",
+              "patrimony_total": 203726,
+              "permission_count": 6,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 192154,
+              "id": "cpu-5",
+              "patrimony_total": 205684,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 182143,
+              "id": "cpu-6",
+              "patrimony_total": 201943,
+              "permission_count": 6,
+              "property_count": 11,
+              "title_count": 9,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1750
+        },
+        {
+          "label": "Turno 1800",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 179325,
+              "id": "cpu-1",
+              "patrimony_total": 193695,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 163927,
+              "id": "cpu-2",
+              "patrimony_total": 179497,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 171516,
+              "id": "cpu-3",
+              "patrimony_total": 186046,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 190125,
+              "id": "cpu-4",
+              "patrimony_total": 206015,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 198426,
+              "id": "cpu-5",
+              "patrimony_total": 211506,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 190711,
+              "id": "cpu-6",
+              "patrimony_total": 209221,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1800
+        },
+        {
+          "label": "Turno 1850",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 184819,
+              "id": "cpu-1",
+              "patrimony_total": 197079,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 170094,
+              "id": "cpu-2",
+              "patrimony_total": 184534,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 176209,
+              "id": "cpu-3",
+              "patrimony_total": 192279,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 193375,
+              "id": "cpu-4",
+              "patrimony_total": 209365,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 201869,
+              "id": "cpu-5",
+              "patrimony_total": 215499,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 199363,
+              "id": "cpu-6",
+              "patrimony_total": 218923,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 4,
+              "toll_count": 3
+            }
+          ],
+          "turnNumber": 1850
+        },
+        {
+          "label": "Turno 1900",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 190017,
+              "id": "cpu-1",
+              "patrimony_total": 203267,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            },
+            {
+              "cash": 176423,
+              "id": "cpu-2",
+              "patrimony_total": 192423,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 183129,
+              "id": "cpu-3",
+              "patrimony_total": 196199,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 196551,
+              "id": "cpu-4",
+              "patrimony_total": 212221,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 205514,
+              "id": "cpu-5",
+              "patrimony_total": 221174,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 208771,
+              "id": "cpu-6",
+              "patrimony_total": 227071,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1900
+        },
+        {
+          "label": "Turno 1950",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 195835,
+              "id": "cpu-1",
+              "patrimony_total": 207905,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 183282,
+              "id": "cpu-2",
+              "patrimony_total": 198112,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 183665,
+              "id": "cpu-3",
+              "patrimony_total": 197815,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 203656,
+              "id": "cpu-4",
+              "patrimony_total": 221856,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 210834,
+              "id": "cpu-5",
+              "patrimony_total": 225254,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 216236,
+              "id": "cpu-6",
+              "patrimony_total": 234516,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 1950
+        },
+        {
+          "label": "Turno 2000",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 198605,
+              "id": "cpu-1",
+              "patrimony_total": 212615,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 184057,
+              "id": "cpu-2",
+              "patrimony_total": 204507,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 6,
+              "toll_count": 3
+            },
+            {
+              "cash": 188850,
+              "id": "cpu-3",
+              "patrimony_total": 202370,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 211975,
+              "id": "cpu-4",
+              "patrimony_total": 227475,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 213968,
+              "id": "cpu-5",
+              "patrimony_total": 228808,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 227265,
+              "id": "cpu-6",
+              "patrimony_total": 240895,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2000
+        },
+        {
+          "label": "Turno 2050",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 203791,
+              "id": "cpu-1",
+              "patrimony_total": 217751,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 193243,
+              "id": "cpu-2",
+              "patrimony_total": 211173,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 194929,
+              "id": "cpu-3",
+              "patrimony_total": 208949,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 217162,
+              "id": "cpu-4",
+              "patrimony_total": 232772,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 215045,
+              "id": "cpu-5",
+              "patrimony_total": 231895,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 231582,
+              "id": "cpu-6",
+              "patrimony_total": 245162,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2050
+        },
+        {
+          "label": "Turno 2100",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 206241,
+              "id": "cpu-1",
+              "patrimony_total": 222811,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 202652,
+              "id": "cpu-2",
+              "patrimony_total": 219892,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 8,
+              "toll_count": 1
+            },
+            {
+              "cash": 195591,
+              "id": "cpu-3",
+              "patrimony_total": 211271,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 226798,
+              "id": "cpu-4",
+              "patrimony_total": 240858,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 223839,
+              "id": "cpu-5",
+              "patrimony_total": 238689,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 2,
+              "toll_count": 2
+            },
+            {
+              "cash": 234305,
+              "id": "cpu-6",
+              "patrimony_total": 247855,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2100
+        },
+        {
+          "label": "Turno 2150",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 214887,
+              "id": "cpu-1",
+              "patrimony_total": 225277,
+              "permission_count": 5,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 207983,
+              "id": "cpu-2",
+              "patrimony_total": 226763,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 199795,
+              "id": "cpu-3",
+              "patrimony_total": 215425,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 229951,
+              "id": "cpu-4",
+              "patrimony_total": 244661,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 231432,
+              "id": "cpu-5",
+              "patrimony_total": 247122,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 234255,
+              "id": "cpu-6",
+              "patrimony_total": 251005,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2150
+        },
+        {
+          "label": "Turno 2200",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 214569,
+              "id": "cpu-1",
+              "patrimony_total": 228459,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 222136,
+              "id": "cpu-2",
+              "patrimony_total": 235986,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 205858,
+              "id": "cpu-3",
+              "patrimony_total": 222888,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 232357,
+              "id": "cpu-4",
+              "patrimony_total": 249677,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 239840,
+              "id": "cpu-5",
+              "patrimony_total": 254590,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 239626,
+              "id": "cpu-6",
+              "patrimony_total": 254736,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2200
+        },
+        {
+          "label": "Turno 2250",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 220781,
+              "id": "cpu-1",
+              "patrimony_total": 234801,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 224148,
+              "id": "cpu-2",
+              "patrimony_total": 239748,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 216026,
+              "id": "cpu-3",
+              "patrimony_total": 229256,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 239012,
+              "id": "cpu-4",
+              "patrimony_total": 258832,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 4,
+              "toll_count": 3
+            },
+            {
+              "cash": 246195,
+              "id": "cpu-5",
+              "patrimony_total": 262465,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 245423,
+              "id": "cpu-6",
+              "patrimony_total": 260433,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2250
+        },
+        {
+          "label": "Turno 2300",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 223933,
+              "id": "cpu-1",
+              "patrimony_total": 240013,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 232076,
+              "id": "cpu-2",
+              "patrimony_total": 248086,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 217464,
+              "id": "cpu-3",
+              "patrimony_total": 233284,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 255716,
+              "id": "cpu-4",
+              "patrimony_total": 268126,
+              "permission_count": 6,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 246974,
+              "id": "cpu-5",
+              "patrimony_total": 264644,
+              "permission_count": 6,
+              "property_count": 10,
+              "title_count": 9,
+              "toll_count": 1
+            },
+            {
+              "cash": 249516,
+              "id": "cpu-6",
+              "patrimony_total": 265476,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2300
+        },
+        {
+          "label": "Turno 2350",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 227684,
+              "id": "cpu-1",
+              "patrimony_total": 246774,
+              "permission_count": 5,
+              "property_count": 11,
+              "title_count": 8,
+              "toll_count": 3
+            },
+            {
+              "cash": 239065,
+              "id": "cpu-2",
+              "patrimony_total": 252685,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 220131,
+              "id": "cpu-3",
+              "patrimony_total": 238071,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 259557,
+              "id": "cpu-4",
+              "patrimony_total": 274467,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 256896,
+              "id": "cpu-5",
+              "patrimony_total": 271636,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 257806,
+              "id": "cpu-6",
+              "patrimony_total": 271456,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2350
+        },
+        {
+          "label": "Turno 2400",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 241931,
+              "id": "cpu-1",
+              "patrimony_total": 254881,
+              "permission_count": 5,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 240908,
+              "id": "cpu-2",
+              "patrimony_total": 256648,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 225523,
+              "id": "cpu-3",
+              "patrimony_total": 243503,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 262646,
+              "id": "cpu-4",
+              "patrimony_total": 279476,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 262577,
+              "id": "cpu-5",
+              "patrimony_total": 276797,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 257088,
+              "id": "cpu-6",
+              "patrimony_total": 273318,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2400
+        },
+        {
+          "label": "Turno 2450",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 249086,
+              "id": "cpu-1",
+              "patrimony_total": 263006,
+              "permission_count": 5,
+              "property_count": 10,
+              "title_count": 10,
+              "toll_count": 0
+            },
+            {
+              "cash": 243120,
+              "id": "cpu-2",
+              "patrimony_total": 260700,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 234452,
+              "id": "cpu-3",
+              "patrimony_total": 249782,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 269200,
+              "id": "cpu-4",
+              "patrimony_total": 286440,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 266366,
+              "id": "cpu-5",
+              "patrimony_total": 281056,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 261647,
+              "id": "cpu-6",
+              "patrimony_total": 276837,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2450
+        },
+        {
+          "label": "Turno 2500",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 250240,
+              "id": "cpu-1",
+              "patrimony_total": 267050,
+              "permission_count": 5,
+              "property_count": 9,
+              "title_count": 7,
+              "toll_count": 2
+            },
+            {
+              "cash": 258283,
+              "id": "cpu-2",
+              "patrimony_total": 273113,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 239108,
+              "id": "cpu-3",
+              "patrimony_total": 254198,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 274418,
+              "id": "cpu-4",
+              "patrimony_total": 289748,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            },
+            {
+              "cash": 270509,
+              "id": "cpu-5",
+              "patrimony_total": 286439,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 264726,
+              "id": "cpu-6",
+              "patrimony_total": 280686,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2500
+        },
+        {
+          "label": "Turno 2550",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 261800,
+              "id": "cpu-1",
+              "patrimony_total": 275290,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 259782,
+              "id": "cpu-2",
+              "patrimony_total": 275802,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 244133,
+              "id": "cpu-3",
+              "patrimony_total": 260973,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 280143,
+              "id": "cpu-4",
+              "patrimony_total": 296443,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 274355,
+              "id": "cpu-5",
+              "patrimony_total": 289975,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 274473,
+              "id": "cpu-6",
+              "patrimony_total": 290153,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2550
+        },
+        {
+          "label": "Turno 2600",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 265372,
+              "id": "cpu-1",
+              "patrimony_total": 282622,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 3,
+              "toll_count": 3
+            },
+            {
+              "cash": 267977,
+              "id": "cpu-2",
+              "patrimony_total": 281707,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 252733,
+              "id": "cpu-3",
+              "patrimony_total": 267663,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 284469,
+              "id": "cpu-4",
+              "patrimony_total": 298409,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 278805,
+              "id": "cpu-5",
+              "patrimony_total": 294495,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 278636,
+              "id": "cpu-6",
+              "patrimony_total": 297046,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 6,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 2600
+        },
+        {
+          "label": "Turno 2650",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 277545,
+              "id": "cpu-1",
+              "patrimony_total": 291925,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 271741,
+              "id": "cpu-2",
+              "patrimony_total": 286511,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 259235,
+              "id": "cpu-3",
+              "patrimony_total": 277285,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 287487,
+              "id": "cpu-4",
+              "patrimony_total": 303587,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 280684,
+              "id": "cpu-5",
+              "patrimony_total": 297354,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 290308,
+              "id": "cpu-6",
+              "patrimony_total": 304288,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2650
+        },
+        {
+          "label": "Turno 2700",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 283336,
+              "id": "cpu-1",
+              "patrimony_total": 299296,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 277851,
+              "id": "cpu-2",
+              "patrimony_total": 292111,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 264718,
+              "id": "cpu-3",
+              "patrimony_total": 279628,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 291343,
+              "id": "cpu-4",
+              "patrimony_total": 306543,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 286849,
+              "id": "cpu-5",
+              "patrimony_total": 303289,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 292420,
+              "id": "cpu-6",
+              "patrimony_total": 309600,
+              "permission_count": 6,
+              "property_count": 9,
+              "title_count": 8,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2700
+        },
+        {
+          "label": "Turno 2750",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 297681,
+              "id": "cpu-1",
+              "patrimony_total": 310061,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 281235,
+              "id": "cpu-2",
+              "patrimony_total": 300365,
+              "permission_count": 6,
+              "property_count": 10,
+              "title_count": 8,
+              "toll_count": 2
+            },
+            {
+              "cash": 263836,
+              "id": "cpu-3",
+              "patrimony_total": 281876,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 297947,
+              "id": "cpu-4",
+              "patrimony_total": 312267,
+              "permission_count": 6,
+              "property_count": 2,
+              "title_count": 1,
+              "toll_count": 1
+            },
+            {
+              "cash": 293435,
+              "id": "cpu-5",
+              "patrimony_total": 309875,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 299762,
+              "id": "cpu-6",
+              "patrimony_total": 313402,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2750
+        },
+        {
+          "label": "Turno 2800",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 303915,
+              "id": "cpu-1",
+              "patrimony_total": 318685,
+              "permission_count": 5,
+              "property_count": 4,
+              "title_count": 2,
+              "toll_count": 2
+            },
+            {
+              "cash": 289112,
+              "id": "cpu-2",
+              "patrimony_total": 303412,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 272279,
+              "id": "cpu-3",
+              "patrimony_total": 287969,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 305184,
+              "id": "cpu-4",
+              "patrimony_total": 320794,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 296920,
+              "id": "cpu-5",
+              "patrimony_total": 314860,
+              "permission_count": 6,
+              "property_count": 11,
+              "title_count": 10,
+              "toll_count": 1
+            },
+            {
+              "cash": 302735,
+              "id": "cpu-6",
+              "patrimony_total": 318375,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2800
+        },
+        {
+          "label": "Turno 2850",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 311185,
+              "id": "cpu-1",
+              "patrimony_total": 325585,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 293299,
+              "id": "cpu-2",
+              "patrimony_total": 310819,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 277483,
+              "id": "cpu-3",
+              "patrimony_total": 293233,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 311955,
+              "id": "cpu-4",
+              "patrimony_total": 327215,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 8,
+              "toll_count": 0
+            },
+            {
+              "cash": 300779,
+              "id": "cpu-5",
+              "patrimony_total": 318359,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            },
+            {
+              "cash": 312988,
+              "id": "cpu-6",
+              "patrimony_total": 326428,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 2850
+        },
+        {
+          "label": "Turno 2900",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 313694,
+              "id": "cpu-1",
+              "patrimony_total": 328334,
+              "permission_count": 5,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 302280,
+              "id": "cpu-2",
+              "patrimony_total": 318020,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 282468,
+              "id": "cpu-3",
+              "patrimony_total": 302068,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 4,
+              "toll_count": 3
+            },
+            {
+              "cash": 318456,
+              "id": "cpu-4",
+              "patrimony_total": 332016,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 312706,
+              "id": "cpu-5",
+              "patrimony_total": 326706,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 314658,
+              "id": "cpu-6",
+              "patrimony_total": 331068,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2900
+        },
+        {
+          "label": "Turno 2950",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 316845,
+              "id": "cpu-1",
+              "patrimony_total": 334395,
+              "permission_count": 5,
+              "property_count": 7,
+              "title_count": 4,
+              "toll_count": 3
+            },
+            {
+              "cash": 309867,
+              "id": "cpu-2",
+              "patrimony_total": 324997,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 3,
+              "toll_count": 1
+            },
+            {
+              "cash": 293661,
+              "id": "cpu-3",
+              "patrimony_total": 310581,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 324042,
+              "id": "cpu-4",
+              "patrimony_total": 337262,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 316316,
+              "id": "cpu-5",
+              "patrimony_total": 331096,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 321440,
+              "id": "cpu-6",
+              "patrimony_total": 337790,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            }
+          ],
+          "turnNumber": 2950
+        },
+        {
+          "label": "Turno 3000",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 325888,
+              "id": "cpu-1",
+              "patrimony_total": 340008,
+              "permission_count": 5,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 308238,
+              "id": "cpu-2",
+              "patrimony_total": 326138,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 5,
+              "toll_count": 2
+            },
+            {
+              "cash": 303416,
+              "id": "cpu-3",
+              "patrimony_total": 317006,
+              "permission_count": 6,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 329976,
+              "id": "cpu-4",
+              "patrimony_total": 343136,
+              "permission_count": 6,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 323446,
+              "id": "cpu-5",
+              "patrimony_total": 337866,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 323937,
+              "id": "cpu-6",
+              "patrimony_total": 344697,
+              "permission_count": 6,
+              "property_count": 10,
+              "title_count": 7,
+              "toll_count": 3
+            }
+          ],
+          "turnNumber": 3000
+        },
+        {
+          "label": "Turno 3050",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 332791,
+              "id": "cpu-1",
+              "patrimony_total": 348131,
+              "permission_count": 5,
+              "property_count": 5,
+              "title_count": 3,
+              "toll_count": 2
+            },
+            {
+              "cash": 319317,
+              "id": "cpu-2",
+              "patrimony_total": 333457,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 302215,
+              "id": "cpu-3",
+              "patrimony_total": 318825,
+              "permission_count": 6,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 333540,
+              "id": "cpu-4",
+              "patrimony_total": 347470,
+              "permission_count": 6,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 328406,
+              "id": "cpu-5",
+              "patrimony_total": 344736,
+              "permission_count": 6,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 337062,
+              "id": "cpu-6",
+              "patrimony_total": 354662,
+              "permission_count": 6,
+              "property_count": 6,
+              "title_count": 4,
+              "toll_count": 2
+            }
+          ],
+          "turnNumber": 3050
+        }
+      ]
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 1",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-2": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 2",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-3": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 3",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-4": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 4",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-5": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 5",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-6": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 6",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Jogador 2: porto resolvido",
+      "active_player_id": "cpu-2",
+      "dice": [
+        6,
+        3
+      ],
+      "note": "Jogador 2 parou em MUM, que ja pertence a sua companhia.",
+      "phase": "Turno 3094",
+      "turn_label": "Turno 3094",
+      "turn_number": 3094
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": false,
+      "ai_difficulty": "normal",
+      "ai_manual_profiles": [],
+      "ai_manual_robot_configs": [],
+      "ai_profile_mode": "balanced",
+      "ai_profile_order": [
+        "balanced_trader"
+      ],
+      "robot_count": 6
+    }
+  },
+  "variant": "robots-ai-ui",
+  "version": 1
+}

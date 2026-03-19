@@ -33,6 +33,10 @@ class CouponKind(str, Enum):
     FREE_PORT_STAY = "free_port_stay"
     SKIP_OWNER_SHARE = "skip_owner_share"
     REROUTE_SAME_VALUE = "reroute_same_value"
+    CANCEL_CONTRACT = "cancel_contract"
+    ANTI_MONOPOLY_OWNER_SHARE = "anti_monopoly_owner_share"
+    FREE_FUEL_CONTRACT = "free_fuel_contract"
+    EXTENDED_CONTRACT_DEADLINE = "extended_contract_deadline"
 
 
 @dataclass(frozen=True)

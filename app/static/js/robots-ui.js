@@ -1,4 +1,5 @@
 const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
+const DEFAULT_PERMISSION_STYLE = { accent: '#17C51A', text: '#FFFFFF' };
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -82,6 +83,21 @@ const state = {
   decision: {
     resolver: null,
   },
+  saveName: {
+    resolver: null,
+    suggestedName: '',
+    wasPaused: false,
+  },
+  loadBrowser: {
+    resolver: null,
+    runtime: 'robots-ui',
+    items: [],
+    selectedFileName: '',
+    selectedSave: null,
+    loading: false,
+    error: '',
+    wasPaused: false,
+  },
   chanceDraw: {
     drawing: false,
     selectedCardId: '',
@@ -141,6 +157,8 @@ const state = {
   },
 };
 
+let saveBrowser = null;
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -175,6 +193,8 @@ function hasCentralOverlayOpen() {
     'movement-dice-overlay',
     'chance-draw-overlay',
     'decision-overlay',
+    'save-name-overlay',
+    'load-browser-overlay',
     'property-inspector-overlay',
     'game-settings-overlay',
     'game-log-overlay',
@@ -1346,6 +1366,28 @@ function setText(id, value) {
   if (node) node.textContent = value;
 }
 
+function findPermissionCatalogCard(permission) {
+  const normalizedKey = String(permission?.kind || permission?.id || '').trim().toLowerCase();
+  if (!normalizedKey) return null;
+  return (state.freightPermissionCards || []).find((card) => String(card?.kind || card?.id || '').trim().toLowerCase() === normalizedKey) || null;
+}
+
+function normalizePermissionState(permission) {
+  if (!permission) return null;
+  const source = findPermissionCatalogCard(permission);
+  return {
+    ...(source || {}),
+    ...permission,
+    id: permission.id || source?.id || null,
+    kind: permission.kind || source?.kind || permission.id || null,
+    title: permission.title || source?.title || '--',
+    accent: permission.accent || source?.accent || DEFAULT_PERMISSION_STYLE.accent,
+    text: permission.text || source?.text || DEFAULT_PERMISSION_STYLE.text,
+    purchase_price: Number(permission.purchase_price || source?.purchase_price || 0),
+    mortgaged: Boolean(permission.mortgaged),
+  };
+}
+
 function setHtml(id, value) {
   const node = byId(id);
   if (node) node.innerHTML = value;
@@ -1549,10 +1591,14 @@ function couponLabelFromCode(code) {
     shortcut_ignore_toll: 'Atalho',
     free_toll: 'Pedagio Livre',
     free_fuel: 'Gasolina Livre',
+    free_fuel_contract: 'Viagem de Graca',
+    extended_contract_deadline: 'Prazo Estendido',
     double_freight: 'Lucro Extra',
     free_port_stay: 'Porto Livre',
     skip_owner_share: 'Quebra de Contrato',
+    anti_monopoly_owner_share: 'Contra o Monopolio',
     reroute_same_value: 'Mudanca de Rota',
+    cancel_contract: 'Contrato Cancelado',
     double_dice_once: 'Dados x2',
   };
   return labels[code] || code || 'Cupom';
@@ -1718,6 +1764,15 @@ function fuelStopCost(node) {
 async function resolveFuelStopForPlayer(player, node) {
   if (!player || node?.kind !== 'fuel') {
     return { paid: 0, usedCoupon: false, note: '', statusLabel: player?.status_label || '--' };
+  }
+
+  if (player?.active_contract?.free_fuel_for_contract) {
+    return {
+      paid: 0,
+      usedCoupon: true,
+      note: `${playerActionName(player)} seguiu com Viagem de Graca e nao pagou abastecimento em ${player.location_label}.`,
+      statusLabel: player.status_label || 'viagem de graca',
+    };
   }
 
   const amount = fuelStopCost(node);
@@ -2340,19 +2395,20 @@ function cargoIconMarkup(kind, className) {
 }
 
 function permissionMiniMarkup(permission) {
-  const mortgaged = Boolean(permission?.mortgaged);
+  const normalized = normalizePermissionState(permission) || permission || {};
+  const mortgaged = Boolean(normalized?.mortgaged);
   return `
-    <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${permission.accent}; --permission-text:${permission.text};">
+    <article class="preview-permission-mini${mortgaged ? ' is-mortgaged' : ''}" style="--permission-accent:${normalized.accent}; --permission-text:${normalized.text};">
       
-      <header class="preview-permission-mini-head">${permission.title}</header>
+      <header class="preview-permission-mini-head">${normalized.title}</header>
       <div class="preview-permission-mini-row top">
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
       </div>
       <div class="preview-permission-mini-body">Permissao</div>
       <div class="preview-permission-mini-row bottom">
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
-        <span class="preview-permission-mini-icon">${cargoIconMarkup(permission.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
+        <span class="preview-permission-mini-icon">${cargoIconMarkup(normalized.kind, 'preview-permission-mini-image')}</span>
       </div>
     </article>
   `;
@@ -2631,12 +2687,19 @@ function miniHandMinVisible(strip) {
 function layoutMiniHand(strip) {
   if (!strip || strip.classList.contains('is-empty')) return;
   const items = [...strip.children].filter((node) => node.nodeType === 1);
+  items.forEach((item, index) => {
+    item.style.zIndex = item.classList.contains('is-selected') ? String(items.length + 2) : String(index + 1);
+  });
   if (items.length <= 1) {
     strip.style.setProperty('--stack-overlap', '0px');
     return;
   }
 
-  const availableWidth = Math.floor(strip.clientWidth || strip.getBoundingClientRect().width || 0);
+  const computed = window.getComputedStyle(strip);
+  const paddingLeft = parseFloat(computed.paddingLeft || '0') || 0;
+  const paddingRight = parseFloat(computed.paddingRight || '0') || 0;
+  const rawWidth = strip.clientWidth || strip.getBoundingClientRect().width || 0;
+  const availableWidth = Math.floor(Math.max(0, rawWidth - paddingLeft - paddingRight));
   const itemWidth = Math.ceil(items[0].getBoundingClientRect().width || items[0].offsetWidth || 0);
   if (!availableWidth || !itemWidth) return;
 
@@ -2914,6 +2977,7 @@ function ensurePlayerContractDraft(player) {
       target_rounds: state.rules.target_rounds || 4,
       toll_passed: false,
       toll_requirement_waived: false,
+      free_fuel_for_contract: false,
       route_stage: 'to_toll',
       completed: false,
       note: 'Contrato em montagem.',
@@ -2925,6 +2989,107 @@ function ensurePlayerContractDraft(player) {
       : '0/4';
   }
   return player.active_contract;
+}
+
+function shouldAutoUseCancelContractCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return false;
+  const targetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  const remainingRounds = Math.max(0, targetRounds - roundsElapsed);
+  const routeContext = buildContractRouteContext(player);
+  const remainingSteps = Math.max(0, (routeContext?.forwardPath?.length || 1) - 1);
+  const baseFreightValue = Number(contract.base_freight_value || contract.freight_value || 0);
+  if (remainingRounds === 0 && remainingSteps > 0) return true;
+  if (!contract.toll_passed && remainingRounds <= 1 && remainingSteps > 6) return true;
+  return remainingSteps > 9 && baseFreightValue <= 120;
+}
+
+function shouldAutoUseFreeFuelContractCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed || contract.free_fuel_for_contract) return false;
+  const routeContext = buildContractRouteContext(player);
+  return (routeContext?.forwardPath || []).some((nodeId) => state.nodesById[nodeId]?.kind === 'fuel');
+}
+
+function shouldAutoUseExtendedDeadlineCoupon(player) {
+  const contract = player?.active_contract;
+  if (!player || !contract || contract.completed) return false;
+  const currentTargetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  if (currentTargetRounds >= 6) return false;
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  const remainingRounds = Math.max(0, currentTargetRounds - roundsElapsed);
+  const routeContext = buildContractRouteContext(player);
+  const remainingSteps = Math.max(0, (routeContext?.forwardPath?.length || 1) - 1);
+  if (roundsElapsed >= currentTargetRounds) return true;
+  if (remainingRounds <= 1 && remainingSteps > 2) return true;
+  return remainingSteps > Math.max(5, remainingRounds * 3);
+}
+
+function originMonopolyOwnerForContract(player, contract) {
+  if (!player || !contract) return null;
+  const originOwner = ownerPlayerOf(contract.origin || '');
+  const originCard = getPropertyCard(contract.origin || '');
+  if (!originOwner || originOwner.id === player.id || originOwner.bankrupt || !originCard || isPropertyMortgaged(contract.origin || '')) {
+    return null;
+  }
+  return playerHasRegionMonopoly(originOwner, originCard.continent) ? originOwner : null;
+}
+
+async function maybeUseCancelContractCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'cancel_contract');
+  if (!player || !contract || contract.completed || !coupon || !shouldAutoUseCancelContractCoupon(player)) return null;
+
+  const previousRoute = `${contract.origin || '--'} -> ${contract.mandatory_toll || '--'} -> ${contract.destination || '--'}`;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Cancelou o contrato ${previousRoute} para abrir um novo.`,
+    statusLabel: 'contrato cancelado',
+    action: 'Contrato cancelado',
+  });
+  player.active_contract = null;
+  player.needs_new_contract = false;
+  const currentCard = getPropertyCard(player.location_code || '');
+  await runContractOpeningForPlayer(player, {
+    phaseLabel: `${player.name}: novo contrato`,
+    needsPermission: !(player.permissions || []).length,
+    originMode: currentCard?.kind === 'port' ? 'current' : 'draw',
+  });
+  return { note: `${playerActionName(player)} cancelou o contrato atual e abriu um novo.` };
+}
+
+async function maybeUseFreeFuelContractCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'free_fuel_contract');
+  if (!player || !contract || contract.completed || contract.free_fuel_for_contract || !coupon || !shouldAutoUseFreeFuelContractCoupon(player)) return null;
+
+  contract.free_fuel_for_contract = true;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Ativou abastecimento gratis ate o fim do contrato ${contract.destination || '--'}.`,
+    statusLabel: 'viagem de graca',
+    action: 'Viagem de graca ativada',
+  });
+  return { note: `${playerActionName(player)} ativou Viagem de Graca para o contrato atual.` };
+}
+
+async function maybeUseExtendedDeadlineCoupon(player) {
+  const contract = player?.active_contract;
+  const coupon = firstCouponOfKind(player, 'extended_contract_deadline');
+  if (!player || !contract || contract.completed || !coupon) return null;
+
+  const currentTargetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
+  if (currentTargetRounds >= 6 || !shouldAutoUseExtendedDeadlineCoupon(player)) return null;
+
+  const roundsElapsed = Math.max(1, Number(contract.rounds_elapsed || 1));
+  contract.target_rounds = 6;
+  contract.deadline_label = `${roundsElapsed} / 6`;
+  contract.deadline_progress = `${roundsElapsed}/6`;
+  consumeCouponForPlayer(player, coupon, {
+    detail: `Ampliou o prazo do contrato ${contract.destination || '--'} para 6 rodadas sem mudar bonus e onus por rodada.`,
+    statusLabel: 'prazo estendido',
+    action: 'Prazo estendido ativado',
+  });
+  return { note: `${playerActionName(player)} ampliou para 6 rodadas o prazo do contrato atual.` };
 }
 
 function ensureHumanContractDraft() {
@@ -3705,6 +3870,18 @@ async function maybeUseRerouteCoupon(player) {
 async function maybeUseTurnStartCoupons(player) {
   if (!player?.active_contract || player.active_contract.completed) return false;
   let usedAny = false;
+  if (await maybeUseCancelContractCoupon(player)) {
+    usedAny = true;
+  }
+  if (!player?.active_contract || player.active_contract.completed) {
+    return usedAny;
+  }
+  if (await maybeUseExtendedDeadlineCoupon(player)) {
+    usedAny = true;
+  }
+  if (await maybeUseFreeFuelContractCoupon(player)) {
+    usedAny = true;
+  }
   if (await maybeUseShortcutIgnoreTollCoupon(player)) {
     usedAny = true;
   }
@@ -4243,6 +4420,11 @@ function triggerEnterOnOverlay() {
     const button = getChanceDrawButton();
     if (button && !button.disabled && !state.chanceDraw.revealOnly) { button.click(); return true; }
   }
+  if (saveBrowser?.triggerEnterOnOverlay?.()) return true;
+  if (!getSaveNameOverlay()?.classList.contains('is-hidden')) {
+    const button = getSaveNamePrimary();
+    if (button && !button.disabled) { button.click(); return true; }
+  }
   if (!getDecisionOverlay()?.classList.contains('is-hidden')) {
     const button = getDecisionPrimary();
     if (button && !button.disabled) { button.click(); return true; }
@@ -4478,6 +4660,20 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
   });
   if (usedDoubleFreight) {
     modifiers.freightMultiplier = 2;
+  }
+
+  const monopolyOwner = originMonopolyOwnerForContract(player, contract);
+  if (monopolyOwner) {
+    const usedAntiMonopolyOwnerShare = await maybeSpendCoupon(player, 'anti_monopoly_owner_share', {
+      detail: `Bloqueou a comissao do dono do monopolio ${monopolyOwner.name} neste contrato.`,
+      statusLabel: 'monopolio bloqueado',
+      action: 'Contra o Monopolio',
+      autoUse: true,
+    });
+    if (usedAntiMonopolyOwnerShare) {
+      modifiers.waiveOriginShare = true;
+      return modifiers;
+    }
   }
 
   const originOwner = ownerPlayerOf(contract.origin || '');
@@ -4933,14 +5129,24 @@ function closeDecision(result = 'primary') {
   if (resolver) resolver(result);
 }
 
-function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, cardCode = '' } = {}) {
+function openDecisionModal({ eyebrowLabel = 'Resolucao', title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, hideTitle = false, copyIsHtml = false, cardCode = '' } = {}) {
+  const modal = getDecisionOverlay()?.querySelector('.decision-modal') || null;
+  const eyebrow = getDecisionOverlay()?.querySelector('.eyebrow') || null;
   const titleNode = getDecisionTitle();
   const copyNode = getDecisionCopy();
   const cardStage = getDecisionCardStage();
   const primary = getDecisionPrimary();
   const secondary = getDecisionSecondary();
-  if (titleNode) titleNode.textContent = title || 'Confirmar acao';
-  if (copyNode) copyNode.textContent = copy || '';
+  if (modal) modal.classList.toggle('is-inline-confirm', Boolean(hideSecondary && !cardCode));
+  if (eyebrow) eyebrow.textContent = eyebrowLabel || 'Resolucao';
+  if (titleNode) {
+    titleNode.textContent = hideTitle ? '' : (title || 'Confirmar acao');
+    titleNode.classList.toggle('is-hidden', hideTitle);
+  }
+  if (copyNode) {
+    if (copyIsHtml) copyNode.innerHTML = copy || '';
+    else copyNode.textContent = copy || '';
+  }
   if (cardStage) {
     const card = cardCode ? getPropertyCard(cardCode) : null;
     cardStage.innerHTML = card ? propertyInspectorMarkup(card) : '';
@@ -4958,6 +5164,82 @@ function openDecisionModal({ title, copy, primaryLabel = 'Continuar', secondaryL
   setDecisionVisible(true);
   return new Promise((resolve) => {
     state.decision.resolver = resolve;
+  });
+}
+
+function buildSuggestedSaveName(date = new Date()) {
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  const second = String(date.getSeconds()).padStart(2, '0');
+  return `robots_${year}_${month}_${day}_-_${hour}_${minute}_${second}`;
+}
+
+function getSaveNameOverlay() { return byId('save-name-overlay'); }
+function getSaveNameTitle() { return byId('save-name-title'); }
+function getSaveNameCopy() { return byId('save-name-copy'); }
+function getSaveNameInput() { return byId('save-name-input'); }
+function getSaveNamePrimary() { return byId('save-name-primary'); }
+function getSaveNameSecondary() { return byId('save-name-secondary'); }
+
+function setSaveNameVisible(visible) {
+  const overlay = getSaveNameOverlay();
+  if (!overlay) return;
+  overlay.classList.toggle('is-hidden', !visible);
+}
+
+function closeSaveName(result = 'primary') {
+  const input = getSaveNameInput();
+  const resolver = state.saveName.resolver;
+  const fallback = state.saveName.suggestedName || buildSuggestedSaveName();
+  const shouldResume = !state.saveName.wasPaused;
+  setSaveNameVisible(false);
+  state.saveName.resolver = null;
+  state.saveName.suggestedName = '';
+  state.saveName.wasPaused = false;
+  if (input) input.onkeydown = null;
+  if (shouldResume) setPaused(false);
+  if (resolver) resolver(result === 'primary' ? (String(input?.value || '').trim() || fallback) : null);
+}
+
+function openSaveNameModal({ title = 'Nome do arquivo', copy = 'Edite o nome do save ou pressione Enter para usar o nome sugerido.', suggestedName = '' } = {}) {
+  const resolvedSuggestedName = String(suggestedName || '').trim() || buildSuggestedSaveName();
+  const titleNode = getSaveNameTitle();
+  const copyNode = getSaveNameCopy();
+  const input = getSaveNameInput();
+  const primary = getSaveNamePrimary();
+  const secondary = getSaveNameSecondary();
+  if (titleNode) titleNode.textContent = title;
+  if (copyNode) copyNode.textContent = copy;
+  if (input) {
+    input.value = resolvedSuggestedName;
+    input.onkeydown = (event) => {
+      if (event.key === 'Enter' && !event.repeat) {
+        event.preventDefault();
+        closeSaveName('primary');
+        return;
+      }
+      if (event.key === 'Escape' && !event.repeat) {
+        event.preventDefault();
+        closeSaveName('secondary');
+      }
+    };
+  }
+  if (primary) primary.onclick = () => closeSaveName('primary');
+  if (secondary) secondary.onclick = () => closeSaveName('secondary');
+  state.saveName.suggestedName = resolvedSuggestedName;
+  state.saveName.wasPaused = state.view.paused;
+  setPaused(true);
+  setSaveNameVisible(true);
+  window.requestAnimationFrame(() => {
+    if (!input) return;
+    input.focus();
+    input.select();
+  });
+  return new Promise((resolve) => {
+    state.saveName.resolver = resolve;
   });
 }
 
@@ -6486,6 +6768,280 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+function buildCurrentSetupDefaults() {
+  const robotCount = (state.players || []).length || state.setup.rivalCount || 6;
+  return {
+    robot_count: Number(robotCount),
+  };
+}
+
+function buildActiveActionFeedSnapshot() {
+  return pruneActionFeed().map((entry) => ({
+    id: entry.id,
+    playerId: entry.playerId,
+    playerName: entry.playerName,
+    action: entry.action,
+    detail: entry.detail,
+    turnLabel: entry.turnLabel,
+    createdAt: entry.createdAt,
+    expiresAt: entry.expiresAt,
+    color: entry.color,
+    glow: entry.glow,
+  }));
+}
+
+function buildPermissionSaveSnapshot(permission) {
+  const normalized = normalizePermissionState(permission);
+  if (!normalized) return null;
+  return {
+    id: normalized.id,
+    kind: normalized.kind,
+    title: normalized.title,
+    accent: normalized.accent,
+    text: normalized.text,
+    purchase_price: Number(normalized.purchase_price || 0),
+    mortgaged: Boolean(normalized.mortgaged),
+  };
+}
+
+function buildPlayerSaveSnapshot(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    is_human: Boolean(player.is_human),
+    color_id: player.color_id,
+    color_hex: player.color_hex,
+    cash: Number(player.cash || 0),
+    cash_display: player.cash_display,
+    location_code: player.location_code || null,
+    location_label: player.location_label || '--',
+    board_node_id: player.board_node_id || null,
+    ship_type: player.ship_type || null,
+    ship_type_label: player.ship_type_label || '--',
+    active_permission_id: player.active_permission_id || null,
+    permissions: (player.permissions || []).map(buildPermissionSaveSnapshot).filter(Boolean),
+    property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
+    coupons: Array.isArray(player.coupons) ? player.coupons : [],
+    monopoly_regions: monopolyRegionsForPlayer(player),
+    active_contract: player.active_contract || null,
+    status_label: player.status_label || '--',
+    skip_turns: Number(player.skip_turns || 0),
+    needs_new_contract: Boolean(player.needs_new_contract),
+    bankrupt: Boolean(player.bankrupt),
+    last_roll: player.last_roll || null,
+  };
+}
+
+function buildMortgagedPropertyCodesSnapshot() {
+  return [...(state.portCards || []), ...(state.tollCards || [])]
+    .filter((card) => card?.mortgaged)
+    .map((card) => String(card.code || '').toUpperCase());
+}
+
+function buildMilestoneSnapshotSummary(snapshot) {
+  return {
+    turnNumber: Number(snapshot?.turnNumber || 0),
+    label: String(snapshot?.label || '').trim() || compactReportTurnLabel(snapshot),
+    phase: String(snapshot?.phase || ''),
+    players: (snapshot?.players || []).map((player) => ({
+      id: player.id,
+      cash: Number(player.cash || 0),
+      patrimony_total: Number(player.patrimony_total || 0),
+      title_count: Number(player.title_count || 0),
+      toll_count: Number(player.toll_count || 0),
+      permission_count: Number(player.permission_count || 0),
+      property_count: Number(player.property_count || 0),
+    })),
+  };
+}
+
+function buildReportSaveSnapshot() {
+  const snapshots = state.report?.cashHistory || [];
+  const milestoneTurns = reportMilestoneTurns(snapshots);
+  const milestoneSnapshots = milestoneTurns
+    .map((turnNumber) => snapshots.find((snapshot) => Number(snapshot?.turnNumber || 0) === turnNumber))
+    .filter(Boolean);
+  return {
+    activeKey: state.report?.activeKey || 'cash-by-turn',
+    turn_points: snapshots.map(buildReportPointIndex),
+    graph_points: {
+      cash: buildReportMetricSeries(snapshots, 'cash'),
+      patrimony: buildReportMetricSeries(snapshots, 'patrimony'),
+      title_count: buildReportMetricSeries(snapshots, 'title_count'),
+      toll_count: buildReportMetricSeries(snapshots, 'toll_count'),
+      permission_count: buildReportMetricSeries(snapshots, 'permission_count'),
+      property_count: buildReportMetricSeries(snapshots, 'property_count'),
+    },
+    milestones: milestoneSnapshots.map(buildMilestoneSnapshotSummary),
+  };
+}
+
+function buildSaveSnapshot() {
+  return {
+    schema: 'rdm-ui-save-v1',
+    session: state.session || null,
+    setup_defaults: buildCurrentSetupDefaults(),
+    players: (state.players || []).map(buildPlayerSaveSnapshot),
+    chance_deck: state.chanceDeck || { draw_pile: [], discard_pile: [], held_card_ids: [] },
+    mortgaged_property_codes: buildMortgagedPropertyCodesSnapshot(),
+    active_action_feed: buildActiveActionFeedSnapshot(),
+    report: buildReportSaveSnapshot(),
+  };
+}
+
+function buildLoadBootstrapPayload(snapshot) {
+  const mortgagedCodes = new Set((snapshot?.mortgaged_property_codes || []).map((code) => String(code || '').toUpperCase()));
+  return {
+    player_colors: state.playerColors || [],
+    rules: state.rules || {},
+    port_cards: (state.portCards || []).map((card) => ({
+      ...card,
+      mortgaged: mortgagedCodes.has(String(card?.code || '').toUpperCase()),
+    })),
+    toll_cards: (state.tollCards || []).map((card) => ({
+      ...card,
+      mortgaged: mortgagedCodes.has(String(card?.code || '').toUpperCase()),
+    })),
+    chance_cards: state.chanceCards || [],
+    chance_deck: snapshot?.chance_deck || { draw_pile: [], discard_pile: [], held_card_ids: [] },
+    freight_permission_cards: state.freightPermissionCards || [],
+    players: snapshot?.players || [],
+    assets: state.assets || { ship_masks: {}, ship_fill_masks: {}, ship_sprites: {}, cargo_icons: {} },
+    distances: state.distances || {},
+    session: snapshot?.session || null,
+    active_contract: null,
+    setup_defaults: snapshot?.setup_defaults || buildCurrentSetupDefaults(),
+  };
+}
+
+function restoreActionFeedFromSnapshot(entries = []) {
+  const now = Date.now();
+  const lifetimeMs = currentLogLifetimeMs();
+  state.actionFeed = (entries || []).slice(0, 18).map((entry, index) => ({
+    ...entry,
+    id: entry?.id || `restored-${now}-${index}`,
+    createdAt: now - (index * 40),
+    expiresAt: now + lifetimeMs - (index * 40),
+  })).filter((entry) => (entry.expiresAt || 0) > now);
+}
+
+function restoreReportFromSnapshot(reportSnapshot) {
+  const milestones = Array.isArray(reportSnapshot?.milestones) ? reportSnapshot.milestones : [];
+  if (!milestones.length) {
+    resetReportData();
+    renderReportOverlay();
+    return;
+  }
+
+  const playersById = Object.fromEntries((state.players || []).map((player) => [player.id, player]));
+  state.report.activeKey = reportSnapshot?.activeKey || 'cash-by-turn';
+  state.report.cashHistory = milestones.map((snapshot) => {
+    const turnNumber = Number(snapshot?.turnNumber || 0);
+    const label = String(snapshot?.label || '').trim() || (turnNumber > 0 ? `Turno ${String(turnNumber).padStart(2, '0')}` : 'Inicio');
+    return {
+      key: `${turnNumber}|${label}`,
+      turnNumber,
+      label,
+      phase: String(snapshot?.phase || ''),
+      players: (snapshot?.players || []).map((player) => {
+        const currentPlayer = playersById[player?.id] || {};
+        const cash = Number(player?.cash || 0);
+        const patrimonyTotal = Number(player?.patrimony_total || cash);
+        const titleCount = Number(player?.title_count || 0);
+        const tollCount = Number(player?.toll_count || 0);
+        return {
+          id: player?.id,
+          name: currentPlayer.name || player?.id || '--',
+          cash,
+          asset_total: Math.max(0, patrimonyTotal - cash),
+          patrimony_total: patrimonyTotal,
+          title_count: titleCount,
+          toll_count: tollCount,
+          permission_count: Number(player?.permission_count || 0),
+          property_count: Number(player?.property_count || (titleCount + tollCount)),
+          color: currentPlayer.color_hex || '#8fd7ff',
+        };
+      }),
+    };
+  });
+  state.report.snapshotKeys = state.report.cashHistory.map((snapshot) => snapshot.key);
+  renderReportOverlay();
+}
+
+async function loadGameFromSavePayload(payload) {
+  const snapshot = payload?.record?.snapshot;
+  if (!snapshot || snapshot.schema !== 'rdm-ui-save-v1') {
+    throw new Error('Invalid save snapshot.');
+  }
+
+  state.setup.started = false;
+  state.setup.submitting = false;
+
+  const bootstrapPayload = buildLoadBootstrapPayload(snapshot);
+  applyBootstrapPayload(bootstrapPayload);
+  populateSetupFromPayload(bootstrapPayload);
+  restoreActionFeedFromSnapshot(snapshot.active_action_feed || []);
+  restoreReportFromSnapshot(snapshot.report || null);
+  state.setup.started = true;
+  updateSetupStartButton();
+  setSetupOverlayVisible(false);
+  await renderMap();
+  renderHud();
+  renderActionFeed();
+  renderReportOverlay();
+  renderPropertyInspector();
+  setPaused(true);
+}
+
+async function saveCurrentGame() {
+  const button = byId('preview-save-button');
+  if (button?.disabled) return;
+
+  const saveLabel = await openSaveNameModal({ suggestedName: buildSuggestedSaveName() });
+  if (!saveLabel) return;
+
+  const previousLabel = button?.getAttribute('aria-label') || 'Salvar';
+  if (button) {
+    button.disabled = true;
+    button.setAttribute('aria-label', 'Salvando');
+  }
+
+  try {
+    const snapshot = buildSaveSnapshot();
+    const response = await fetchJson('/api/saves/robots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        variant: 'robots-ui',
+        label: saveLabel,
+        snapshot,
+      }),
+    });
+    if (button && response?.save?.file_name) {
+      button.title = `Ultimo save: ${response.save.file_name}`;
+    }
+    await openDecisionModal({
+      title: 'Partida salva',
+      eyebrowLabel: 'Salvamento de partida',
+      copy: `Arquivo ${response?.save?.label || response?.save?.save_id || 'Save'} salvo.`,
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+  } catch (_error) {
+    await openDecisionModal({
+      title: 'Falha ao salvar',
+      copy: 'Nao foi possivel salvar a partida.',
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.setAttribute('aria-label', previousLabel);
+    }
+  }
+}
+
 function applyMapPayload(payload) {
   state.nodes = payload.nodes || [];
   state.projectedNodes = payload.projected_nodes || payload.nodes || [];
@@ -6520,11 +7076,11 @@ function applyBootstrapPayload(payload) {
     bankrupt: false,
     ...player,
     property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
-    permissions: (player.permissions || []).map((permission) => ({
+    permissions: (player.permissions || []).map((permission) => normalizePermissionState({
       ...permission,
       purchase_price: Number(permission.purchase_price || defaultPermissionPrice),
-      mortgaged: false,
-    })),
+      mortgaged: Boolean(permission.mortgaged),
+    })).filter(Boolean),
     coupons: player.coupons || [],
     last_roll: player.last_roll || null,
     skip_turns: player.skip_turns || 0,
@@ -6677,19 +7233,22 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
       setSession({
         active_player_id: player.id,
         phase: phaseLabel,
+      const sampledSnapshots = sampleReportSnapshotsForSave(snapshots);
         action_label: `${player.name}: permissao`,
         dice: [0, 0],
         note: `${player.name} esta sorteando a permissao de frete.`,
       });
       renderHud();
       renderNodeOverlay();
+        sample_turn_step: REPORT_SAVE_SAMPLE_TURN_STEP,
+        sampled_turn_numbers: sampledSnapshots.map((snapshot) => Number(snapshot?.turnNumber || 0)),
       renderShipOverlay();
-      await delay(shortDelay);
-      const permissionCard = randomChoice(state.freightPermissionCards);
-      applyPermissionSelectionForPlayer(player, permissionCard, {
-        updateSession: true,
-        actionLabel: `${player.name}: permissao sorteada`,
-        note: `${player.name} recebeu a permissao ${permissionCard.title}.`,
+          cash: buildReportMetricSeries(sampledSnapshots, 'cash'),
+          patrimony: buildReportMetricSeries(sampledSnapshots, 'patrimony'),
+          title_count: buildReportMetricSeries(sampledSnapshots, 'title_count'),
+          toll_count: buildReportMetricSeries(sampledSnapshots, 'toll_count'),
+          permission_count: buildReportMetricSeries(sampledSnapshots, 'permission_count'),
+          property_count: buildReportMetricSeries(sampledSnapshots, 'property_count'),
       });
       await delay(shortDelay);
     }
@@ -6817,23 +7376,12 @@ async function runPlayerSubsequentTurn(player, turnNumber) {
     return;
   }
 
-  if (player.needs_new_contract) {
     await runPostContractForPlayer(player, {
       phaseLabel,
       advanceGlobalTurn: false,
       autoRollAfterSetup: true,
     });
     return;
-  }
-
-  if (!player.active_contract || !player.active_contract.destination || player.active_contract.destination === '--') {
-    await runContractOpeningForPlayer(player, {
-      phaseLabel,
-      needsPermission: !(player.permissions || []).length,
-      originMode: player.location_code ? 'current' : 'draw',
-    });
-    await runTurnExecutionForPlayer(player, {
-      phaseLabel,
       humanActionLabel: 'Rolar 2 dados',
       humanNote: 'Agora voce pode rolar os dados da rodada.',
       cpuActionLabel: `${player.name}: rolar dados`,
@@ -6978,11 +7526,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = byId('game-setup-form');
   const layer = getHitLayer();
 
+  saveBrowser = window.createSaveBrowserController?.({
+    state,
+    byId,
+    fetchJson,
+    setPaused,
+    openDecisionModal,
+    runtime: 'robots-ui',
+    onLoad: loadGameFromSavePayload,
+    onAfterSuccess: async () => {
+      if (state.setup.started && !state.flow.turnCycleRunning) {
+        runSubsequentTurnCycle().catch(() => {});
+      }
+    },
+    confirmEyebrow: 'Carregamento de Arquivo',
+    confirmTitle: 'Carregamento de Arquivo',
+    confirmCopyBuilder: (payload) => `Arquivo <strong>${String(payload?.meta?.file_name || payload?.meta?.label || 'selecionado').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</strong> carregado com sucesso.`,
+  }) || null;
+
   form?.addEventListener('submit', (event) => {
     submitSetupSelection(event).catch(() => {
       state.setup.submitting = false;
       updateSetupStartButton();
     });
+  });
+  byId('setup-continue-button')?.addEventListener('click', () => {
+    saveBrowser?.loadLatestCompatibleSave().catch(() => {});
+  });
+  byId('setup-load-button')?.addEventListener('click', () => {
+    saveBrowser?.browseCompatibleSaves().catch(() => {});
   });
 
   byId('start-permission-draw')?.addEventListener('click', startPermissionDraw);
@@ -7028,6 +7600,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   byId('preview-settings-button')?.addEventListener('click', () => {
     openSettingsOverlay();
+  });
+  byId('preview-load-button')?.addEventListener('click', () => {
+    saveBrowser?.browseCompatibleSaves().catch(() => {});
+  });
+  byId('preview-save-button')?.addEventListener('click', () => {
+    saveCurrentGame().catch(() => {});
   });
   byId('preview-report-button')?.addEventListener('click', () => {
     openReportOverlay();

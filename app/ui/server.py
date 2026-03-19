@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from pathlib import Path
+
 from app.config import STATIC_DIR, TEMPLATE_DIR
 from app.maptools import (
     BoardEdgeRecord,
@@ -20,7 +22,7 @@ from app.maptools import (
     geo_to_pixel,
     project_node_records,
 )
-from app.services import build_chance_cards, build_freight_permission_cards, build_port_title_cards, build_robots_ui_bootstrap, build_toll_title_cards, build_ui_bootstrap, load_game_data
+from app.services import SaveStore, build_chance_cards, build_freight_permission_cards, build_port_title_cards, build_robots_ui_bootstrap, build_toll_title_cards, build_ui_bootstrap, load_ai_v2_config, load_ai_v2_rules_config, load_game_data
 
 
 class GameSetupRequest(BaseModel):
@@ -32,6 +34,12 @@ class GameSetupRequest(BaseModel):
 
 class RobotsSetupRequest(BaseModel):
     robot_count: int = Field(default=6, ge=2, le=6)
+
+
+class SaveSnapshotRequest(BaseModel):
+    variant: str = Field(min_length=1, max_length=64)
+    snapshot: dict[str, Any]
+    label: str | None = Field(default=None, max_length=80)
 
 class EditorNodeCreate(BaseModel):
     kind: Literal['port', 'toll', 'fuel', 'chance']
@@ -175,11 +183,12 @@ def _load_synced_snapshot(
     return snapshot
 
 
-def create_app() -> FastAPI:
+def create_app(save_root_dir: Path | None = None) -> FastAPI:
     app = FastAPI(title='Rei dos Mares')
     app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
     templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
     workspace = BoardWorkspaceRepository()
+    save_store = SaveStore(save_root_dir)
     data = load_game_data()
 
     @app.get('/', response_class=HTMLResponse)
@@ -222,6 +231,18 @@ def create_app() -> FastAPI:
             context={'page_title': 'Preview do Jogo AI'},
         )
 
+    @app.get('/preview/game-ai-ui-v2', response_class=HTMLResponse)
+    async def game_ai_preview_v2(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='game_ai_ui_v2.html',
+            context={
+                'page_title': 'Preview do Jogo AI V2',
+                'ai_v2_config': load_ai_v2_config(),
+                'ai_v2_rules': load_ai_v2_rules_config(),
+            },
+        )
+
 
     @app.get('/preview/robots-ui', response_class=HTMLResponse)
     async def robots_ui_preview(request: Request) -> HTMLResponse:
@@ -237,6 +258,18 @@ def create_app() -> FastAPI:
             request=request,
             name='robots_ai_ui.html',
             context={'page_title': 'Preview dos Robos AI'},
+        )
+
+    @app.get('/preview/robots-ai-ui-v2', response_class=HTMLResponse)
+    async def robots_ai_ui_preview_v2(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='robots_ai_ui_v2.html',
+            context={
+                'page_title': 'Preview dos Robos AI V2',
+                'ai_v2_config': load_ai_v2_config(),
+                'ai_v2_rules': load_ai_v2_rules_config(),
+            },
         )
 
     @app.get('/preview/ai-analysis-ui', response_class=HTMLResponse)
@@ -405,6 +438,47 @@ def create_app() -> FastAPI:
     @app.post('/api/robots-ai/setup')
     async def robots_ai_setup(payload: RobotsSetupRequest) -> dict[str, Any]:
         return build_robots_ui_bootstrap(robot_count=payload.robot_count)
+
+    @app.post('/api/saves/game')
+    async def save_game(payload: SaveSnapshotRequest) -> dict[str, Any]:
+        save_meta = save_store.save_snapshot(
+            mode='game',
+            variant=payload.variant,
+            snapshot=payload.snapshot,
+            label=payload.label,
+        )
+        return {'save': save_meta}
+
+    @app.post('/api/saves/robots')
+    async def save_robots(payload: SaveSnapshotRequest) -> dict[str, Any]:
+        save_meta = save_store.save_snapshot(
+            mode='robots',
+            variant=payload.variant,
+            snapshot=payload.snapshot,
+            label=payload.label,
+        )
+        return {'save': save_meta}
+
+    @app.get('/api/saves/runtime/{runtime}')
+    async def list_runtime_saves(runtime: str) -> dict[str, Any]:
+        try:
+            saves = save_store.list_compatible_saves(runtime=runtime)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {
+            'runtime': runtime,
+            'saves': saves,
+        }
+
+    @app.get('/api/saves/runtime/{runtime}/{file_name}')
+    async def load_runtime_save(runtime: str, file_name: str) -> dict[str, Any]:
+        try:
+            payload = save_store.load_compatible_save(runtime=runtime, file_name=file_name)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail='Save file not found.') from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return payload
 
     @app.get('/api/map/bootstrap')
     async def map_bootstrap() -> dict[str, Any]:

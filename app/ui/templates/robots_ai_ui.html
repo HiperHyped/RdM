@@ -1160,7 +1160,6 @@
     <section class="game-setup-modal" aria-labelledby="game-setup-title">
       <p class="eyebrow">Inicio da partida</p>
       <h1 id="game-setup-title">Configure a mesa de robos</h1>
-      <p class="body-copy compact">Escolha quantos robos do sistema entrarao na simulacao, a dificuldade geral da IA e se a mesa sera ajustada de forma rapida ou detalhada.</p>
 
       <form id="game-setup-form" class="game-setup-form">
         <div class="game-setup-field">
@@ -1171,7 +1170,6 @@
         <div id="setup-ai-advanced-field" class="game-setup-field">
           <span>Modo de configuracao da IA</span>
           <div id="setup-ai-advanced-toggle" class="settings-choice-group setup-ai-mode-toggle"></div>
-          <span class="settings-note setup-ai-mode-note">Escolha entre os controles rapidos da mesa e a edicao detalhada por robo.</span>
         </div>
 
         <div id="setup-ai-difficulty-field" class="game-setup-field">
@@ -1185,7 +1183,9 @@
         </div>
 
         <div class="game-setup-actions">
-          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar mesa</button>
+          <button id="setup-continue-button" type="button" class="game-setup-start">Continuar</button>
+          <button id="setup-load-button" type="button" class="game-setup-start">Carregar</button>
+          <button id="setup-start-button" type="submit" class="game-setup-start">Iniciar partida</button>
         </div>
       </form>
     </section>
@@ -1227,7 +1227,8 @@
       <div class="preview-contract-topline">
         <div class="preview-contract-head-actions">
           <button type="button" class="preview-ghost-button" aria-label="Sair">&#8617;</button>
-          <button type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
+          <button id="preview-load-button" type="button" class="preview-ghost-button" aria-label="Carregar">&#128194;</button>
+          <button id="preview-save-button" type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
           <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
           <button id="preview-log-button" type="button" class="preview-ghost-button" aria-label="Log">&#128221;</button>
@@ -1362,12 +1363,49 @@
     </section>
   </div>
 
+  <div id="save-name-overlay" class="decision-overlay is-hidden">
+    <section class="decision-modal save-name-modal" aria-labelledby="save-name-title">
+      <p class="eyebrow">Salvar partida</p>
+      <h2 id="save-name-title">Nome do arquivo</h2>
+      <p id="save-name-copy" class="body-copy compact">Edite o nome do save ou pressione Enter para usar o nome sugerido.</p>
+      <label class="save-name-field" for="save-name-input">
+        <span>Arquivo</span>
+        <input id="save-name-input" class="save-name-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="decision-actions">
+        <button id="save-name-primary" type="button" class="decision-button primary">Salvar</button>
+        <button id="save-name-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="load-browser-overlay" class="decision-overlay is-hidden" aria-hidden="true">
+    <section class="decision-modal load-browser-modal" aria-labelledby="load-browser-title">
+      <p class="eyebrow">Carregar partida</p>
+      <h2 id="load-browser-title">Saves compativeis</h2>
+      <p id="load-browser-copy" class="body-copy compact">Navegue pelos saves compativeis desta tela e valide o arquivo antes do restore completo.</p>
+      <div class="load-browser-toolbar">
+        <span id="load-browser-status" class="load-browser-status">Buscando saves...</span>
+        <button id="load-browser-refresh" type="button" class="decision-button secondary load-browser-refresh">Atualizar</button>
+      </div>
+      <div class="load-browser-shell">
+        <div id="load-browser-list" class="load-browser-list"></div>
+        <div id="load-browser-detail" class="load-browser-detail"></div>
+      </div>
+      <div class="decision-actions">
+        <button id="load-browser-primary" type="button" class="decision-button primary">Carregar</button>
+        <button id="load-browser-secondary" type="button" class="decision-button secondary">Cancelar</button>
+      </div>
+    </section>
+  </div>
+
   <section class="preview-panel preview-rivals">
     <div id="preview-rival-list" class="preview-rival-grid"></div>
   </section>
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
+<script src="{{ request.url_for('static', path='js/save-browser.js') }}?v=save-browser-v1"></script>
 <script src="{{ request.url_for('static', path='js/ai-profiles.js') }}?v=ai-profiles-v15"></script>
 <script src="{{ request.url_for('static', path='js/ai-policy-engine.js') }}?v=ai-policy-engine-v14"></script>
 <script src="{{ request.url_for('static', path='js/robots-ai-ui.js') }}?v=robots-ai-ui-v18"></script>

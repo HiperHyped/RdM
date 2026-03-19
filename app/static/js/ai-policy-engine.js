@@ -1820,8 +1820,13 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
     const resolvedContext = buildDecisionContext(player, context);
     const profile = resolvedContext.profile || null;
     const signals = resolvedContext.couponSignals || {};
+    const activeContract = player?.active_contract || null;
     const charge = money(signals.charge || signals.amount || 0);
     const cash = money(player?.cash || 0);
+    const freightValue = money(activeContract?.base_freight_value || activeContract?.freight_value || 0);
+    const roundsElapsed = Math.max(1, numeric(signals.roundsElapsed, numeric(activeContract?.rounds_elapsed, 1)));
+    const targetRounds = Math.max(1, numeric(signals.targetRounds ?? signals.currentTargetRounds, numeric(activeContract?.target_rounds, 4)));
+    const remainingRounds = Math.max(0, targetRounds - roundsElapsed);
     const reserveTarget = reserveCashTarget(player, Math.max(charge, 120), profile, 'coupon_usage');
     const pressure = clamp((reserveTarget - cash) / Math.max(1, reserveTarget || cash || 1), -1, 1.4);
     const patience = clamp(numeric(profile?.personality?.coupon_patience, 0.4), 0, 1);
@@ -1857,6 +1862,34 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
       score += impulse * 0.1;
       score += risk * 0.06;
       threshold = 0.66 + (patience * 0.12);
+    } else if (kind === 'free_fuel_contract') {
+      score += autoUse ? 0.34 : -0.24;
+      score += clamp(freightValue / 180, 0, 1.4) * 0.12;
+      score += Math.max(0, pressure) * 0.18;
+      threshold = 0.54 + (patience * 0.12) - (risk * 0.08);
+    } else if (kind === 'extended_contract_deadline') {
+      score += autoUse ? 0.36 : -0.26;
+      score += remainingRounds <= 1 ? 0.18 : 0;
+      score += roundsElapsed >= targetRounds ? 0.2 : 0;
+      score += Math.max(0, pressure) * 0.12;
+      threshold = 0.56 + (patience * 0.12) - (risk * 0.06);
+    } else if (kind === 'cancel_contract') {
+      score += autoUse ? 0.34 : -0.28;
+      score += remainingRounds <= 1 ? 0.16 : 0;
+      score += roundsElapsed >= targetRounds ? 0.2 : 0;
+      score += freightValue > 0 && freightValue <= 120 ? 0.08 : 0;
+      threshold = 0.57 + (patience * 0.12) - (impulse * 0.06) - (risk * 0.04);
+    } else if (kind === 'double_freight') {
+      score += clamp(freightValue / 150, 0, 1.8) * 0.46;
+      score += Math.max(0, pressure) * 0.16;
+      score += autoUse ? 0.08 : 0;
+      threshold = 0.62 + (patience * 0.12) - (risk * 0.06);
+    } else if (kind === 'anti_monopoly_owner_share' || kind === 'skip_owner_share') {
+      score += clamp(freightValue / 160, 0, 1.6) * 0.44;
+      score += signals.ownerId ? 0.12 : 0;
+      score += Math.max(0, pressure) * 0.14;
+      score += autoUse ? 0.08 : 0;
+      threshold = 0.6 + (patience * 0.1) - (risk * 0.04);
     } else {
       score += Math.max(0, pressure) * 0.16;
       threshold = 0.64 + (patience * 0.14);

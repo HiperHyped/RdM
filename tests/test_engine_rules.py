@@ -31,7 +31,8 @@ def test_stop_quote_for_owned_property_uses_owner_multiplier() -> None:
 
     assert quote.can_buy is False
     assert quote.bank_fee == 0
-    assert quote.owner_fee == engine.data.properties["RIO"].rates[ShipType.OIL].multiplier
+    rate = engine.data.properties["RIO"].rates[ShipType.OIL]
+    assert quote.owner_fee == rate.fee * rate.multiplier
     assert quote.owner_player_id == owner.id
 
 

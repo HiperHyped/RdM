@@ -1,0 +1,843 @@
+{
+  "label": "game_2026_03_17_-_22_24_32",
+  "mode": "game",
+  "save_id": "20260318T012434315466Z-game-ai-ui-game-2026-03-17-22-24-32",
+  "saved_at": "2026-03-18T01:24:34.315466Z",
+  "snapshot": {
+    "active_action_feed": [
+      {
+        "action": "Destino definido",
+        "color": "#a855f7",
+        "createdAt": 1773797072647,
+        "detail": "SHA | $ 456",
+        "expiresAt": 1773797084647,
+        "glow": "#cd9cfa",
+        "id": "1773797072647-2f2b2a92f13818",
+        "playerId": "cpu-5",
+        "playerName": "Jogador 5",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Pedagio sorteado",
+        "color": "#a855f7",
+        "createdAt": 1773797072525,
+        "detail": "GIB",
+        "expiresAt": 1773797084525,
+        "glow": "#cd9cfa",
+        "id": "1773797072525-c86df6e6aaa5f",
+        "playerId": "cpu-5",
+        "playerName": "Jogador 5",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Porto inicial comprado",
+        "color": "#a855f7",
+        "createdAt": 1773797072403,
+        "detail": "RIO por $ 460",
+        "expiresAt": 1773797084403,
+        "glow": "#cd9cfa",
+        "id": "1773797072403-f5415f85161938",
+        "playerId": "cpu-5",
+        "playerName": "Jogador 5",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Permissao sorteada",
+        "color": "#a855f7",
+        "createdAt": 1773797072274,
+        "detail": "G\u00e1s",
+        "expiresAt": 1773797084274,
+        "glow": "#cd9cfa",
+        "id": "1773797072274-d5f267687b9aa",
+        "playerId": "cpu-5",
+        "playerName": "Jogador 5",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#f97316",
+        "createdAt": 1773797072010,
+        "detail": "Pagou $ 25 ao banco.",
+        "expiresAt": 1773797084010,
+        "glow": "#fcae78",
+        "id": "1773797072010-c6d1a0f5bd2748",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Destino definido",
+        "color": "#f97316",
+        "createdAt": 1773797071523,
+        "detail": "REC | $ 400",
+        "expiresAt": 1773797083523,
+        "glow": "#fcae78",
+        "id": "1773797071523-2d9135420a6718",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Pedagio sorteado",
+        "color": "#f97316",
+        "createdAt": 1773797071398,
+        "detail": "PAN",
+        "expiresAt": 1773797083398,
+        "glow": "#fcae78",
+        "id": "1773797071398-5ff01cfc4d2cf",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Porto inicial comprado",
+        "color": "#f97316",
+        "createdAt": 1773797071278,
+        "detail": "HAM por $ 430",
+        "expiresAt": 1773797083278,
+        "glow": "#fcae78",
+        "id": "1773797071278-9035a95174a6a",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Permissao sorteada",
+        "color": "#f97316",
+        "createdAt": 1773797071155,
+        "detail": "Autom\u00f3veis",
+        "expiresAt": 1773797083155,
+        "glow": "#fcae78",
+        "id": "1773797071155-0c518783125c9",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#ef4444",
+        "createdAt": 1773797070891,
+        "detail": "Pagou $ 15 ao banco.",
+        "expiresAt": 1773797082891,
+        "glow": "#f69393",
+        "id": "1773797070891-1e337f4d7890f8",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Destino definido",
+        "color": "#ef4444",
+        "createdAt": 1773797070149,
+        "detail": "LON | $ 950",
+        "expiresAt": 1773797082149,
+        "glow": "#f69393",
+        "id": "1773797070149-374d92f7c36bc8",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Pedagio sorteado",
+        "color": "#ef4444",
+        "createdAt": 1773797070028,
+        "detail": "SUZ",
+        "expiresAt": 1773797082028,
+        "glow": "#f69393",
+        "id": "1773797070028-d911a2cc277d2",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Porto inicial comprado",
+        "color": "#ef4444",
+        "createdAt": 1773797069911,
+        "detail": "TOK por $ 450",
+        "expiresAt": 1773797081911,
+        "glow": "#f69393",
+        "id": "1773797069911-f1ed4094d25a3",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Permissao sorteada",
+        "color": "#ef4444",
+        "createdAt": 1773797069788,
+        "detail": "Container",
+        "expiresAt": 1773797081788,
+        "glow": "#f69393",
+        "id": "1773797069788-9b0672888554a8",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#22c55e",
+        "createdAt": 1773797069524,
+        "detail": "Pagou $ 15 ao banco.",
+        "expiresAt": 1773797081524,
+        "glow": "#7fdda2",
+        "id": "1773797069524-7a160fe47ea85",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Destino definido",
+        "color": "#22c55e",
+        "createdAt": 1773797068707,
+        "detail": "REC | $ 144",
+        "expiresAt": 1773797080707,
+        "glow": "#7fdda2",
+        "id": "1773797068707-9e5e4375d5e0d",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Pedagio sorteado",
+        "color": "#22c55e",
+        "createdAt": 1773797068582,
+        "detail": "PAN",
+        "expiresAt": 1773797080582,
+        "glow": "#7fdda2",
+        "id": "1773797068582-7bb75edd2b9f9",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 01"
+      },
+      {
+        "action": "Porto inicial comprado",
+        "color": "#22c55e",
+        "createdAt": 1773797068461,
+        "detail": "SPE por $ 370",
+        "expiresAt": 1773797080461,
+        "glow": "#7fdda2",
+        "id": "1773797068461-b6bd99327280a",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 01"
+      }
+    ],
+    "ai": {
+      "aiDifficultyId": "normal",
+      "aiProfileModeId": "balanced",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [],
+      "draw_pile": [
+        "iceberg",
+        "time_campeao",
+        "manutencao_total",
+        "lula_gigante",
+        "reliquias",
+        "motim",
+        "ataque_submarino",
+        "lucro_extra",
+        "corrente_a_favor",
+        "tempestade",
+        "maelstrom",
+        "vento_a_favor",
+        "pedagio_extra",
+        "sabotagem",
+        "nautilus",
+        "baleias",
+        "pedagio_livre",
+        "quebra_de_contrato",
+        "gasolina_livre",
+        "atlantida",
+        "nova_especie",
+        "aposta",
+        "naufrago",
+        "mudanca_de_rota",
+        "greve",
+        "desastre_maritimo",
+        "porto_livre",
+        "vazamento",
+        "atalho",
+        "sardinhas",
+        "bermudas",
+        "banco_de_gelo",
+        "piratas",
+        "alfandega",
+        "atraso_de_entrega"
+      ],
+      "held_card_ids": []
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 560,
+          "cargo_label": "Cruzeiro",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "JED",
+          "distance_label": "Distancia 14",
+          "distance_value": 14,
+          "freight_label": "Frete $ 560",
+          "freight_value": 560,
+          "mandatory_toll": "CAP",
+          "note": "Minha Companhia parou em Abastecimento 20 e pagou $ 20 ao banco.",
+          "origin": "BUE",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 560,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cruise",
+        "bankrupt": false,
+        "board_node_id": "fuel-008",
+        "cash": 1580,
+        "cash_display": "$ 1.580",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupons": [],
+        "id": "human",
+        "is_human": true,
+        "last_roll": [
+          2,
+          6
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Minha Companhia",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Cruzeiro"
+          }
+        ],
+        "property_codes": [
+          "BUE"
+        ],
+        "ship_type": "cruise",
+        "ship_type_label": "Cruzeiro",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 20"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 408,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "GUA",
+          "distance_label": "Distancia 17",
+          "distance_value": 17,
+          "freight_label": "Frete $ 408",
+          "freight_value": 408,
+          "mandatory_toll": "PAN",
+          "note": "Jogador 1 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "MUM",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 408,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-004",
+        "cash": 1535,
+        "cash_display": "$ 1.535",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupons": [],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          3,
+          6
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "MUM"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 144,
+          "cargo_label": "Granel",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "REC",
+          "distance_label": "Distancia 9",
+          "distance_value": 9,
+          "freight_label": "Frete $ 144",
+          "freight_value": 144,
+          "mandatory_toll": "PAN",
+          "note": "Jogador 2 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "SPE",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 144,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "bulk",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-062",
+        "cash": 1575,
+        "cash_display": "$ 1.575",
+        "color_hex": "#22c55e",
+        "color_id": "green",
+        "coupons": [],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          3,
+          5
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Granel"
+          }
+        ],
+        "property_codes": [
+          "SPE"
+        ],
+        "ship_type": "bulk",
+        "ship_type_label": "Granel",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 950,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "LON",
+          "distance_label": "Distancia 19",
+          "distance_value": 19,
+          "freight_label": "Frete $ 950",
+          "freight_value": 950,
+          "mandatory_toll": "SUZ",
+          "note": "Jogador 3 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "TOK",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 950,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-107",
+        "cash": 1495,
+        "cash_display": "$ 1.495",
+        "color_hex": "#ef4444",
+        "color_id": "red",
+        "coupons": [],
+        "id": "cpu-3",
+        "is_human": false,
+        "last_roll": [
+          5,
+          2
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 3",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "TOK"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 400,
+          "cargo_label": "Autom\u00f3veis",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "REC",
+          "distance_label": "Distancia 8",
+          "distance_value": 8,
+          "freight_label": "Frete $ 400",
+          "freight_value": 400,
+          "mandatory_toll": "PAN",
+          "note": "Jogador 4 parou em Abastecimento 25 e pagou $ 25 ao banco.",
+          "origin": "HAM",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 400,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cars",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-033",
+        "cash": 1505,
+        "cash_display": "$ 1.505",
+        "color_hex": "#f97316",
+        "color_id": "orange",
+        "coupons": [],
+        "id": "cpu-4",
+        "is_human": false,
+        "last_roll": [
+          1,
+          2
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 25",
+        "monopoly_regions": [],
+        "name": "Jogador 4",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "Autom\u00f3veis"
+          }
+        ],
+        "property_codes": [
+          "HAM"
+        ],
+        "ship_type": "cars",
+        "ship_type_label": "Autom\u00f3veis",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 25"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 456,
+          "cargo_label": "G\u00e1s",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "SHA",
+          "distance_label": "Distancia 19",
+          "distance_value": 19,
+          "freight_label": "Frete $ 456",
+          "freight_value": 456,
+          "mandatory_toll": "GIB",
+          "note": "Contrato: 19 x 6 x 4 = 456. Aplicado porto de partida comprado.",
+          "origin": "RIO",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 456,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.52,
+            "evaluation_noise": 0.08,
+            "foresight": 0.42,
+            "id": "ai_normal",
+            "label": "Normal",
+            "liquidity_discipline": 0.56,
+            "timing_quality": 0.44
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "rio",
+        "cash": 1500,
+        "cash_display": "$ 1.500",
+        "color_hex": "#a855f7",
+        "color_id": "purple",
+        "coupons": [],
+        "id": "cpu-5",
+        "is_human": false,
+        "last_roll": null,
+        "location_code": "RIO",
+        "location_label": "RIO",
+        "monopoly_regions": [],
+        "name": "Jogador 5",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "RIO"
+        ],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "contrato inicial definido"
+      }
+    ],
+    "report": {
+      "activeKey": "cash-by-turn",
+      "milestones": []
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 1",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-2": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 2",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-3": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 3",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-4": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 4",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-5": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 5",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.52,
+          "evaluation_noise": 0.08,
+          "foresight": 0.42,
+          "id": "ai_normal",
+          "label": "Normal",
+          "liquidity_discipline": 0.56,
+          "timing_quality": 0.44
+        },
+        "skill_preset_id": "ai_normal"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Jogador 5: destino definido",
+      "active_player_id": "cpu-5",
+      "dice": [
+        0,
+        0
+      ],
+      "note": "Jogador 5 vai de RIO para SHA com multiplicador de posse no porto inicial.",
+      "phase": "Primeiro turno - Jogador 5",
+      "turn_label": "Turno 01",
+      "turn_number": 1
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": false,
+      "ai_difficulty": "normal",
+      "ai_manual_profiles": [],
+      "ai_manual_robot_configs": [],
+      "ai_profile_mode": "balanced",
+      "ai_profile_order": [
+        "balanced_trader"
+      ],
+      "company_name": "Minha Companhia",
+      "human_color_id": "blue",
+      "rival_count": 5
+    }
+  },
+  "variant": "game-ai-ui",
+  "version": 1
+}

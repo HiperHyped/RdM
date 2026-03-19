@@ -130,6 +130,7 @@ Em [data](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data):
 - [ports.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/ports.json)
 - [distances.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/distances.json)
 - [cards.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/cards.json)
+- [docs/CHANCE_CARDS_GUIDE.md](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/docs/CHANCE_CARDS_GUIDE.md)
 - [continents.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/continents.json)
 - [rules_v2.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/rules_v2.json)
 - [ship_types.json](C:/Users/Haroldo%20Duraes/Desktop/GOvGO/RdM/data/ship_types.json)
