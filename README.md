@@ -23,28 +23,6 @@ Antes de executar qualquer comando Python, faça exatamente isto:
 4. Nao apague nem renomeie os arquivos JSON dentro de `data`, porque eles alimentam as regras, cartas, cores, portos, pedagogios e distancias do jogo.
 5. Nao apague nem renomeie `run.py` e `pyproject.toml`, porque sao os arquivos usados para iniciar e instalar o projeto.
 
-O que voce nao precisa fazer antes de rodar:
-
-- nao precisa abrir nem converter os arquivos da pasta `manual`
-- nao precisa editar os arquivos de `data`
-- nao precisa copiar arquivos para outro lugar
-- nao precisa criar banco de dados
-- nao precisa configurar variaveis de ambiente
-
-Para evitar erro de caminho, o terminal deve estar nesta pasta:
-
-```powershell
-C:\Users\Haroldo Duraes\Desktop\GOvGO\RdM
-```
-
-Uma forma simples de conferir isso e executar:
-
-```powershell
-dir
-```
-
-Se aparecerem `run.py`, `pyproject.toml`, `app` e `data` na listagem, voce esta no lugar certo.
-
 ## Instalacao
 
 No diretorio do projeto, instale as dependencias:
