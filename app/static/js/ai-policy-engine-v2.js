@@ -710,6 +710,29 @@
     };
   }
 
+  function ownedPropertyNegotiationFloor(basePrice, {
+    propertyKind = 'port',
+    sellerWouldLoseMonopoly = false,
+    sellerRegionBeforeRatio = 0,
+    sellerRegionAfterRatio = 0,
+  } = {}) {
+    const normalizedBasePrice = Math.max(1, money(basePrice));
+    const monopolyLossPressure = sellerWouldLoseMonopoly && propertyKind === 'port'
+      ? clamp(
+        Math.max(0, sellerRegionBeforeRatio - sellerRegionAfterRatio) + sellerRegionBeforeRatio,
+        0,
+        1.5,
+      )
+      : 0;
+    const premiumRatio = 0.04
+      + (sellerWouldLoseMonopoly && propertyKind === 'port' ? 0.08 : 0)
+      + monopolyLossPressure * 0.10;
+    return money(Math.max(
+      normalizedBasePrice + 1,
+      Math.ceil(normalizedBasePrice * (1 + premiumRatio)),
+    ));
+  }
+
   function dynamicOwnedPropertyNegotiation({ player, owner = null, card = null, price = 0, resolvedContext }) {
     const buyerProfile = resolvedContext.profile || ensureProfile(player, resolvedContext.tableConfig);
     const ownerProfile = ensureProfile(owner, resolvedContext.tableConfig);
@@ -754,6 +777,12 @@
     const sellerRegionAfterRatio = clamp(numeric(signals.sellerRegionAfterRatio, sellerRegionBeforeRatio), 0, 1);
     const buyerWouldCompleteMonopoly = Boolean(signals.buyerWouldCompleteMonopoly);
     const sellerWouldLoseMonopoly = Boolean(signals.sellerWouldLoseMonopoly);
+    const strategicSellerFloor = ownedPropertyNegotiationFloor(basePrice, {
+      propertyKind,
+      sellerWouldLoseMonopoly,
+      sellerRegionBeforeRatio,
+      sellerRegionAfterRatio,
+    });
     const reason = String(resolvedContext.reason || 'owned_property_negotiation');
     const normalizedYield = clamp((Math.max(ownerCharge, freightPotential * 0.35)) / basePrice, 0, 1);
     const interestRule = getDecisionRule('negotiation', 'owned_property_interest');
@@ -796,7 +825,11 @@
     buyerEnv.runtimeSignals.interest_score = interestScore;
     buyerEnv.runtimeSignals.base_price = basePrice;
     const buyerMax = money(Math.min(buyerCash, evaluateFormulaDefinition(priceRule?.price_formula?.buyer_max, buyerEnv)));
-    const sellerMin = money(Math.max(mortgageFloor * 1.1, evaluateFormulaDefinition(priceRule?.price_formula?.seller_min, sellerEnv)));
+    const sellerMin = money(Math.max(
+      mortgageFloor * 1.1,
+      strategicSellerFloor,
+      evaluateFormulaDefinition(priceRule?.price_formula?.seller_min, sellerEnv),
+    ));
     const overlap = buyerMax - sellerMin;
     const minimumOverlap = basePrice * Math.max(0, numeric(priceRule?.thresholds?.acceptable_overlap, 0));
     const buyerAggression = clamp(0.25 + interestScore * 0.45, 0.18, 0.85);
@@ -807,15 +840,21 @@
       0.12,
       0.78,
     );
-    const buyerOpening = money(clamp(
-      basePrice + Math.max(0, (buyerMax - basePrice) * (0.34 + buyerAggression * 0.22)),
-      mortgageFloor,
-      Math.max(mortgageFloor, buyerMax),
-    ));
+    const buyerOpening = buyerMax >= strategicSellerFloor
+      ? money(clamp(
+          basePrice + Math.max(0, (buyerMax - basePrice) * (0.34 + buyerAggression * 0.22)),
+          strategicSellerFloor,
+          Math.max(strategicSellerFloor, buyerMax),
+        ))
+      : 0;
     const sellerCounter = money(Math.max(
       sellerMin,
       Math.min(
-        Math.max(listPrice * 0.95, sellerMin + Math.max(0, (buyerMax - sellerMin) * (0.32 + sellerFlexibility * 0.14 + sellerAttachment * 0.10))),
+        Math.max(
+          strategicSellerFloor,
+          listPrice,
+          sellerMin + Math.max(0, (buyerMax - sellerMin) * (0.32 + sellerFlexibility * 0.14 + sellerAttachment * 0.10)),
+        ),
         buyerCash,
       ),
     ));
@@ -1025,6 +1064,12 @@
     const sellerRegionBeforeRatio = clamp(numeric(signals.sellerRegionBeforeRatio, 0), 0, 1);
     const sellerRegionAfterRatio = clamp(numeric(signals.sellerRegionAfterRatio, sellerRegionBeforeRatio), 0, 1);
     const sellerWouldLoseMonopoly = Boolean(signals.sellerWouldLoseMonopoly);
+    const strategicSellerFloor = ownedPropertyNegotiationFloor(basePrice, {
+      propertyKind,
+      sellerWouldLoseMonopoly,
+      sellerRegionBeforeRatio,
+      sellerRegionAfterRatio,
+    });
     const reason = String(resolvedContext.reason || 'owned_property_negotiation');
     const normalizedYield = clamp((Math.max(ownerCharge, freightPotential * 0.35)) / basePrice, 0, 1);
     const priceRule = getDecisionRule('negotiation', 'owned_property_price_band');
@@ -1058,7 +1103,11 @@
       strategicLockScore,
       thresholds: sessionRule?.stance_thresholds || {},
     });
-    const privateFloor = money(Math.max(mortgageFloor * 1.10, evaluateFormulaDefinition(priceRule?.price_formula?.seller_min, sellerEnv)));
+    const privateFloor = money(Math.max(
+      mortgageFloor * 1.10,
+      strategicSellerFloor,
+      evaluateFormulaDefinition(priceRule?.price_formula?.seller_min, sellerEnv),
+    ));
     const targetMarkup = clamp(
       numeric(offerPolicy.target_markup_base, 0.05)
         + (1 - sessionScore) * numeric(offerPolicy.target_markup_session_penalty, 0.08)
@@ -1547,6 +1596,15 @@
     const buyerRegionBeforeRatio = clamp(numeric(signals.buyerRegionBeforeRatio, 0), 0, 1);
     const buyerRegionAfterRatio = clamp(numeric(signals.buyerRegionAfterRatio, buyerRegionBeforeRatio), 0, 1);
     const buyerWouldCompleteMonopoly = Boolean(signals.buyerWouldCompleteMonopoly);
+    const sellerRegionBeforeRatio = clamp(numeric(signals.sellerRegionBeforeRatio, 0), 0, 1);
+    const sellerRegionAfterRatio = clamp(numeric(signals.sellerRegionAfterRatio, sellerRegionBeforeRatio), 0, 1);
+    const sellerWouldLoseMonopoly = Boolean(signals.sellerWouldLoseMonopoly);
+    const strategicSellerFloor = ownedPropertyNegotiationFloor(basePrice, {
+      propertyKind,
+      sellerWouldLoseMonopoly,
+      sellerRegionBeforeRatio,
+      sellerRegionAfterRatio,
+    });
     const reason = String(resolvedContext.reason || 'owned_property_negotiation');
     const normalizedYield = clamp((Math.max(ownerCharge, freightPotential * 0.35)) / basePrice, 0, 1);
     const interestRule = getDecisionRule('negotiation', 'owned_property_interest');
@@ -1582,44 +1640,53 @@
       buyerStrategicLift,
       thresholds: sessionRule?.stance_thresholds || {},
     });
-    const privateCeiling = money(Math.min(buyerCash, Math.max(mortgageFloor * 1.10, evaluateFormulaDefinition(priceRule?.price_formula?.buyer_max, buyerEnv))));
-    const privateTarget = money(Math.min(
-      privateCeiling,
+    const privateCeiling = money(Math.min(
+      buyerCash,
       Math.max(
-        mortgageFloor,
-        basePrice + Math.max(0, (privateCeiling - basePrice) * clamp(
-          numeric(offerPolicy.target_window_base, 0.42)
-            + buyerAggression * numeric(offerPolicy.target_window_aggression_weight, 0.12)
-            + buyerCashStress * numeric(offerPolicy.target_window_cash_stress_weight, -0.10),
-          numeric(offerPolicy.target_window_min, 0.2),
-          numeric(offerPolicy.target_window_max, 0.7),
-        )),
+        strategicSellerFloor,
+        mortgageFloor * 1.10,
+        evaluateFormulaDefinition(priceRule?.price_formula?.buyer_max, buyerEnv),
       ),
     ));
-    const openingBid = money(Math.min(
-      privateCeiling,
-      Math.max(
-        mortgageFloor,
-        privateTarget - basePrice * clamp(
-          numeric(offerPolicy.opening_discount_base, 0.03) + (1 - sessionScore) * numeric(offerPolicy.opening_discount_session_weight, 0.03),
-          numeric(offerPolicy.opening_discount_min, 0.02),
-          numeric(offerPolicy.opening_discount_max, 0.08),
-        ),
-        listPrice * clamp(
-          numeric(offerPolicy.opening_list_ratio_base, 0.74)
-            + buyerAggression * numeric(offerPolicy.opening_list_aggression_weight, 0.08)
-            + buyerCashStress * numeric(offerPolicy.opening_list_cash_stress_weight, -0.12),
-          numeric(offerPolicy.opening_list_ratio_min, 0.55),
-          numeric(offerPolicy.opening_list_ratio_max, 0.96),
-        ),
-      ),
-    ));
-    const canNegotiate = buyerCash >= Math.max(mortgageFloor, Math.floor(privateTarget * numeric(offerPolicy.entry_target_ratio, 0.92)))
+    const canReachSellerFloor = privateCeiling >= strategicSellerFloor;
+    const privateTarget = canReachSellerFloor
+      ? money(Math.min(
+          privateCeiling,
+          Math.max(
+            strategicSellerFloor,
+            basePrice + Math.max(0, (privateCeiling - basePrice) * clamp(
+              numeric(offerPolicy.target_window_base, 0.42)
+                + buyerAggression * numeric(offerPolicy.target_window_aggression_weight, 0.12)
+                + buyerCashStress * numeric(offerPolicy.target_window_cash_stress_weight, -0.10),
+              numeric(offerPolicy.target_window_min, 0.2),
+              numeric(offerPolicy.target_window_max, 0.7),
+            )),
+          ),
+        ))
+      : 0;
+    const openingBid = canReachSellerFloor
+      ? money(Math.min(
+          privateCeiling,
+          Math.max(
+            strategicSellerFloor,
+            privateTarget - basePrice * clamp(
+              numeric(offerPolicy.opening_discount_base, 0.03) + (1 - sessionScore) * numeric(offerPolicy.opening_discount_session_weight, 0.03),
+              numeric(offerPolicy.opening_discount_min, 0.02),
+              numeric(offerPolicy.opening_discount_max, 0.08),
+            ),
+            listPrice,
+          ),
+        ))
+      : 0;
+    const canNegotiate = canReachSellerFloor
+      && buyerCash >= Math.max(strategicSellerFloor, Math.floor(privateTarget * numeric(offerPolicy.entry_target_ratio, 0.92)))
       && sessionScore >= numeric(sessionRule?.thresholds?.hard_reject, 0.36);
-    const suggestedAsk = money(Math.max(
-      openingBid + Math.ceil(basePrice * numeric(offerPolicy.suggested_ask_step_ratio, 0.10)),
-      Math.min(buyerCash, privateCeiling + Math.ceil(basePrice * numeric(offerPolicy.suggested_ask_ceiling_ratio, 0.06))),
-    ));
+    const suggestedAsk = canNegotiate
+      ? money(Math.max(
+          openingBid + Math.ceil(basePrice * numeric(offerPolicy.suggested_ask_step_ratio, 0.10)),
+          Math.min(buyerCash, privateCeiling + Math.ceil(basePrice * numeric(offerPolicy.suggested_ask_ceiling_ratio, 0.06))),
+        ))
+      : 0;
     const transcript = [
       {
         phase: 'interest',

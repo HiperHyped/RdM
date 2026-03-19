@@ -2614,14 +2614,14 @@ function playerActionLogMarkup(player) {
   const expanded = Boolean(state.view.expandedActionFeedsByPlayer?.[player.id]);
   return `
     <div class="preview-rival-action-log${expanded ? ' is-expanded' : ' is-collapsed'}" data-player-log-player-id="${player.id}">
-      <div class="preview-rival-action-log-chip">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
+      <div class="preview-rival-action-log-chip" style="font-size:0.58rem;">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
       <div class="preview-rival-action-feed">
         ${entries.map((entry, index) => `
           <article class="preview-rival-action-entry${index === 0 ? ' is-newest' : ''}">
             <span class="preview-rival-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
             <div class="preview-rival-action-entry-body">
-              <strong class="preview-rival-action-entry-title">${entry.action}</strong>
-              <span class="preview-rival-action-entry-detail">${entry.detail}</span>
+              <strong class="preview-rival-action-entry-title" style="font-size:0.72rem;">${entry.action}</strong>
+              <span class="preview-rival-action-entry-detail" style="font-size:0.64rem;">${entry.detail}</span>
             </div>
           </article>
         `).join('')}
@@ -7233,22 +7233,19 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
       setSession({
         active_player_id: player.id,
         phase: phaseLabel,
-      const sampledSnapshots = sampleReportSnapshotsForSave(snapshots);
         action_label: `${player.name}: permissao`,
         dice: [0, 0],
         note: `${player.name} esta sorteando a permissao de frete.`,
       });
       renderHud();
       renderNodeOverlay();
-        sample_turn_step: REPORT_SAVE_SAMPLE_TURN_STEP,
-        sampled_turn_numbers: sampledSnapshots.map((snapshot) => Number(snapshot?.turnNumber || 0)),
       renderShipOverlay();
-          cash: buildReportMetricSeries(sampledSnapshots, 'cash'),
-          patrimony: buildReportMetricSeries(sampledSnapshots, 'patrimony'),
-          title_count: buildReportMetricSeries(sampledSnapshots, 'title_count'),
-          toll_count: buildReportMetricSeries(sampledSnapshots, 'toll_count'),
-          permission_count: buildReportMetricSeries(sampledSnapshots, 'permission_count'),
-          property_count: buildReportMetricSeries(sampledSnapshots, 'property_count'),
+      await delay(shortDelay);
+      const permissionCard = randomChoice(state.freightPermissionCards);
+      applyPermissionSelectionForPlayer(player, permissionCard, {
+        updateSession: true,
+        actionLabel: `${player.name}: permissao sorteada`,
+        note: `${player.name} recebeu a permissao ${permissionCard.title}.`,
       });
       await delay(shortDelay);
     }
@@ -7376,12 +7373,23 @@ async function runPlayerSubsequentTurn(player, turnNumber) {
     return;
   }
 
+  if (player.needs_new_contract) {
     await runPostContractForPlayer(player, {
       phaseLabel,
       advanceGlobalTurn: false,
       autoRollAfterSetup: true,
     });
     return;
+  }
+
+  if (!player.active_contract || !player.active_contract.destination || player.active_contract.destination === '--') {
+    await runContractOpeningForPlayer(player, {
+      phaseLabel,
+      needsPermission: !(player.permissions || []).length,
+      originMode: player.location_code ? 'current' : 'draw',
+    });
+    await runTurnExecutionForPlayer(player, {
+      phaseLabel,
       humanActionLabel: 'Rolar 2 dados',
       humanNote: 'Agora voce pode rolar os dados da rodada.',
       cpuActionLabel: `${player.name}: rolar dados`,

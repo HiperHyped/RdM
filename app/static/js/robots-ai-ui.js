@@ -3534,14 +3534,14 @@ function playerActionLogMarkup(player) {
   const expanded = Boolean(state.view.expandedActionFeedsByPlayer?.[player.id]);
   return `
     <div class="preview-rival-action-log${expanded ? ' is-expanded' : ' is-collapsed'}" data-player-log-player-id="${player.id}">
-      <div class="preview-rival-action-log-chip">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
+      <div class="preview-rival-action-log-chip" style="font-size:0.58rem;">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
       <div class="preview-rival-action-feed">
         ${entries.map((entry, index) => `
           <article class="preview-rival-action-entry${index === 0 ? ' is-newest' : ''}">
             <span class="preview-rival-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
             <div class="preview-rival-action-entry-body">
-              <strong class="preview-rival-action-entry-title">${entry.action}</strong>
-              <span class="preview-rival-action-entry-detail">${entry.detail}</span>
+              <strong class="preview-rival-action-entry-title" style="font-size:0.72rem;">${entry.action}</strong>
+              <span class="preview-rival-action-entry-detail" style="font-size:0.64rem;">${entry.detail}</span>
             </div>
           </article>
         `).join('')}

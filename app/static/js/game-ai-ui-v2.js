@@ -362,6 +362,7 @@ const state = {
     paused: false,
     actionFeedExpanded: false,
     propertyInspectorCode: '',
+    propertyInspectorAnchor: null,
     deferredUiRefresh: false,
   },
   projection: {
@@ -934,16 +935,39 @@ function renderPropertyInspector({ force = false } = {}) {
   const card = getPropertyCard(code);
   overlay.classList.toggle('is-hidden', !card);
   stage.innerHTML = card ? propertyInspectorMarkup(card) : '';
+  stage.style.removeProperty('--inspector-left');
+  stage.style.removeProperty('--inspector-top');
+  stage.classList.toggle('is-anchored', false);
+  if (!card) return;
+  const anchor = state.view.propertyInspectorAnchor;
+  const cardNode = stage.firstElementChild;
+  if (!anchor || !cardNode) return;
+  const margin = 16;
+  const horizontalOffset = 18;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const cardWidth = Math.ceil(cardNode.getBoundingClientRect().width || cardNode.offsetWidth || 0);
+  const cardHeight = Math.ceil(cardNode.getBoundingClientRect().height || cardNode.offsetHeight || 0);
+  if (!cardWidth || !cardHeight || !viewportWidth || !viewportHeight) return;
+  const left = Math.max(margin, Math.min(viewportWidth - cardWidth - margin, Number(anchor.x || 0) + horizontalOffset));
+  const top = Math.max(margin, Math.min(viewportHeight - cardHeight - margin, Number(anchor.y || 0) - (cardHeight / 2)));
+  stage.style.setProperty('--inspector-left', `${Math.round(left)}px`);
+  stage.style.setProperty('--inspector-top', `${Math.round(top)}px`);
+  stage.classList.toggle('is-anchored', true);
 }
 
-function openPropertyInspector(code) {
+function openPropertyInspector(code, anchor = null) {
   state.view.propertyInspectorCode = String(code || '').toUpperCase();
+  state.view.propertyInspectorAnchor = anchor && Number.isFinite(Number(anchor.x)) && Number.isFinite(Number(anchor.y))
+    ? { x: Number(anchor.x), y: Number(anchor.y) }
+    : null;
   renderPropertyInspector();
 }
 
 function closePropertyInspector() {
   if (!state.view.propertyInspectorCode) return;
   state.view.propertyInspectorCode = '';
+  state.view.propertyInspectorAnchor = null;
   renderPropertyInspector();
 }
 
@@ -979,7 +1003,7 @@ function handleMapClick(event) {
   if (hasCentralOverlayOpen()) return;
   const card = findPropertyCardAtClientPoint(event.clientX, event.clientY);
   if (card) {
-    openPropertyInspector(card.code);
+    openPropertyInspector(card.code, { x: event.clientX, y: event.clientY });
   }
 }
 
@@ -3963,8 +3987,8 @@ function permissionMiniMarkup(permission) {
   `;
 }
 
-function tollDiamondSvg() {
-  return '<svg viewBox="0 0 28 18" class="port-draw-toll-diamond" aria-hidden="true"><polygon points="14,2 26,9 14,16 2,9" fill="none" stroke="#05070a" stroke-width="2.8"></polygon></svg>';
+function tollDiamondSvg(stroke = '#05070a') {
+  return `<svg viewBox="0 0 28 18" class="port-draw-toll-diamond" aria-hidden="true"><polygon points="14,2 26,9 14,16 2,9" fill="none" stroke="${stroke}" stroke-width="2.8"></polygon></svg>`;
 }
 
 function propertyMiniRowsMarkup(card) {
@@ -3984,12 +4008,12 @@ function propertyMiniMarkup(card) {
     <article class="preview-property-mini${card.is_toll ? ' is-toll' : ''}${mortgaged ? ' is-mortgaged' : ''}" style="--title-fill:${card.fill}; --title-text:${card.text};">
       
       <header class="preview-property-mini-head${tollHeadClass}">
-        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
+        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg('#05070a')}</span>` : `<span class="preview-property-mini-number-spacer"></span>`}
         <div class="preview-property-mini-heading">
           <strong class="preview-property-mini-code">${card.code}</strong>
           <span class="preview-property-mini-name">${card.name}</span>
         </div>
-        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg()}</span>` : '<span class="preview-property-mini-number-spacer"></span>'}
+        ${card.is_toll ? `<span class="preview-property-mini-diamond">${tollDiamondSvg('#05070a')}</span>` : '<span class="preview-property-mini-number-spacer"></span>'}
       </header>
       <div class="preview-property-mini-body">
         <div class="preview-property-mini-table-head">
@@ -4107,6 +4131,18 @@ const REGION_LABELS = {
   SA: 'America do Sul',
 };
 
+const REGION_ORDER = Object.keys(REGION_LABELS);
+
+function regionOrderIndex(regionCode) {
+  const normalized = String(regionCode || '').trim().toUpperCase();
+  const index = REGION_ORDER.indexOf(normalized);
+  return index >= 0 ? index : REGION_ORDER.length;
+}
+
+function propertyRegionSortValue(card) {
+  return `${String(regionOrderIndex(card?.continent || '')).padStart(2, '0')}|${String(card?.continent || '').toUpperCase()}|${String(card?.code || '').toUpperCase()}`;
+}
+
 function monopolyRegionStyle(regionCode) {
   const card = regionPortCards(regionCode)?.[0] || null;
   const background = card?.fill || '#8fd7ff';
@@ -4204,14 +4240,14 @@ function playerActionLogMarkup(player) {
   const expanded = Boolean(state.view.expandedActionFeedsByPlayer?.[player.id]);
   return `
     <div class="preview-rival-action-log${expanded ? ' is-expanded' : ' is-collapsed'}" data-player-log-player-id="${player.id}">
-      <div class="preview-rival-action-log-chip">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
+      <div class="preview-rival-action-log-chip" style="font-size:0.58rem;">${entries.length} ${entries.length > 1 ? 'acoes' : 'acao'}</div>
       <div class="preview-rival-action-feed">
         ${entries.map((entry, index) => `
           <article class="preview-rival-action-entry${index === 0 ? ' is-newest' : ''}">
             <span class="preview-rival-action-entry-accent" style="background:${entry.color}; box-shadow:0 0 8px ${entry.glow};"></span>
             <div class="preview-rival-action-entry-body">
-              <strong class="preview-rival-action-entry-title">${entry.action}</strong>
-              <span class="preview-rival-action-entry-detail">${entry.detail}</span>
+              <strong class="preview-rival-action-entry-title" style="font-size:0.72rem;">${entry.action}</strong>
+              <span class="preview-rival-action-entry-detail" style="font-size:0.64rem;">${entry.detail}</span>
             </div>
           </article>
         `).join('')}
@@ -4374,6 +4410,29 @@ function miniCouponMarkup(playerId, coupon, selected = false) {
   });
 }
 
+function propertyChipMarkup(card) {
+  const mortgaged = Boolean(card?.mortgaged);
+  const background = card?.fill || '#8fd7ff';
+  const text = card?.text || readableTextColor(background);
+  return `
+    <span class="preview-monopoly-chip preview-property-chip${card.is_toll ? ' is-toll' : ' is-port'}${mortgaged ? ' is-mortgaged' : ''}" style="background:${background}; color:${text}; border-color:${background};">
+      <span class="preview-property-chip-code">${card.code}</span>
+      ${mortgaged ? '<span class="preview-property-chip-badge">M</span>' : ''}
+    </span>
+  `;
+}
+
+function propertyChipButtonMarkup(playerId, card, selected = false) {
+  return miniCardWrapper({
+    playerId,
+    type: 'property',
+    key: card.code,
+    selected,
+    extraClass: 'preview-mini-selectable-property preview-mini-selectable-property-chip',
+    innerMarkup: propertyChipMarkup(card),
+  });
+}
+
 
 function routeStopMarkup(code, { large = false, halo = false, haloColor = '' } = {}) {
   const normalized = String(code || '').toUpperCase();
@@ -4426,21 +4485,20 @@ function playerDrawerMarkup(player) {
   const monopolyItems = monopolyRegionsForPlayer(player)
     .map((region) => String(region || '').toUpperCase())
     .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => regionOrderIndex(left) - regionOrderIndex(right) || left.localeCompare(right));
 
   const permissionItems = moveSelectedToEnd(
     [...(player.permissions || [])].sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''))),
     selectedPermissionKey,
     (permission) => permission.id,
   );
-  const propertyItems = moveSelectedToEnd(
-    (player.property_codes || [])
-      .map((code) => getPropertyCard(code))
-      .filter(Boolean)
-      .sort((a, b) => propertyCardSortValue(a).localeCompare(propertyCardSortValue(b))),
-    selectedPropertyKey,
-    (card) => card.code,
-  );
+  const ownedPropertyCodes = new Set((player.property_codes || []).map((code) => String(code || '').toUpperCase()));
+  const portPropertyItems = (state.portCards || [])
+    .filter((card) => ownedPropertyCodes.has(String(card?.code || '').toUpperCase()))
+    .sort((left, right) => propertyRegionSortValue(left).localeCompare(propertyRegionSortValue(right)));
+  const tollPropertyItems = (state.tollCards || [])
+    .filter((card) => ownedPropertyCodes.has(String(card?.code || '').toUpperCase()))
+    .sort((left, right) => propertyRegionSortValue(left).localeCompare(propertyRegionSortValue(right)));
   const couponItems = moveSelectedToEnd(
     [...(player.coupons || [])].sort((a, b) => couponLabelFromCode(typeof a === 'string' ? a : a?.kind).localeCompare(couponLabelFromCode(typeof b === 'string' ? b : b?.kind))),
     selectedCouponKey,
@@ -4456,14 +4514,17 @@ function playerDrawerMarkup(player) {
     innerMarkup: permissionMiniMarkup(permission),
   })).join('');
 
-  const propertiesMarkup = propertyItems.map((card) => miniCardWrapper({
-    playerId: player.id,
-    type: 'property',
-    key: card.code,
-    selected: String(card.code) === String(selectedPropertyKey),
-    extraClass: 'preview-mini-selectable-property',
-    innerMarkup: propertyMiniMarkup(card),
-  })).join('');
+  const portPropertiesMarkup = portPropertyItems.map((card) => propertyChipButtonMarkup(
+    player.id,
+    card,
+    String(card.code) === String(selectedPropertyKey),
+  )).join('');
+
+  const tollPropertiesMarkup = tollPropertyItems.map((card) => propertyChipButtonMarkup(
+    player.id,
+    card,
+    String(card.code) === String(selectedPropertyKey),
+  )).join('');
 
   const couponsMarkup = couponItems.map((coupon) => miniCouponMarkup(
     player.id,
@@ -4481,8 +4542,18 @@ function playerDrawerMarkup(player) {
         ${miniHandMarkup(permissionsMarkup || '<span class="preview-inline-chip is-muted">sem permissao</span>', 'permissions-hand', miniHandStyle('permission', permissionItems.length))}
       </div>
       <div class="preview-rival-drawer-section">
-        <span class="preview-rival-drawer-label">Titulos e pedagios</span>
-        ${miniHandMarkup(propertiesMarkup || '<span class="preview-inline-chip is-muted">sem titulos</span>', 'properties-hand', miniHandStyle('property', propertyItems.length))}
+        <div class="preview-rival-chip-group">
+          <span class="preview-rival-drawer-label">Portos</span>
+          <div class="preview-rival-chip-strip preview-rival-property-chip-strip">
+            ${portPropertiesMarkup || '<span class="preview-inline-chip is-muted">sem titulos</span>'}
+          </div>
+          ${tollPropertyItems.length ? `
+          <span class="preview-rival-drawer-label">Pedagios</span>
+          <div class="preview-rival-chip-strip preview-rival-property-chip-strip is-tolls">
+            ${tollPropertiesMarkup}
+          </div>
+          ` : ''}
+        </div>
       </div>
       ${couponItems.length ? `
       <div class="preview-rival-drawer-section">
@@ -8752,6 +8823,36 @@ function renderNodeOverlay({ force = false } = {}) {
     overlay.appendChild(border);
   }
 
+  function appendChanceMarker(cx, cy, radius) {
+    const leftHalf = document.createElementNS(svgNs, 'path');
+    leftHalf.setAttribute('d', `M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} L ${cx} ${cy - radius} Z`);
+    leftHalf.setAttribute('fill', '#d94b45');
+    overlay.appendChild(leftHalf);
+
+    const rightHalf = document.createElementNS(svgNs, 'path');
+    rightHalf.setAttribute('d', `M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 1 ${cx} ${cy + radius} L ${cx} ${cy - radius} Z`);
+    rightHalf.setAttribute('fill', '#2ea65a');
+    overlay.appendChild(rightHalf);
+
+    const meridian = document.createElementNS(svgNs, 'line');
+    meridian.setAttribute('x1', cx);
+    meridian.setAttribute('y1', cy - radius);
+    meridian.setAttribute('x2', cx);
+    meridian.setAttribute('y2', cy + radius);
+    meridian.setAttribute('stroke', '#06111a');
+    meridian.setAttribute('stroke-width', '1.2');
+    overlay.appendChild(meridian);
+
+    const border = document.createElementNS(svgNs, 'circle');
+    border.setAttribute('cx', cx);
+    border.setAttribute('cy', cy);
+    border.setAttribute('r', radius);
+    border.setAttribute('fill', 'none');
+    border.setAttribute('stroke', '#06111a');
+    border.setAttribute('stroke-width', '3.2');
+    overlay.appendChild(border);
+  }
+
   state.projectedNodes.forEach((node) => {
     if (node.lat === null || node.lon === null) return;
     const projected = projectLonLat(node.lon, node.lat);
@@ -8779,7 +8880,7 @@ function renderNodeOverlay({ force = false } = {}) {
     }
 
     if (node.kind === 'chance') {
-      appendCircle(x, y, 6.9, '#f8fafc', '#06111a', 3.2);
+      appendChanceMarker(x, y, 6.9);
       return;
     }
 
@@ -10581,6 +10682,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (mini?.dataset?.playerId && mini?.dataset?.miniType && mini?.dataset?.miniKey) {
       event.stopPropagation();
       setSelectedMiniKey(mini.dataset.playerId, mini.dataset.miniType, mini.dataset.miniKey);
+      if (mini.dataset.miniType === 'property') {
+        openPropertyInspector(mini.dataset.miniKey, { x: event.clientX, y: event.clientY });
+      }
       renderRivals();
       return;
     }

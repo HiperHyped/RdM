@@ -2595,19 +2595,19 @@ kbd {
 
 .game-action-log .eyebrow {
   margin-bottom: 1px;
-  font-size: 0.54rem;
+  font-size: 0.68rem;
 }
 
 .game-action-feed {
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
 .game-action-entry {
   display: grid;
   grid-template-columns: 6px minmax(0, 1fr);
   gap: 6px;
-  padding: 6px 7px;
+  padding: 10px 11px;
   border-radius: 10px;
   border: 1px solid rgba(215, 230, 245, 0.08);
   background: rgba(255, 255, 255, 0.04);
@@ -2631,14 +2631,14 @@ kbd {
 
 .game-action-entry-title {
   color: #edf6ff;
-  font-size: 0.64rem;
+  font-size: 0.86rem;
   font-weight: 700;
   line-height: 1.15;
 }
 
 .game-action-entry-detail {
   color: var(--muted);
-  font-size: 0.58rem;
+  font-size: 0.76rem;
   line-height: 1.2;
 }
 
@@ -4254,12 +4254,17 @@ kbd {
 }
 
 .property-inspector-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.property-inspector-stage.is-anchored {
+  display: block;
 }
 
 .property-inspector-card {
@@ -4271,6 +4276,12 @@ kbd {
   opacity: 1 !important;
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
   pointer-events: none;
+}
+
+.property-inspector-stage.is-anchored .property-inspector-card {
+  position: absolute;
+  top: var(--inspector-top, 16px);
+  left: var(--inspector-left, 16px);
 }
 
 
@@ -4331,6 +4342,64 @@ kbd {
   --stack-end-padding: 22px;
   min-height: 0;
   height: calc(26px * var(--stack-scale, 0.84));
+}
+
+.preview-rival-chip-group {
+  display: grid;
+  gap: 4px;
+}
+
+.preview-rival-chip-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.preview-mini-selectable.preview-mini-selectable-property-chip {
+  display: inline-flex;
+  align-items: center;
+}
+
+.preview-property-chip {
+  min-height: 20px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+.preview-mini-selectable.preview-mini-selectable-property-chip:hover .preview-property-chip {
+  transform: translateY(-1px);
+}
+
+.preview-mini-selectable.preview-mini-selectable-property-chip.is-selected .preview-property-chip {
+  box-shadow: 0 0 0 2px rgba(237, 246, 255, 0.7), 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.preview-property-chip-code {
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.preview-property-chip-badge {
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(5, 7, 10, 0.26);
+  color: inherit;
+  font-size: 0.5rem;
+  font-weight: 900;
+}
+
+.preview-property-chip.is-mortgaged {
+  filter: saturate(0.82) brightness(0.92);
 }
 
 
@@ -4965,8 +5034,8 @@ kbd {
   bottom: calc(100% + var(--player-log-offset, 8px));
   z-index: 34;
   display: grid;
-  gap: 4px;
-  padding: 7px;
+  gap: 5px;
+  padding: 8px;
   border-radius: 14px;
   border: 1px solid rgba(215, 230, 245, 0.12);
   background:
@@ -4978,13 +5047,13 @@ kbd {
 
 .preview-rival-action-log-chip {
   justify-self: start;
-  min-height: 18px;
-  padding: 0 7px;
+  min-height: 19px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid rgba(215, 230, 245, 0.1);
   background: rgba(255, 255, 255, 0.05);
   color: var(--muted);
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4992,7 +5061,7 @@ kbd {
 
 .preview-rival-action-feed {
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .preview-rival-action-log.is-collapsed .preview-rival-action-entry:not(:first-child) {
@@ -5027,14 +5096,14 @@ kbd {
 
 .preview-rival-action-entry-title {
   color: #edf6ff;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.16;
 }
 
 .preview-rival-action-entry-detail {
   color: var(--muted);
-  font-size: 0.54rem;
+  font-size: 0.64rem;
   line-height: 1.18;
 }
 
