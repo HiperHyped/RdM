@@ -2,6 +2,8 @@
 
 Versao online do jogo Rei dos Mares, executada no navegador.
 
+![Tela do jogo Rei dos Mares](docs/image.png)
+
 Este projeto permite jogar uma partida contra robos ou acompanhar simulacoes completas entre robos, com mapa interativo, contratos, titulos, permissoes, cartas de sorte/reves, negociacoes e sistema de save/load.
 
 ## Requisitos
