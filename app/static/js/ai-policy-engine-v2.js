@@ -984,6 +984,135 @@
     });
   }
 
+  function negotiationReferenceValue(decision, fallbackAmount, side = 'buyer') {
+    const fallback = Math.max(1, money(fallbackAmount || 0));
+    if (side === 'seller') {
+      return money(Math.max(
+        fallback,
+        numeric(decision?.sellerMin, 0),
+        numeric(decision?.finalPrice, 0),
+        numeric(decision?.currentAsk, 0),
+        numeric(decision?.openingOffer, 0),
+        numeric(decision?.currentBid, 0),
+        numeric(decision?.openingBid, 0),
+      ));
+    }
+    return money(Math.max(
+      fallback,
+      numeric(decision?.buyerMax, 0),
+      numeric(decision?.finalPrice, 0),
+      numeric(decision?.currentAsk, 0),
+      numeric(decision?.openingOffer, 0),
+      numeric(decision?.currentBid, 0),
+      numeric(decision?.openingBid, 0),
+    ));
+  }
+
+  function evaluateOwnedPropertyBarter({ player, owner = null, card = null, price = 0, offeredBundle = [], context = {} } = {}) {
+    if (!player || !owner || !card || player.bankrupt || owner.bankrupt || player.id === owner.id) {
+      return {
+        accepted: false,
+        reason: 'invalid_parties',
+        offeredEntries: [],
+      };
+    }
+
+    const normalizedBundle = (Array.isArray(offeredBundle) ? offeredBundle : [])
+      .filter((entry) => entry?.card)
+      .map((entry) => ({
+        card: entry.card,
+        price: Math.max(1, money(entry?.price || entry?.card?.price || 0)),
+        negotiationSignals: entry?.negotiationSignals || {},
+      }));
+
+    if (!normalizedBundle.length) {
+      return {
+        accepted: false,
+        reason: 'empty_bundle',
+        offeredEntries: [],
+      };
+    }
+
+    const resolvedContext = buildDecisionContext(player, context);
+    const buyerProfile = resolvedContext.profile || ensureProfile(player, resolvedContext.tableConfig);
+    const ownerProfile = ensureProfile(owner, resolvedContext.tableConfig);
+    const targetPrice = Math.max(1, money(price || card?.price || 0));
+    const targetSignals = resolvedContext.negotiationSignals || {};
+    const targetDecision = decideOwnedPropertyNegotiation({
+      player,
+      owner,
+      card,
+      price: targetPrice,
+      context: {
+        ...context,
+        negotiationSignals: targetSignals,
+      },
+    });
+    const buyerTargetValue = negotiationReferenceValue(targetDecision, targetPrice, 'buyer');
+    const sellerTargetFloor = negotiationReferenceValue(targetDecision, targetPrice, 'seller');
+    const buyerFlex = clamp(
+      numeric(buyerProfile?.negotiation?.premium_tolerance, 0.5) * 0.08
+        + (targetSignals.buyerWouldCompleteMonopoly ? 0.14 : 0),
+      0,
+      0.24,
+    );
+    const sellerFlex = clamp(
+      numeric(ownerProfile?.negotiation?.discount_tolerance, 0.5) * 0.06
+        + numeric(ownerProfile?.negotiation?.sell_openness, 0.5) * 0.08
+        + (targetSignals.sellerWouldLoseMonopoly ? -0.08 : 0),
+      -0.08,
+      0.2,
+    );
+    const buyerCap = money(Math.max(targetPrice, buyerTargetValue + (targetPrice * buyerFlex)));
+    const sellerNeed = money(Math.max(
+      targetPrice,
+      sellerTargetFloor - (targetPrice * Math.max(0, sellerFlex)),
+    ));
+
+    const offeredEntries = normalizedBundle.map((entry) => {
+      const offerDecision = decideOwnedPropertyNegotiation({
+        player: owner,
+        owner: player,
+        card: entry.card,
+        price: entry.price,
+        context: {
+          ...context,
+          reason: 'owned_property_barter_offer',
+          negotiationSignals: entry.negotiationSignals,
+        },
+      });
+      return {
+        ...entry,
+        decision: offerDecision,
+        receiverValue: negotiationReferenceValue(offerDecision, entry.price, 'buyer'),
+        giverCost: negotiationReferenceValue(offerDecision, entry.price, 'seller'),
+      };
+    });
+
+    const offeredReceiverValue = money(offeredEntries.reduce((total, entry) => total + numeric(entry.receiverValue, 0), 0));
+    const offeredGiverCost = money(offeredEntries.reduce((total, entry) => total + numeric(entry.giverCost, 0), 0));
+    const sellerMargin = money(offeredReceiverValue - sellerNeed);
+    const buyerMargin = money(buyerCap - offeredGiverCost);
+    const accepted = offeredReceiverValue >= sellerNeed && offeredGiverCost <= buyerCap;
+
+    return {
+      accepted,
+      reason: accepted ? 'balanced_bundle' : (offeredReceiverValue < sellerNeed ? 'seller_value_shortfall' : 'buyer_overpay'),
+      card,
+      targetDecision,
+      buyerTargetValue,
+      sellerTargetFloor,
+      buyerCap,
+      sellerNeed,
+      offeredEntries,
+      offeredReceiverValue,
+      offeredGiverCost,
+      sellerMargin,
+      buyerMargin,
+      context: resolvedContext,
+    };
+  }
+
 
   function resolveHumanNegotiationStance({ sellerFlexibility = 0, sellerCashStress = 0, sellerAttachment = 0, strategicLockScore = 0, thresholds = {} } = {}) {
     if (strategicLockScore >= numeric(thresholds.irredutivel_strategic_lock_min, 0.84)
@@ -2266,6 +2395,7 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
     buildDecisionContext,
     decideBuyBankProperty,
     decideOwnedPropertyNegotiation,
+    evaluateOwnedPropertyBarter,
     buildHumanOwnedPropertyNegotiation,
     acceptHumanOwnedPropertyOffer,
     respondToHumanOwnedPropertyOffer,

@@ -553,7 +553,7 @@ kbd {
   z-index: 5;
   top: 16px;
   left: 16px;
-  width: min(214px, calc(100vw - 32px));
+  width: min(282px, calc(100vw - 32px));
   display: grid;
   gap: 10px;
 }
@@ -783,6 +783,7 @@ kbd {
   color: rgba(237, 246, 255, 0.7);
   font-size: 0.92rem;
   font-weight: 800;
+  margin: 0 1px;
 }
 
 .preview-route-empty {
@@ -910,7 +911,7 @@ kbd {
 }
 
 .preview-rival-route .preview-route-inline {
-  gap: 4px;
+  gap: 6px;
 }
 
 .preview-rival-route .preview-route-stop {
@@ -988,7 +989,7 @@ kbd {
   }
 
   .preview-left-stack {
-    width: min(244px, calc(100vw - 32px));
+    width: min(282px, calc(100vw - 32px));
   }
 
   .preview-turn-strip {
@@ -2631,14 +2632,14 @@ kbd {
 
 .game-action-entry-title {
   color: #edf6ff;
-  font-size: 0.86rem;
+  font-size: 0.79rem;
   font-weight: 700;
   line-height: 1.15;
 }
 
 .game-action-entry-detail {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   line-height: 1.2;
 }
 
@@ -3765,12 +3766,17 @@ kbd {
 
 .preview-contract {
   padding: 9px 10px;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  justify-self: start;
 }
 
 .preview-contract-topline {
   display: grid;
   gap: 8px;
   align-items: start;
+  width: max-content;
+  max-width: 100%;
 }
 
 .preview-contract-topline h1 {
@@ -3781,11 +3787,12 @@ kbd {
 
 .preview-contract-head-actions {
   display: flex;
-  width: 100%;
-  gap: 5px;
+  width: max-content;
+  max-width: 100%;
+  gap: 4px;
   flex-wrap: nowrap;
   align-items: center;
-  overflow-x: hidden;
+  overflow: visible;
   scrollbar-width: none;
 }
 
@@ -3794,9 +3801,10 @@ kbd {
 }
 
 .preview-ghost-button {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3804,6 +3812,7 @@ kbd {
   border: 1px solid rgba(215, 230, 245, 0.08);
   background: rgba(255, 255, 255, 0.03);
   color: #d6e5f5;
+  font-size: 0.74rem;
   font-size: 1rem;
   font-weight: 700;
   flex: 0 0 auto;
@@ -5096,14 +5105,14 @@ kbd {
 
 .preview-rival-action-entry-title {
   color: #edf6ff;
-  font-size: 0.72rem;
+  font-size: 0.79rem;
   font-weight: 700;
   line-height: 1.16;
 }
 
 .preview-rival-action-entry-detail {
   color: var(--muted);
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   line-height: 1.18;
 }
 
