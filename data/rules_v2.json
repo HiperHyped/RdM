@@ -6,6 +6,8 @@
   "single_active_contract_per_player": true,
   "first_permission_free": true,
   "extra_permission_cost": 2000,
+  "mortgage_credit_ratio": 0.5,
+  "mortgage_release_multiplier": 1.5,
   "origin_owner_commission_share": 0.5,
   "toll_owner_share": 0.5,
   "freight_uses_multiplier_value_when_origin_owned": true,

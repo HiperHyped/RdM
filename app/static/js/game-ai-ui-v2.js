@@ -916,9 +916,13 @@ function renderPauseIndicator() {
   node.classList.toggle('is-hidden', !state.view.paused);
 }
 
-function propertyInspectorMarkup(card) {
+function propertyInspectorMarkup(card, { centered = false } = {}) {
   if (!card) return '';
-  return `
+  const owner = ownerPlayerOf(card.code);
+  const ownerName = owner ? (owner.is_human ? owner.name : owner.name) : 'Banco';
+  const ownerAccent = owner?.color_hex || '#8fa5bb';
+  const ownerLabel = owner ? 'Pertence a' : 'Sem proprietario';
+  const propertyCardMarkup = `
     <article class="port-draw-card${card.is_toll ? ' toll-draw-card' : ''} property-inspector-card" style="--title-fill:${card.fill}; --title-text:${card.text};">
       <header class="port-draw-card-head${card.is_toll ? ' toll-draw-title-head' : ''}">
         ${card.is_toll ? `<span class="port-draw-toll-side-icon">${tollDiamondSvg()}</span>` : `<span class="port-draw-title-number">${card.number_display}</span>`}
@@ -942,6 +946,21 @@ function propertyInspectorMarkup(card) {
       </footer>
     </article>
   `;
+  if (!centered) {
+    return propertyCardMarkup;
+  }
+  return `
+    <section class="property-inspector-modal">
+      <div class="property-inspector-owner-row" style="--property-owner-accent:${ownerAccent};">
+        <span class="property-inspector-owner-bar" aria-hidden="true"></span>
+        <div class="property-inspector-owner-copy">
+          <span class="property-inspector-owner-label">${ownerLabel}</span>
+          <strong class="property-inspector-owner-name">${ownerName}</strong>
+        </div>
+      </div>
+      ${propertyCardMarkup}
+    </section>
+  `;
 }
 
 function renderPropertyInspector({ force = false } = {}) {
@@ -954,14 +973,17 @@ function renderPropertyInspector({ force = false } = {}) {
   if (!overlay || !stage) return;
   const code = String(state.view.propertyInspectorCode || '').toUpperCase();
   const card = getPropertyCard(code);
+  const centered = !state.view.propertyInspectorAnchor;
   overlay.classList.toggle('is-hidden', !card);
-  stage.innerHTML = card ? propertyInspectorMarkup(card) : '';
+  stage.innerHTML = card ? propertyInspectorMarkup(card, { centered }) : '';
   stage.style.removeProperty('--inspector-left');
   stage.style.removeProperty('--inspector-top');
   stage.classList.toggle('is-anchored', false);
   if (!card) return;
   const anchor = state.view.propertyInspectorAnchor;
-  const cardNode = stage.firstElementChild;
+  const cardNode = centered
+    ? stage.querySelector('.property-inspector-card')
+    : stage.firstElementChild;
   if (!anchor || !cardNode) return;
   const margin = 16;
   const horizontalOffset = 18;
@@ -1024,7 +1046,7 @@ function handleMapClick(event) {
   if (hasCentralOverlayOpen()) return;
   const card = findPropertyCardAtClientPoint(event.clientX, event.clientY);
   if (card) {
-    openPropertyInspector(card.code, { x: event.clientX, y: event.clientY });
+    openPropertyInspector(card.code);
   }
 }
 
@@ -2015,12 +2037,24 @@ function playerAssetBookValue(player) {
   return propertiesValue + permissionsValue;
 }
 
+function playerOwnedPropertyCountByKind(player, kind) {
+  const normalizedKind = kind === 'toll' ? 'toll' : 'port';
+  if (Array.isArray(player?.property_codes)) {
+    return player.property_codes.reduce((count, code) => {
+      return count + (getPropertyCard(code)?.kind === normalizedKind ? 1 : 0);
+    }, 0);
+  }
+  return normalizedKind === 'toll'
+    ? Math.max(0, Number(player?.tolls_owned || 0))
+    : Math.max(0, Number(player?.ports_owned || 0));
+}
+
 function playerTitleCount(player) {
-  return Math.max(0, Number(player?.ports_owned || 0));
+  return playerOwnedPropertyCountByKind(player, 'port');
 }
 
 function playerTollCount(player) {
-  return Math.max(0, Number(player?.tolls_owned || 0));
+  return playerOwnedPropertyCountByKind(player, 'toll');
 }
 
 function playerPermissionCount(player) {
@@ -2758,6 +2792,16 @@ function refreshOwnedCounts(player) {
   player.tolls_owned = player.property_codes.filter((code) => getPropertyCard(code)?.kind === 'toll').length;
 }
 
+function refreshAllOwnedCounts() {
+  (state.players || []).forEach((player) => {
+    if (!player) return;
+    if (!Array.isArray(player.property_codes)) {
+      player.property_codes = [];
+    }
+    refreshOwnedCounts(player);
+  });
+}
+
 function addPropertyToPlayer(player, code) {
   const normalized = (code || '').toUpperCase();
   if (!player.property_codes.includes(normalized)) {
@@ -2904,11 +2948,17 @@ function monopolyRegionsForPlayer(player) {
 }
 
 function propertyMortgageCredit(card) {
-  return economyLib()?.mortgageCredit ? economyLib().mortgageCredit(card?.price || 0, normalizedGameRules()) : Math.floor(Number(card?.price || 0) * 0.5);
+  const rules = normalizedGameRules();
+  return economyLib()?.mortgageCredit
+    ? economyLib().mortgageCredit(card?.price || 0, rules)
+    : Math.floor(Number(card?.price || 0) * Math.max(0, Number(rules?.mortgage_credit_ratio || 0)));
 }
 
 function propertyRedeemCost(card) {
-  return economyLib()?.redeemCost ? economyLib().redeemCost(card?.price || 0, normalizedGameRules()) : Math.round(propertyMortgageCredit(card) * 1.5);
+  const rules = normalizedGameRules();
+  return economyLib()?.redeemCost
+    ? economyLib().redeemCost(card?.price || 0, rules)
+    : Math.round(propertyMortgageCredit(card) * Math.max(1, Number(rules?.mortgage_release_multiplier || 1)));
 }
 
 function permissionMortgageCredit(permission) {
@@ -3011,17 +3061,23 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
   const originCard = getPropertyCard(resolvedOriginCode);
   const ownsOrigin = Boolean(player?.property_codes?.includes(resolvedOriginCode) && !isPropertyMortgaged(resolvedOriginCode));
   const currentPermissionId = String(player?.active_permission_id || '');
+  const switchCost = Math.max(0, Number(state.rules?.permission_switch_cost || 50));
   const choices = availablePermissionRecords(player).map((permission) => {
     const rate = getRate(originCard, permission.kind || permission.id) || { fee: 0, multiplier: 1 };
     const fee = Number(rate.fee || 0);
     const multiplier = Number(rate.multiplier || 1);
+    const isCurrent = String(permission.id) === currentPermissionId;
+    const permissionSwitchCost = isCurrent ? 0 : switchCost;
     return {
       permission,
       fee,
       multiplier,
       comparisonValue: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
       projectedFreight: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
-      isCurrent: String(permission.id) === currentPermissionId,
+      effectiveComparisonValue: Math.max(0, (ownsOrigin ? (fee * Math.max(1, multiplier)) : fee) - permissionSwitchCost),
+      isCurrent,
+      switchCost: permissionSwitchCost,
+      canAffordSwitch: isCurrent || Number(player?.cash || 0) >= permissionSwitchCost,
     };
   });
   return {
@@ -3035,14 +3091,49 @@ function bestContractPermissionChoiceForOrigin(player, originCode = null) {
   const selection = contractPermissionChoicesForOrigin(player, originCode);
   return selection.choices.reduce((best, entry) => {
     if (!best) return entry;
-    if (entry.comparisonValue > best.comparisonValue) return entry;
-    if (entry.comparisonValue < best.comparisonValue) return best;
+    if (entry.effectiveComparisonValue > best.effectiveComparisonValue) return entry;
+    if (entry.effectiveComparisonValue < best.effectiveComparisonValue) return best;
     if (entry.isCurrent) return entry;
     return best;
   }, null);
 }
 
-function applyBestContractPermissionForRobot(player, originCode = null) {
+async function applyContractPermissionChoice(player, permissionId, {
+  statusLabel = 'permissao escolhida',
+  actionLabel = 'Mudanca de permissao',
+  reason = 'mudanca de permissao no novo contrato',
+} = {}) {
+  const permission = findPermissionRecord(player, permissionId);
+  if (!player || !permission) {
+    return { permission: null, changed: false, charged: 0, blocked: 'invalid_permission' };
+  }
+
+  const previousPermission = findPermissionRecord(player, player.active_permission_id);
+  const changed = String(player.active_permission_id || '') !== String(permission.id);
+  const switchCost = changed ? Math.max(0, Number(state.rules?.permission_switch_cost || 50)) : 0;
+
+  if (switchCost > 0) {
+    const charge = await bankChargeOutcome(player, switchCost, {
+      action: actionLabel,
+      detail: `Pagou ${formatCurrency(switchCost)} ao banco para trocar ${previousPermission?.title || 'a permissao atual'} por ${permission.title}.`,
+      statusLabel: `pagou ${formatCurrency(switchCost)}`,
+      reason,
+    });
+    if (charge.bankrupt) {
+      return { permission: null, changed: false, charged: 0, blocked: 'bankrupt_on_switch_cost' };
+    }
+  }
+
+  const result = setActivePermissionForPlayer(player, permission.id, { statusLabel });
+  return {
+    ...result,
+    changed,
+    charged: switchCost,
+    previousPermission,
+  };
+}
+
+async function applyBestContractPermissionForRobot(player, originCode = null) {
   const selection = contractPermissionChoicesForOrigin(player, originCode);
   const bestPermissionDecision = aiPolicyEngine()?.chooseBestPermission
     ? aiPolicyEngine().chooseBestPermission({
@@ -3059,8 +3150,10 @@ function applyBestContractPermissionForRobot(player, originCode = null) {
     return best;
   }, null);
   if (!bestChoice) return null;
-  const result = setActivePermissionForPlayer(player, bestChoice.permission.id, {
+  const result = await applyContractPermissionChoice(player, bestChoice.permission.id, {
     statusLabel: 'permissao ativa definida',
+    actionLabel: 'Mudanca de permissao',
+    reason: 'mudanca de permissao do robo no novo contrato',
   });
   if (result.changed && result.permission) {
     pushActionLog(player, 'Permissao escolhida', `${result.permission.title} (${bestPermissionDecision?.explanation || (selection.ownsOrigin ? `melhor frete no porto inicial ${selection.originCode}` : 'melhor combinacao atual')}).`);
@@ -3117,6 +3210,58 @@ function redeemPropertyForPlayer(player, code, { auto = false } = {}) {
   renderNodeOverlay();
   renderShipOverlay();
   return true;
+}
+
+async function maybeOpenHumanOwnedPropertyMortgage(player, code) {
+  const normalized = String(code || '').toUpperCase();
+  const card = getPropertyCard(normalized);
+  if (!player?.is_human || !card || card.mortgaged) return false;
+  if (!player.property_codes?.includes(normalized)) return false;
+  if (!canMortgageProperty(player, normalized)) return false;
+
+  const mortgageCredit = propertyMortgageCredit(card);
+  const currentCash = Math.max(0, Number(player.cash || 0));
+  const projectedCash = currentCash + mortgageCredit;
+  const propertyLabel = card.is_toll ? 'O pedagio' : 'O porto';
+
+  closePropertyInspector();
+  const choice = await openDecisionModal({
+    eyebrowLabel: 'Hipoteca',
+    title: `${card.code} disponivel`,
+    copy: `${propertyLabel} ${card.code} esta livre. Hipotecar agora por ${formatCurrency(mortgageCredit)}? Caixa atual: ${formatCurrency(currentCash)}. Caixa apos a hipoteca: ${formatCurrency(projectedCash)}.`,
+    primaryLabel: `Hipotecar ${formatCurrency(mortgageCredit)}`,
+    secondaryLabel: 'Cancelar',
+    cardCode: card.code,
+  });
+  if (choice !== 'primary') return true;
+  return mortgagePropertyForPlayer(player, normalized);
+}
+
+async function maybeOpenHumanMortgagedPropertyRedeem(player, code) {
+  const normalized = String(code || '').toUpperCase();
+  const card = getPropertyCard(normalized);
+  if (!player?.is_human || !card || !card.mortgaged) return false;
+  if (!player.property_codes?.includes(normalized)) return false;
+
+  const redeemCost = propertyRedeemCost(card);
+  const canAfford = canRedeemProperty(player, normalized);
+  const currentCash = Math.max(0, Number(player.cash || 0));
+  const propertyLabel = card.is_toll ? 'O pedagio' : 'O porto';
+
+  closePropertyInspector();
+  const choice = await openDecisionModal({
+    eyebrowLabel: 'Hipoteca',
+    title: `${card.code} hipotecado`,
+    copy: canAfford
+      ? `${propertyLabel} ${card.code} esta hipotecado. Resgatar agora por ${formatCurrency(redeemCost)}? Caixa atual: ${formatCurrency(currentCash)}.`
+      : `${propertyLabel} ${card.code} esta hipotecado. O resgate custa ${formatCurrency(redeemCost)}, mas seu caixa atual e ${formatCurrency(currentCash)}.`,
+    primaryLabel: canAfford ? `Resgatar ${formatCurrency(redeemCost)}` : 'Caixa insuficiente',
+    primaryDisabled: !canAfford,
+    secondaryLabel: 'Cancelar',
+    cardCode: card.code,
+  });
+  if (choice !== 'primary' || !canAfford) return true;
+  return redeemPropertyForPlayer(player, normalized);
 }
 
 function mortgagePermissionForPlayer(player, permissionId, { auto = false, reason = 'hipoteca' } = {}) {
@@ -4735,9 +4880,9 @@ function propertyChipMarkup(card) {
   const background = card?.fill || '#8fd7ff';
   const text = card?.text || readableTextColor(background);
   return `
-    <span class="preview-monopoly-chip preview-property-chip${card.is_toll ? ' is-toll' : ' is-port'}${mortgaged ? ' is-mortgaged' : ''}" style="background:${background}; color:${text}; border-color:${background};">
+      <span class="preview-monopoly-chip preview-property-chip${card.is_toll ? ' is-toll' : ' is-port'}${mortgaged ? ' is-mortgaged' : ''}" style="--property-chip-fill:${background}; --property-chip-text:${text}; background-color:${background}; color:${text}; border-color:${background};">
       <span class="preview-property-chip-code">${card.code}</span>
-      ${mortgaged ? '<span class="preview-property-chip-badge">M</span>' : ''}
+      ${mortgaged ? '<span class="preview-property-chip-badge">H</span>' : ''}
     </span>
   `;
 }
@@ -6066,7 +6211,16 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
       reason: 'post_delivery_port_negotiation',
       saleAction: 'Vendeu porto',
     });
-    if (!negotiation.canNegotiate) return false;
+    if (!negotiation.canNegotiate) {
+      await openDecisionModal({
+        title: `${card.code} pertence a ${owner.name}`,
+        copy: negotiation.decision?.sellerLine || `${owner.name} nao esta disposto a vender agora.`,
+        primaryLabel: 'Continuar',
+        hideSecondary: true,
+        cardCode: card.code,
+      });
+      return false;
+    }
     const choice = await openDecisionModal({
       title: `${card.code} pertence a ${owner.name}`,
       copy: `Deseja abrir uma negociacao pela compra do porto ${card.code} antes do novo contrato?`,
@@ -6899,6 +7053,22 @@ function resolveContractSettlement(player, contract, { freightMultiplier = 1, wa
   return contractSettlementBreakdown(player, contract, { freightMultiplier, waiveOriginShare });
 }
 
+function contractSettlementStatus(total) {
+  const value = Number(total || 0);
+  if (value < 0) {
+    return `pagou ${formatCurrency(Math.abs(value))}`;
+  }
+  return `recebeu ${formatCurrency(value)}`;
+}
+
+function contractSettlementNarrative(total) {
+  const value = Number(total || 0);
+  if (value < 0) {
+    return `pagou ${formatCurrency(Math.abs(value))} liquidos`;
+  }
+  return `recebeu ${formatCurrency(value)} liquidos`;
+}
+
 async function resolveSettlementCouponModifiersForPlayer(player, contract) {
   const modifiers = { freightMultiplier: 1, waiveOriginShare: false };
   if (!player || !contract) return modifiers;
@@ -6973,7 +7143,15 @@ async function completeContractForPlayer(player) {
 
   const modifiers = await resolveSettlementCouponModifiersForPlayer(player, contract);
   const settlement = resolveContractSettlement(player, contract, modifiers);
-  updatePlayerCash(player, settlement.total);
+  if (settlement.total < 0) {
+    const due = Math.abs(settlement.total);
+    await ensurePlayerLiquidity(player, due, { reason: 'liquidacao negativa de contrato' });
+    if (!player.bankrupt) {
+      updatePlayerCash(player, -due);
+    }
+  } else {
+    updatePlayerCash(player, settlement.total);
+  }
   if (settlement.originCommission > 0 && settlement.originOwner) {
     updatePlayerCash(settlement.originOwner, settlement.originCommission);
     pushActionLog(
@@ -7025,8 +7203,8 @@ async function completeContractForPlayer(player) {
     ? `${formatCurrency(settlement.total)} liquidos (${detailParts.join(' | ')}).`
     : `${formatCurrency(settlement.total)} sem ajuste adicional.`;
 
-  contract.note = `${playerActionName(player)} concluiu o contrato e recebeu ${formatCurrency(settlement.total)} liquidos.`;
-  player.status_label = `recebeu ${formatCurrency(settlement.total)}`;
+  contract.note = `${playerActionName(player)} concluiu o contrato e ${contractSettlementNarrative(settlement.total)}.`;
+  player.status_label = contractSettlementStatus(settlement.total);
   pushActionLog(player, 'Contrato concluido', detailLine);
   renderHud();
   return settlement;
@@ -7136,12 +7314,15 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
 
   let note = `O navio terminou a jogada em ${player.location_label}.`;
   if (reachedDestination && passedToll) {
+    const settlementLead = contractCompletion?.total < 0
+      ? `e pagou ${formatCurrency(Math.abs(contractCompletion.total))}`
+      : `e recebeu ${formatCurrency(contractCompletion?.total || 0)}`;
     if (contractCompletion?.adjustment > 0) {
-      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} + bonus ${formatCurrency(contractCompletion.adjustment)}).`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} ${settlementLead} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} + bonus ${formatCurrency(contractCompletion.adjustment)}).`;
     } else if (contractCompletion?.adjustment < 0) {
-      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion.total)} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} - onus ${formatCurrency(Math.abs(contractCompletion.adjustment))}).`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} ${settlementLead} (${formatCurrency(contractCompletion.adjustedBase || contractCompletion.base)} - onus ${formatCurrency(Math.abs(contractCompletion.adjustment))}).`;
     } else {
-      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} e recebeu ${formatCurrency(contractCompletion?.total || 0)}.`;
+      note = `O navio chegou em ${contract.destination} ${contractArrivalText(contract)} ${settlementLead}.`;
     }
   } else if (propertyOutcome) {
     note = `${propertyOutcome.note}${destinationBeforeTollSuffix(contract, reachedDestination, passedToll)}`.trim();
@@ -7159,7 +7340,7 @@ async function animatePlayerMovement(player, totalSteps, { stepDelay = 360, dice
 
   contract.note = note;
   player.status_label = reachedDestination && passedToll
-    ? `recebeu ${formatCurrency(contractCompletion?.total || 0)}`
+    ? contractSettlementStatus(contractCompletion?.total || 0)
     : (propertyOutcome?.statusLabel || chanceOutcome?.statusLabel || fuelOutcome?.statusLabel || player.location_label);
   player.last_roll = resolvedDice;
   if (updateSession) {
@@ -7401,7 +7582,7 @@ function closeDecision(result = 'primary') {
   if (resolver) resolver(result);
 }
 
-function openDecisionModal({ eyebrowLabel = 'Resolucao', title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, hideTitle = false, copyIsHtml = false, cardCode = '' } = {}) {
+function openDecisionModal({ eyebrowLabel = 'Resolucao', title, copy, primaryLabel = 'Continuar', secondaryLabel = 'Cancelar', hideSecondary = false, hideTitle = false, copyIsHtml = false, cardCode = '', primaryDisabled = false } = {}) {
   const modal = getDecisionOverlay()?.querySelector('.decision-modal') || null;
   const eyebrow = getDecisionOverlay()?.querySelector('.eyebrow') || null;
   const titleNode = getDecisionTitle();
@@ -7426,11 +7607,13 @@ function openDecisionModal({ eyebrowLabel = 'Resolucao', title, copy, primaryLab
   }
   if (primary) {
     primary.textContent = primaryLabel;
-    primary.onclick = () => closeDecision('primary');
+    primary.disabled = Boolean(primaryDisabled);
+    primary.onclick = primaryDisabled ? null : (() => closeDecision('primary'));
   }
   if (secondary) {
     secondary.textContent = secondaryLabel;
     secondary.classList.toggle('is-hidden', hideSecondary);
+    secondary.disabled = false;
     secondary.onclick = hideSecondary ? null : (() => closeDecision('secondary'));
   }
   setDecisionVisible(true);
@@ -7962,13 +8145,16 @@ function renderPermissionChoice() {
 
   titleNode.textContent = 'Escolha a permissao';
   originNode.textContent = selection.originCode ? `Origem ${selection.originCode}` : 'Origem --';
-  copyNode.textContent = 'Escolha a permissao para o proximo contrato.';
+  copyNode.textContent = `Permissao atual: ${player?.active_permission_label || '--'}. Trocar de permissao custa ${formatCurrency(Math.max(0, Number(state.rules?.permission_switch_cost || 50)))} ao banco.`;
 
   stage.innerHTML = selection.choices.map((entry) => {
     const factorLabel = `${Number(entry.multiplier || 1).toFixed(2).replace('.', ',')}x`;
-    const detailLabel = selection.ownsOrigin
+    const baseDetailLabel = selection.ownsOrigin
       ? `Frete base ${formatCurrency(entry.fee)} | Multiplicador ${factorLabel}`
       : `Estadia ${formatCurrency(entry.fee)}`;
+    const detailLabel = entry.isCurrent
+      ? `${baseDetailLabel} | Permissao ativa atual`
+      : `${baseDetailLabel} | Troca custa ${formatCurrency(entry.switchCost || 0)} ao banco`;
     return `
       <button type="button" class="permission-choice-card${entry.isCurrent ? ' is-current' : ''}" data-permission-choice-id="${entry.permission.id}">
         <span class="permission-choice-card-icon">${cargoIconMarkup(entry.permission.kind, 'permission-choice-icon-image')}</span>
@@ -7977,7 +8163,10 @@ function renderPermissionChoice() {
           <span class="permission-choice-card-detail">${detailLabel}</span>
         </span>
         <span class="permission-choice-card-badge">${entry.isCurrent ? 'Atual' : 'Usar'}</span>
-        <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
+        <span class="permission-choice-card-metrics">
+          <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
+          ${entry.isCurrent ? '' : `<span class="permission-choice-card-switch-chip">Troca: - ${formatCurrency(entry.switchCost || 0)}</span>`}
+        </span>
       </button>
     `;
   }).join('');
@@ -9918,6 +10107,7 @@ async function loadGameFromSavePayload(payload) {
 
   const bootstrapPayload = buildLoadBootstrapPayload(snapshot);
   applyBootstrapPayload(bootstrapPayload);
+  refreshAllOwnedCounts();
   populateSetupFromPayload(bootstrapPayload);
   restoreActionFeedFromSnapshot(snapshot.active_action_feed || []);
   restoreReportFromSnapshot(snapshot.report || null);
@@ -10789,7 +10979,11 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
         renderHud();
         const selectedPermissionId = await openHumanPermissionChoice(player, { originCode: selection.originCode });
         if (selectedPermissionId) {
-          const result = setActivePermissionForPlayer(player, selectedPermissionId, { statusLabel: 'permissao escolhida' });
+          const result = await applyContractPermissionChoice(player, selectedPermissionId, {
+            statusLabel: 'permissao escolhida',
+            actionLabel: 'Mudanca de permissao',
+            reason: 'mudanca de permissao do jogador no novo contrato',
+          });
           if (result.changed && result.permission) {
             pushActionLog(player, 'Permissao escolhida', result.permission.title);
             renderHud();
@@ -10798,7 +10992,7 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
         await delay(shortDelay);
       }
     } else {
-      applyBestContractPermissionForRobot(player, originCode);
+      await applyBestContractPermissionForRobot(player, originCode);
     }
   }
 
@@ -11301,7 +11495,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  byId('preview-rival-list')?.addEventListener('click', (event) => {
+  byId('preview-rival-list')?.addEventListener('click', async (event) => {
     const playerLog = event.target.closest('.preview-rival-action-log');
     if (playerLog?.dataset?.playerLogPlayerId) {
       event.stopPropagation();
@@ -11315,6 +11509,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       event.stopPropagation();
       setSelectedMiniKey(mini.dataset.playerId, mini.dataset.miniType, mini.dataset.miniKey);
       if (mini.dataset.miniType === 'property') {
+        const player = playerById(mini.dataset.playerId);
+        const card = getPropertyCard(mini.dataset.miniKey);
+        if (player?.is_human && player.property_codes?.includes(card?.code || '')) {
+          renderRivals();
+          if (card?.mortgaged) {
+            await maybeOpenHumanMortgagedPropertyRedeem(player, card.code);
+          } else {
+            await maybeOpenHumanOwnedPropertyMortgage(player, card.code);
+          }
+          return;
+        }
         openPropertyInspector(mini.dataset.miniKey, { x: event.clientX, y: event.clientY });
       }
       renderRivals();

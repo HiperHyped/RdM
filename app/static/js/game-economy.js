@@ -95,7 +95,7 @@
     const bonusPerRound = Math.max(0, asNumber(config.bonus_per_early_round, 0));
     const penaltyPerRound = Math.max(0, asNumber(config.penalty_per_late_round, 0));
     const adjustment = (earlyRounds * bonusPerRound) - (lateRounds * penaltyPerRound);
-    const gross = Math.max(0, adjustedBase + adjustment);
+    const gross = adjustedBase + adjustment;
     const originCommission = originOwnerEligible && !waiveOriginShare
       ? Math.max(0, Math.floor(gross * config.origin_owner_commission_share))
       : 0;
@@ -117,7 +117,7 @@
       monopolyMultiplier,
       originCommission,
       tollShare,
-      total: Math.max(0, gross - originCommission - tollShare),
+      total: gross - originCommission - tollShare,
     };
   }
 

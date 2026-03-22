@@ -1179,6 +1179,34 @@
     }
 
     const ownerProfile = ensureProfile(owner, resolvedContext.tableConfig);
+    const sellerFlags = resolveNegotiationProfileFlags(ownerProfile);
+    if (sellerFlags.tradeLocked || sellerFlags.sellBlocked) {
+      const closedReason = sellerFlags.tradeLocked ? 'trade_locked' : 'seller_closed_market';
+      return {
+        ...legacyOwnedPropertyNegotiation({
+          player,
+          owner,
+          card,
+          price,
+          resolvedContext,
+        }),
+        canNegotiate: false,
+        currentAsk: money(price || card?.price || 0),
+        sellerLine: humanNegotiationReplyLine(closedReason, { card, owner }),
+        sellerStanceId: 'firme',
+        sellerStanceLabel: 'Mercado fechado',
+        maxRounds: Math.max(1, numeric(sessionRule?.session_limits?.max_rounds, 4)),
+        round: 0,
+        rejectionReason: closedReason,
+        diagnostics: {
+          sellerFlags,
+          sessionScore: 0,
+          strategicLockScore: sellerFlags.strategicLock,
+          sellerCashStress: 0,
+          sellerWouldLoseMonopoly: false,
+        },
+      };
+    }
     const signals = resolvedContext.negotiationSignals || {};
     const basePrice = Math.max(1, money(card?.price || price || 0));
     const listPrice = Math.max(basePrice, money(price || basePrice));
@@ -1260,8 +1288,13 @@
       privateTarget + basePrice * askMarkup,
     ));
     const canOpenConversation = buyerCash >= Math.max(mortgageFloor, Math.floor(privateFloor * numeric(offerPolicy.entry_cash_floor_ratio, 0.72)));
-    const hardLock = sessionScore <= numeric(sessionRule?.thresholds?.hard_reject, 0.34)
-      && sellerCashStress < numeric(offerPolicy.hard_lock_cash_stress_cap, 0.30);
+    const hardRejectThreshold = numeric(sessionRule?.thresholds?.hard_reject, 0.34);
+    const hardLockStrategicFloor = numeric(sessionRule?.stance_thresholds?.irredutivel_strategic_lock_min, 0.84);
+    const hardLock = Boolean(sellerWouldLoseMonopoly) || (
+      sessionScore <= hardRejectThreshold
+      && strategicLockScore >= hardLockStrategicFloor
+      && sellerCashStress < numeric(offerPolicy.hard_lock_cash_stress_cap, 0.30)
+    );
     const canNegotiate = canOpenConversation && !hardLock;
     const transcript = [
       {
@@ -1321,6 +1354,13 @@
       maxRounds: Math.max(1, numeric(sessionLimits.max_rounds, 4)),
       round: 0,
       rejectionReason: canNegotiate ? null : (hardLock ? 'strategic_lock' : 'cash_short'),
+      diagnostics: {
+        sellerFlags,
+        sessionScore,
+        strategicLockScore,
+        sellerCashStress,
+        sellerWouldLoseMonopoly,
+      },
       canNegotiate,
       ruleConfig: sessionRule,
       profileId: ownerProfile?.id || 'legacy_open',
@@ -2140,13 +2180,15 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
 
     const scoredChoices = resolvedChoices.map((entry) => {
       const freight = Math.max(0, numeric(entry.projectedFreight, numeric(entry.fee, 0) * Math.max(1, numeric(entry.multiplier, 1))));
+      const switchCost = Math.max(0, numeric(entry.switchCost, 0));
+      const netFreight = Math.max(0, numeric(entry.effectiveComparisonValue, freight - switchCost));
       const env = buildRuleEvaluationEnv({
         profile,
         assetKind: 'permission',
         runtimeSignals: {
-          reachable_destinations_gain_norm: clamp(freight / scale, 0, 1),
+          reachable_destinations_gain_norm: clamp(netFreight / scale, 0, 1),
           route_unlock_gain_norm: clamp(Math.max(0, numeric(entry.multiplier, 1) - 1) / 3, 0, 1),
-          contract_value_gain_norm: clamp(freight / scale, 0, 1),
+          contract_value_gain_norm: clamp(netFreight / scale, 0, 1),
         },
       });
       let score = normalizeRuleScore(evaluateFormulaDefinition(decisionRule?.ranking_formula, env));
@@ -2155,6 +2197,7 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
       score = clamp(score, 0, 1);
       return {
         ...entry,
+        netFreight,
         aiScore: score,
       };
     });
