@@ -1312,6 +1312,49 @@
   }
   /* AI SETUP UI REFRESH END */
 
+  .preview-route-inline {
+    gap: 8px;
+  }
+
+  .preview-route-inline.is-large {
+    gap: 11px;
+  }
+
+  .preview-route-stop {
+    box-shadow: none;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+  }
+
+  .preview-route-stop.toll {
+    border-radius: 1px;
+  }
+
+  .preview-route-stop.is-empty {
+    filter: none;
+  }
+
+  .preview-route-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 10px;
+    margin: 0 2px;
+    font-size: 1rem;
+  }
+
+  .preview-route-stop.has-halo {
+    box-shadow: none;
+    filter:
+      drop-shadow(0 0 2px var(--halo-color, #8fd7ff))
+      drop-shadow(0 0 7px var(--halo-color, #8fd7ff))
+      drop-shadow(0 0 12px rgba(143, 215, 255, 0.26))
+      drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+  }
+
+  .preview-rival-route .preview-route-inline,
+  .preview-rival-drawer-route .preview-route-inline {
+    gap: 7px;
+  }
 </style>
 {% endblock %}
 

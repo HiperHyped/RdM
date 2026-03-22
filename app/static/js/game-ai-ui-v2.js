@@ -6120,6 +6120,68 @@ async function maybeHandleCurrentPortAfterDelivery(player) {
   return false;
 }
 
+async function maybeHandleOwnedOriginPortNegotiation(player, card, { forceHumanPrompt = false } = {}) {
+  if (!player || player.bankrupt || !card || card.kind !== 'port') {
+    return { attempted: false, accepted: false };
+  }
+  const owner = ownerPlayerOf(card.code);
+  if (!owner || owner.id === player.id || owner.bankrupt) {
+    return { attempted: false, accepted: false };
+  }
+  if (isPropertyMortgaged(card.code)) {
+    return { attempted: false, accepted: false, blocked: 'mortgaged' };
+  }
+
+  const negotiationPrice = Math.round(Number(card.price || 0) * 1.5);
+
+  if (player.is_human) {
+    const negotiation = prepareHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'origin_port_negotiation',
+      saleAction: 'Vendeu porto',
+    });
+    if (!forceHumanPrompt || !negotiation.canNegotiate || isTradeLockBuyEnabled()) {
+      return {
+        attempted: false,
+        accepted: false,
+        blocked: negotiation.canNegotiate ? 'trade_lock_buy' : 'seller_declined',
+        decision: negotiation.decision || null,
+      };
+    }
+    const outcome = await runHumanOwnedPropertyNegotiation(player, owner, card, {
+      listPrice: negotiationPrice,
+      reason: 'origin_port_negotiation',
+      saleAction: 'Vendeu porto',
+      title: `${card.code} pertence a ${owner.name}`,
+      copy: `Negocie a compra do porto ${card.code} com ${owner.name} antes da abertura do contrato.`,
+    });
+    return {
+      attempted: true,
+      accepted: Boolean(outcome?.accepted),
+      outcome,
+    };
+  }
+
+  const outcome = owner.is_human
+    ? await runHumanSaleToRobotNegotiation(owner, player, card, {
+        listPrice: negotiationPrice,
+        reason: 'origin_port_negotiation',
+        saleAction: 'Vendeu porto',
+        title: `${player.name} quer ${card.code}`,
+        copy: `${player.name} quer comprar o porto ${card.code} antes da abertura do contrato.`,
+      })
+    : executeCpuOwnedPropertyNegotiation(player, owner, card, {
+        listPrice: negotiationPrice,
+        reason: 'origin_port_negotiation',
+        saleAction: 'Vendeu porto',
+      });
+  return {
+    attempted: true,
+    accepted: Boolean(outcome?.accepted),
+    outcome,
+  };
+}
+
 async function maybeHandleExtraPermissionAfterDelivery(player) {
   if (!player) return false;
   const extraCost = Number(state.rules.extra_permission_cost || 2000);
@@ -6307,6 +6369,66 @@ function finishOriginPortDraw() {
 
   if (!card) {
     closePortDraw(null);
+    return;
+  }
+
+  const player = humanPlayer();
+  const owner = ownerPlayerOf(card.code);
+  const isOwnedByOther = Boolean(owner && player && owner.id !== player.id);
+  const isMortgaged = isOwnedByOther && isPropertyMortgaged(card.code);
+  const negotiationPrice = Math.round(Number(card.price || 0) * 1.5);
+  const negotiation = isOwnedByOther && !isMortgaged && player
+    ? prepareHumanOwnedPropertyNegotiation(player, owner, card, {
+        listPrice: negotiationPrice,
+        reason: 'origin_port_negotiation',
+        saleAction: 'Vendeu porto',
+      })
+    : null;
+  const canNegotiateOwnedOrigin = Boolean(negotiation?.canNegotiate) && !isTradeLockBuyEnabled();
+
+  if (isOwnedByOther) {
+    if (isMortgaged) {
+      configurePortDrawExtra({
+        copy: `${card.code} pertence a ${owner.name} e esta hipotecado. O porto inicial sera definido sem compra.`,
+        layout: 'inline',
+        primaryLabel: 'Continuar',
+        hideSecondary: true,
+        onPrimary: () => {
+          applyHumanOriginSelection(card, false);
+          closePortDraw({ card, bought: false, negotiate: false });
+        },
+      });
+      return;
+    }
+
+    if (canNegotiateOwnedOrigin) {
+      configurePortDrawExtra({
+        copy: `${card.code} pertence a ${owner.name}. Deseja abrir uma negociacao antes de iniciar o contrato?`,
+        layout: 'inline',
+        primaryLabel: 'Negociar',
+        secondaryLabel: 'Nao',
+        onPrimary: () => {
+          applyHumanOriginSelection(card, false);
+          closePortDraw({ card, bought: false, negotiate: true });
+        },
+        onSecondary: () => {
+          applyHumanOriginSelection(card, false);
+          closePortDraw({ card, bought: false, negotiate: false });
+        },
+      });
+      return;
+    }
+
+    configurePortDrawExtra({
+      copy: `${card.code} pertence a ${owner.name}. ${negotiation?.sellerLine || `${owner.name} nao esta disposto a vender agora.`}`,
+      layout: 'inline',
+      primaryLabel: 'Continuar',
+      hideSecondary: true,
+      onPrimary: () => {
+        applyHumanOriginSelection(card, false);
+        closePortDraw({ card, bought: false, negotiate: false });
+      },
+    });
     return;
   }
 
@@ -10620,12 +10742,16 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
         action_label: 'Sortear porto de partida',
         note: 'Agora o jogo vai sortear o porto de partida e perguntar se voce quer comprar a posse dele.',
       });
-      await openHumanOriginPortDraw();
+      const drawResult = await openHumanOriginPortDraw();
       await delay(longDelay);
+      if (drawResult?.card && drawResult.negotiate) {
+        await maybeHandleOwnedOriginPortNegotiation(player, drawResult.card, { forceHumanPrompt: true });
+      }
       originResult = { bought: Boolean(player.property_codes?.includes(player.location_code || '')), note: ensurePlayerContractDraft(player)?.note || '' };
     } else {
       const originCard = randomChoice(state.portCards);
-      const shouldBuyOrigin = cpuShouldBuyOrigin(player, originCard, 'origin_purchase');
+      const originOwner = ownerPlayerOf(originCard?.code || '');
+      const shouldBuyOrigin = !originOwner && cpuShouldBuyOrigin(player, originCard, 'origin_purchase');
       originResult = applyOriginSelectionForPlayer(player, originCard, shouldBuyOrigin, {
         updateSession: true,
         actionLabel: `${player.name}: porto inicial`,
@@ -10633,6 +10759,9 @@ async function runContractOpeningForPlayer(player, { phaseLabel = 'Preparacao', 
           ? `${player.name} sorteou ${originCard.code} e comprou o porto inicial.`
           : `${player.name} sorteou ${originCard.code} sem comprar o porto inicial.`,
       });
+      if (originOwner && originOwner.id !== player.id) {
+        await maybeHandleOwnedOriginPortNegotiation(player, originCard);
+      }
       await delay(shortDelay);
     }
   } else {

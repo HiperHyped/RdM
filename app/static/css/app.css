@@ -707,12 +707,12 @@ kbd {
 .preview-route-inline {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .preview-route-inline.is-large {
-  gap: 13px;
+  gap: 11px;
 }
 
 .preview-route-stop {
@@ -918,7 +918,7 @@ kbd {
 }
 
 .preview-rival-route .preview-route-inline {
-  gap: 9px;
+  gap: 7px;
 }
 
 .preview-rival-route .preview-route-stop {
@@ -3397,7 +3397,7 @@ kbd {
 }
 
 .preview-rival-drawer-route .preview-route-inline {
-  gap: 9px;
+  gap: 7px;
 }
 
 .preview-rival-drawer-metrics {
