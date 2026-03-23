@@ -16,6 +16,28 @@ const CPU_MOVE_DELAY_MS = 240;
 const PLAYER_CASH_FLASH_ANIMATION_MS = 1600;
 const PLAYER_CASH_FLASH_CLEAR_MS = 1700;
 const COUPON_EXPIRATION_TURNS = 100;
+const COUPON_EXPIRATION_TURNS_BY_KIND = {
+  free_port_stay: 140,
+  free_toll: 140,
+  free_fuel_contract: 160,
+  cancel_contract: 160,
+  extended_contract_deadline: 160,
+  skip_owner_share: 180,
+  anti_monopoly_owner_share: 200,
+};
+const COUPON_EXPIRATION_MODE_BY_KIND = {
+  free_port_stay: 'eligible_checks',
+  free_toll: 'eligible_checks',
+  free_fuel: 'eligible_checks',
+  free_fuel_contract: 'eligible_checks',
+  cancel_contract: 'eligible_checks',
+  extended_contract_deadline: 'eligible_checks',
+  double_freight: 'eligible_checks',
+  skip_owner_share: 'eligible_checks',
+  anti_monopoly_owner_share: 'eligible_checks',
+  shortcut_ignore_toll: 'eligible_checks',
+  reroute_same_value: 'eligible_checks',
+};
 
 const AI_DIFFICULTY_OPTIONS = [
   { id: 'easy', label: 'Facil', skillPresetId: 'ai_easy' },
@@ -2579,32 +2601,103 @@ function couponExpiresAfterTurns(coupon) {
   return Math.max(1, Number(typeof coupon === 'string' ? COUPON_EXPIRATION_TURNS : (coupon?.expires_after_turns || COUPON_EXPIRATION_TURNS)));
 }
 
+function couponExpirationTurnsForKind(kind = '') {
+  const normalizedKind = String(kind || '').trim();
+  return Math.max(1, Number(COUPON_EXPIRATION_TURNS_BY_KIND[normalizedKind] || COUPON_EXPIRATION_TURNS));
+}
+
+function couponExpirationModeForKind(kind = '') {
+  const normalizedKind = String(kind || '').trim();
+  return COUPON_EXPIRATION_MODE_BY_KIND[normalizedKind] || 'rounds';
+}
+
 function normalizeCouponRecord(coupon, { defaultTurn = null } = {}) {
   if (!coupon || typeof coupon !== 'object' || Array.isArray(coupon)) return coupon;
   const resolvedDefaultTurn = Math.max(0, Number(defaultTurn ?? Math.max(0, currentTurnNumber() - COUPON_EXPIRATION_TURNS)) || 0);
   const acquiredTurnRaw = Number(coupon?.acquired_turn);
   const acquiredTurn = Number.isFinite(acquiredTurnRaw) ? Math.max(0, acquiredTurnRaw) : resolvedDefaultTurn;
   const expiresAfterTurns = couponExpiresAfterTurns(coupon);
-  if (Number(coupon?.acquired_turn) === acquiredTurn && Number(coupon?.expires_after_turns || COUPON_EXPIRATION_TURNS) === expiresAfterTurns) {
+  const eligibleChecks = Math.max(0, Number(coupon?.eligible_checks || 0));
+  if (
+    Number(coupon?.acquired_turn) === acquiredTurn
+    && Number(coupon?.expires_after_turns || COUPON_EXPIRATION_TURNS) === expiresAfterTurns
+    && Number(coupon?.eligible_checks || 0) === eligibleChecks
+  ) {
     return coupon;
   }
   return {
     ...coupon,
     acquired_turn: acquiredTurn,
     expires_after_turns: expiresAfterTurns,
+    eligible_checks: eligibleChecks,
   };
 }
 
-function couponHeldTurns(coupon, turnNumber = currentTurnNumber()) {
+function couponElapsedExpirationUnits(coupon, turnNumber = currentTurnNumber()) {
   if (!coupon || typeof coupon === 'string') return 0;
+  if (couponExpirationModeForKind(couponKind(coupon)) === 'eligible_checks') {
+    return Math.max(0, Number(coupon?.eligible_checks || 0));
+  }
   const acquiredTurn = Number.isFinite(Number(coupon?.acquired_turn))
     ? Math.max(0, Number(coupon.acquired_turn))
     : Math.max(0, turnNumber - couponExpiresAfterTurns(coupon));
   return Math.max(0, Number(turnNumber || 0) - acquiredTurn);
 }
 
+function couponHeldTurns(coupon, turnNumber = currentTurnNumber()) {
+  return couponElapsedExpirationUnits(coupon, turnNumber);
+}
+
 function couponTurnsUntilExpiry(coupon, turnNumber = currentTurnNumber()) {
   return Math.max(0, couponExpiresAfterTurns(coupon) - couponHeldTurns(coupon, turnNumber));
+}
+
+function noteCouponOpportunity(coupon) {
+  if (!coupon || typeof coupon === 'string') return coupon;
+  if (couponExpirationModeForKind(couponKind(coupon)) !== 'eligible_checks') return coupon;
+  coupon.eligible_checks = Math.max(0, Number(coupon.eligible_checks || 0)) + 1;
+  return coupon;
+}
+
+function clamp01(value) {
+  return Math.min(1, Math.max(0, Number(value || 0)));
+}
+
+function contractCouponDerivedSignals(signals = {}) {
+  const mandatoryTollPressure = Number(signals.mandatoryToll ? 1 : 0);
+  const fuelStopsRemaining = Math.max(0, Number(signals.fuelStopsRemaining || 0));
+  const remainingSteps = Math.max(0, Number(signals.remainingSteps || 0));
+  const remainingRounds = Math.max(0, Number(signals.remainingRounds || 0));
+  const fuelRoutePressure = clamp01(fuelStopsRemaining / Math.max(3, fuelStopsRemaining || 0));
+  const remainingStepsPressure = clamp01(remainingSteps / Math.max(8, remainingSteps || 0));
+  const remainingRoundPressure = clamp01((remainingSteps + (mandatoryTollPressure * 2)) / Math.max(1, remainingRounds * 3));
+  const contractFailureRisk = clamp01(
+    (remainingRoundPressure * 0.48)
+    + (remainingStepsPressure * 0.24)
+    + (mandatoryTollPressure * 0.14)
+    + (fuelRoutePressure * 0.14),
+  );
+  return {
+    mandatoryTollPressure,
+    fuelRoutePressure,
+    remainingStepsPressure,
+    remainingRoundPressure,
+    contractFailureRisk,
+  };
+}
+
+function shouldCountContractCouponOpportunity(kind, signals = {}, currentTargetRounds = 0) {
+  const derived = contractCouponDerivedSignals(signals);
+  if (kind === 'free_fuel_contract') {
+    return derived.fuelRoutePressure >= 0.333333;
+  }
+  if (kind === 'cancel_contract') {
+    return derived.contractFailureRisk >= 0.18 || Number(signals.freightWeaknessNorm || 0) >= 0.45;
+  }
+  if (kind === 'extended_contract_deadline') {
+    return currentTargetRounds < 6 && derived.contractFailureRisk >= 0.18;
+  }
+  return true;
 }
 
 function couponHasExpired(coupon, turnNumber = currentTurnNumber()) {
@@ -2705,9 +2798,13 @@ async function maybeSpendCoupon(player, kind, {
   hideSecondary = false,
   autoUse = true,
   couponSignals = {},
+  countOpportunity = true,
 } = {}) {
   const coupon = firstCouponOfKind(player, kind);
   if (!coupon) return null;
+  if (countOpportunity) {
+    noteCouponOpportunity(coupon);
+  }
   const couponAgeTurns = couponHeldTurns(coupon);
   const couponExpirationTurns = couponExpiresAfterTurns(coupon);
   const turnsUntilCouponExpiry = couponTurnsUntilExpiry(coupon);
@@ -2786,6 +2883,7 @@ function routeUnlockGainForDestination(player, destinationCode = '') {
 
 function buildContractCouponSignals(player, extra = {}) {
   const contract = player?.active_contract;
+  const rules = normalizedGameRules();
   const currentTargetRounds = Math.max(1, Number(contract?.target_rounds || state.rules.target_rounds || 4));
   const roundsElapsed = Math.max(1, Number(contract?.rounds_elapsed || 1));
   const remainingRounds = Math.max(0, currentTargetRounds - roundsElapsed);
@@ -2826,6 +2924,9 @@ function buildContractCouponSignals(player, extra = {}) {
     1,
     Math.max(0, (Math.max(0, travelRouteDistance - directFreightDistance) - 3) / 12),
   );
+  const originCommissionShare = Math.max(0, Number(rules.origin_owner_commission_share || 0.5));
+  const commissionAvoidedValue = Math.max(0, Math.floor(Math.max(0, freightValue) * originCommissionShare));
+  const commissionAvoidedNorm = Math.min(1, Math.max(0, (commissionAvoidedValue - 84) / 276));
   return {
     targetRounds: currentTargetRounds,
     currentTargetRounds,
@@ -2843,6 +2944,8 @@ function buildContractCouponSignals(player, extra = {}) {
     freightWeaknessNorm,
     travelDistanceNorm,
     detourPressure,
+    commissionAvoidedValue,
+    commissionAvoidedNorm,
     ...extra,
   };
 }
@@ -4791,6 +4894,10 @@ async function maybeUseCancelContractCoupon(player) {
   const contract = player?.active_contract;
   const coupon = firstCouponOfKind(player, 'cancel_contract');
   if (!player || !contract || contract.completed || !coupon) return null;
+  const couponSignals = buildContractCouponSignals(player);
+  if (shouldCountContractCouponOpportunity('cancel_contract', couponSignals)) {
+    noteCouponOpportunity(coupon);
+  }
 
   if (player.is_human) {
     const choice = await openDecisionModal({
@@ -4809,7 +4916,7 @@ async function maybeUseCancelContractCoupon(player) {
           autoUse: true,
           context: aiDecisionContext(player, {
             reason: 'coupon_usage',
-            couponSignals: buildContractCouponSignals(player),
+            couponSignals,
           }),
         })
       : null;
@@ -4837,6 +4944,12 @@ async function maybeUseFreeFuelContractCoupon(player) {
   const contract = player?.active_contract;
   const coupon = firstCouponOfKind(player, 'free_fuel_contract');
   if (!player || !contract || contract.completed || contract.free_fuel_for_contract || !coupon) return null;
+  const couponSignals = buildContractCouponSignals(player, {
+    destination: contract.destination || '',
+  });
+  if (shouldCountContractCouponOpportunity('free_fuel_contract', couponSignals)) {
+    noteCouponOpportunity(coupon);
+  }
 
   if (player.is_human) {
     const choice = await openDecisionModal({
@@ -4855,9 +4968,7 @@ async function maybeUseFreeFuelContractCoupon(player) {
           autoUse: true,
           context: aiDecisionContext(player, {
             reason: 'coupon_usage',
-            couponSignals: buildContractCouponSignals(player, {
-              destination: contract.destination || '',
-            }),
+            couponSignals,
           }),
         })
       : null;
@@ -4880,6 +4991,13 @@ async function maybeUseExtendedDeadlineCoupon(player) {
 
   const currentTargetRounds = Math.max(1, Number(contract.target_rounds || state.rules.target_rounds || 4));
   if (currentTargetRounds >= 6) return null;
+  const couponSignals = buildContractCouponSignals(player, {
+    currentTargetRounds,
+    destination: contract.destination || '',
+  });
+  if (shouldCountContractCouponOpportunity('extended_contract_deadline', couponSignals, currentTargetRounds)) {
+    noteCouponOpportunity(coupon);
+  }
 
   if (player.is_human) {
     const choice = await openDecisionModal({
@@ -4898,10 +5016,7 @@ async function maybeUseExtendedDeadlineCoupon(player) {
           autoUse: true,
           context: aiDecisionContext(player, {
             reason: 'coupon_usage',
-            couponSignals: buildContractCouponSignals(player, {
-              currentTargetRounds,
-              destination: contract.destination || '',
-            }),
+            couponSignals,
           }),
         })
       : null;
@@ -5669,6 +5784,7 @@ async function maybeUseRerouteCoupon(player) {
   const coupon = firstCouponOfKind(player, 'reroute_same_value');
   const candidates = sameValueDestinationCandidatesForPlayer(player);
   if (!player || !contract || contract.completed || !coupon || !candidates.length) return null;
+  noteCouponOpportunity(coupon);
 
   let selected = null;
   if (player.is_human) {
@@ -6563,6 +6679,11 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
   const modifiers = { freightMultiplier: 1, waiveOriginShare: false };
   if (!player || !contract) return modifiers;
 
+  const antiMonopolyCoupon = firstCouponOfKind(player, 'anti_monopoly_owner_share');
+  if (antiMonopolyCoupon) {
+    noteCouponOpportunity(antiMonopolyCoupon);
+  }
+
   const usedDoubleFreight = await maybeSpendCoupon(player, 'double_freight', {
     title: 'Lucro Extra',
     copy: `Usar Lucro Extra para dobrar o frete deste contrato na chegada a ${contract.destination}?`,
@@ -6570,10 +6691,9 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
     secondaryLabel: 'Receber normal',
     detail: `Dobrou o frete na liquidacao do contrato para ${contract.destination}.`,
     statusLabel: 'lucro extra ativado',
-    couponSignals: {
+    couponSignals: buildContractCouponSignals(player, {
       destination: contract.destination || '',
-      freightValue: Number(contract.base_freight_value || contract.freight_value || 0),
-    },
+    }),
   });
   if (usedDoubleFreight) {
     modifiers.freightMultiplier = 2;
@@ -6589,11 +6709,13 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
       cardCode: contract.origin,
       detail: `Bloqueou a comissao do dono do monopolio ${monopolyOwner.name} neste contrato.`,
       statusLabel: 'monopolio bloqueado',
-      couponSignals: {
+      countOpportunity: false,
+      couponSignals: buildContractCouponSignals(player, {
         ownerId: monopolyOwner.id,
         destination: contract.destination || '',
-        freightValue: Number(contract.base_freight_value || contract.freight_value || 0),
-      },
+        ownerPresent: true,
+        ownerMonopoly: true,
+      }),
     });
     if (usedAntiMonopolyOwnerShare) {
       modifiers.waiveOriginShare = true;
@@ -6603,6 +6725,10 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
 
   const originOwner = ownerPlayerOf(contract.origin || '');
   if (originOwner && originOwner.id !== player.id && !originOwner.bankrupt && !isPropertyMortgaged(contract.origin || '')) {
+    const skipOwnerCoupon = firstCouponOfKind(player, 'skip_owner_share');
+    if (skipOwnerCoupon) {
+      noteCouponOpportunity(skipOwnerCoupon);
+    }
     const usedSkipOwnerShare = await maybeSpendCoupon(player, 'skip_owner_share', {
       title: 'Quebra de Contrato',
       copy: `Usar Quebra de Contrato para impedir a comissao de ${originOwner.name} sobre o frete deste contrato?`,
@@ -6611,11 +6737,12 @@ async function resolveSettlementCouponModifiersForPlayer(player, contract) {
       cardCode: contract.origin,
       detail: `Bloqueou a comissao de ${originOwner.name} sobre o frete deste contrato.`,
       statusLabel: 'comissao bloqueada',
-      couponSignals: {
+      countOpportunity: false,
+      couponSignals: buildContractCouponSignals(player, {
         ownerId: originOwner.id,
         destination: contract.destination || '',
-        freightValue: Number(contract.base_freight_value || contract.freight_value || 0),
-      },
+        ownerPresent: true,
+      }),
     });
     if (usedSkipOwnerShare) {
       modifiers.waiveOriginShare = true;
@@ -7738,7 +7865,8 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
         label: card.title,
         source_card_id: card.id,
         acquired_turn: currentTurnNumber(),
-        expires_after_turns: COUPON_EXPIRATION_TURNS,
+        expires_after_turns: couponExpirationTurnsForKind(effect.coupon),
+        eligible_checks: 0,
       };
       player.coupons = [...(player.coupons || []), coupon];
       keepHeld = true;

@@ -549,6 +549,153 @@ Com essa revisao:
 - o `play_threshold` passa a medir a passagem entre caso apenas aceitavel e caso claramente prioritario
 - idade do cupom, passos restantes e outras urgencias continuam validos, mas agora como moduladores taticos sobre um nucleo estatistico ja correto
 
+## Derivacao Matematica Dos Proximos Cupons Economicos
+
+Os 3 proximos cupons a recalibrar sao os que mexem com liquidacao economica na chegada do contrato:
+
+- `double_freight`
+- `anti_monopoly_owner_share`
+- `skip_owner_share`
+
+Aqui o estudo de distancias e fretes entra de forma direta, porque o ganho do cupom e um multiplo ou uma fracao do frete base ja medido nas estatisticas gerais.
+
+### Ganho Incremental De `double_freight`
+
+O cupom dobra o frete base do contrato na liquidacao.
+
+Logo, o ganho incremental bruto do jogador e:
+
+$$
+double\_freight\_gain = freightValue
+$$
+
+Como `contract_value_band_norm` ja normaliza `freightValue` com base nas estatisticas reais do estudo, ele passa a ser o sinal principal desse cupom.
+
+Fronteiras do estudo:
+
+- caso minimo legitimo: contrato ao menos medio
+- caso prioritario: contrato ao menos alto
+
+Com origem comprada, isso significa:
+
+- medio, p50: `(288 - 168) / 552 = 0.217391`
+- alto, p75: `(480 - 168) / 552 = 0.565217`
+
+Para nao premiar contrato apenas longo e pouco eficiente, entra tambem a densidade economica:
+
+- densidade media, p50: `(24 - 15) / 35 = 0.257143`
+- densidade boa, p75: `(35 - 15) / 35 = 0.571429`
+
+Score de considerar:
+
+$$
+S_{considerar} = 0.72 \cdot 0.217391 + 0.18 \cdot 0.257143 = 0.202807
+$$
+
+Score de priorizar:
+
+$$
+S_{priorizar} = 0.72 \cdot 0.565217 + 0.18 \cdot 0.571429 = 0.509829
+$$
+
+Threshold calculado:
+
+$$
+play\_threshold = \frac{0.202807 + 0.509829}{2} = 0.356318
+$$
+
+Valor adotado no JSON: `0.356`
+
+Constante calculada: `0`
+
+### Ganho Incremental De `skip_owner_share` E `anti_monopoly_owner_share`
+
+Pelas regras em `rules_v2.json`, a comissao do dono do porto inicial vale `50%` da base de comissao do contrato:
+
+$$
+origin\_owner\_commission\_share = 0.5
+$$
+
+Logo, o valor economico evitado por esses cupons e:
+
+$$
+commission\_avoided\_value = floor(freightValue \cdot 0.5)
+$$
+
+Como esses cupons so existem quando ha dono do porto inicial recebendo comissao, o estudo relevante e o de frete com origem comprada:
+
+- frete p25: `168`
+- frete p50: `288`
+- frete p75: `480`
+- frete p90: `720`
+
+Aplicando `50%`:
+
+- comissao evitada p25: `84`
+- comissao evitada p50: `144`
+- comissao evitada p75: `240`
+- comissao evitada p90: `360`
+
+Sinal normalizado:
+
+$$
+commission\_avoided\_norm = clamp\left(\frac{commissionAvoidedValue - 84}{360 - 84}, 0, 1\right)
+$$
+
+Portanto:
+
+- caso minimo legitimo, p50: `(144 - 84) / 276 = 0.217391`
+- caso prioritario, p75: `(240 - 84) / 276 = 0.565217`
+
+Como esse ganho ja representa o proprio beneficio economico do cupom, o score estatistico de ambos passa a ser quase todo concentrado nesse sinal.
+
+Score de considerar:
+
+$$
+S_{considerar} = 0.90 \cdot 0.217391 = 0.195652
+$$
+
+Score de priorizar:
+
+$$
+S_{priorizar} = 0.90 \cdot 0.565217 = 0.508695
+$$
+
+Threshold calculado:
+
+$$
+play\_threshold = \frac{0.195652 + 0.508695}{2} = 0.352174
+$$
+
+Valor adotado no JSON: `0.352`
+
+Constante calculada: `0`
+
+### Diferenca Entre `anti_monopoly_owner_share` E `skip_owner_share`
+
+Os dois cupons bloqueiam o mesmo tipo de comissao.
+
+O que muda nao e a conta economica, mas a condicao de uso:
+
+- `skip_owner_share`
+  - exige apenas que haja dono elegivel recebendo comissao
+- `anti_monopoly_owner_share`
+  - exige que o dono elegivel tenha monopolio na regiao da origem
+
+Por isso:
+
+- o sinal economico e o mesmo
+- o threshold numerico calculado e o mesmo
+- o gate estatistico-contextual muda
+
+### Resultado Pratico Desta Segunda Leva
+
+Com essa extensao:
+
+- `double_freight` deixa de usar constante alta e passa a depender de contrato estatisticamente medio para cima
+- `skip_owner_share` deixa de bloquear comissao pequena so por idade e passa a exigir economia evitada ao menos mediana
+- `anti_monopoly_owner_share` deixa de ser apenas um gatilho de monopolio e passa a exigir monopolio com valor real em disputa
+
 ## Conclusao
 
 Os numeros mais uteis para a proxima etapa sao:

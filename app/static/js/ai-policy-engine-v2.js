@@ -220,6 +220,19 @@
     return conditions.every((condition) => evaluateRuleCondition(condition, env));
   }
 
+  function couponExpiryFallbackDecision({ autoUse = true, score = 0, threshold = 1, env = null } = {}) {
+    if (!autoUse || !env) return false;
+    const couponExpirationTurns = Math.max(1, numeric(env.runtimeSignals?.coupon_expiration_turns, 50));
+    const turnsUntilCouponExpiry = Math.max(0, numeric(env.runtimeSignals?.turns_until_coupon_expiry, couponExpirationTurns));
+    const couponAgePressure = clamp(resolveSignalValue('coupon_age_pressure', env), 0, 1);
+    const urgencyWindow = Math.max(8, Math.round(couponExpirationTurns * 0.15));
+    if (turnsUntilCouponExpiry > urgencyWindow && couponAgePressure < 0.82) {
+      return false;
+    }
+    const fallbackThreshold = clamp(Math.max(0.24, threshold - 0.16), 0, 1);
+    return score >= fallbackThreshold;
+  }
+
   function buildCouponRuntimeSignals({
     signals = {},
     reserveTarget = 0,
@@ -2437,7 +2450,13 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
     score = clamp(score, 0, 1);
     const threshold = numeric(couponRule?.play_threshold, 0.56);
     const conditionsMet = evaluateRuleConditions(couponRule?.play_conditions, env);
-    const shouldUse = Boolean(autoUse) && conditionsMet && score >= threshold;
+    const expiryFallbackUsed = couponExpiryFallbackDecision({
+      autoUse,
+      score,
+      threshold,
+      env,
+    });
+    const shouldUse = Boolean(autoUse) && ((conditionsMet && score >= threshold) || expiryFallbackUsed);
     return {
       shouldUse,
       accepted: shouldUse,
@@ -2445,6 +2464,7 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
       score,
       threshold,
       conditionsMet,
+      expiryFallbackUsed,
       profileId: resolvedContext.profile?.id || 'legacy_open',
       tableConfigId: resolvedContext.tableConfig?.id || 'legacy_open_table',
       context: resolvedContext,

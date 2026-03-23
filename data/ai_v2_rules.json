@@ -204,6 +204,12 @@
     "freight_density_norm": {
       "description": "Qualidade normalizada da densidade economica do contrato atual."
     },
+    "commission_avoided_value": {
+      "description": "Valor absoluto de comissao do porto inicial que o cupom de bloqueio evita pagar na liquidacao."
+    },
+    "commission_avoided_norm": {
+      "description": "Valor normalizado da comissao do porto inicial evitada, calibrado pelas estatisticas reais de frete com origem comprada."
+    },
     "freight_weakness_norm": {
       "description": "Fragilidade economica normalizada do contrato atual, alta quando o frete e fraco para a distancia."
     },
@@ -1808,54 +1814,32 @@
               "play_threshold": 0.45
             },
             "free_fuel_contract": {
-              "description": "Ativa viagem de graca quando a travessia atinge a fronteira estatistica do estudo, existe combustivel relevante na rota e o contrato nao e economicamente fraco.",
-              "play_conditions": [
-                {
-                  "signal": "fuel_route_pressure",
-                  "operator": ">=",
-                  "value": 0.333333
-                },
-                {
-                  "signal": "travel_distance_norm",
-                  "operator": ">=",
-                  "value": 0.357143
-                },
-                {
-                  "signal": "contract_value_band_norm",
-                  "operator": ">=",
-                  "value": 0.217391
-                },
-                {
-                  "signal": "freight_density_norm",
-                  "operator": ">=",
-                  "value": 0.257143
-                }
-              ],
+              "description": "Ativa viagem de graca em contratos com combustivel relevante, priorizando a primeira janela boa antes do cupom envelhecer.",
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
                     "signal": "fuel_route_pressure",
-                    "weight": 0.26
+                    "weight": 0.24
                   },
                   {
                     "signal": "travel_distance_norm",
                     "source": "runtime_context",
-                    "weight": 0.22
+                    "weight": 0.16
                   },
                   {
                     "signal": "contract_value_band_norm",
                     "source": "runtime_context",
-                    "weight": 0.18
+                    "weight": 0.14
                   },
                   {
                     "signal": "freight_density_norm",
                     "source": "runtime_context",
-                    "weight": 0.1
+                    "weight": 0.08
                   },
                   {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.16
+                    "weight": 0.30
                   },
                   {
                     "signal": "remaining_steps_pressure",
@@ -1867,7 +1851,7 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.313
+              "play_threshold": 0.22
             },
             "shortcut_ignore_toll": {
               "description": "Atalho entra na primeira janela com pedagio obrigatorio, com pressao extra se o cupom envelhecer.",
@@ -1930,40 +1914,23 @@
               "play_threshold": 0.45
             },
             "cancel_contract": {
-              "description": "Cancela contrato quando a travessia cruza a fronteira estatistica do estudo, o risco tatico minimo ja apareceu e a densidade economica continua fraca.",
-              "play_conditions": [
-                {
-                  "signal": "contract_failure_risk",
-                  "operator": ">=",
-                  "value": 0.30
-                },
-                {
-                  "signal": "travel_distance_norm",
-                  "operator": ">=",
-                  "value": 0.357143
-                },
-                {
-                  "signal": "freight_density_norm",
-                  "operator": "<=",
-                  "value": 0.05
-                }
-              ],
+              "description": "Cancela contrato ruim quando risco e fraqueza economica aparecem, com prioridade crescente conforme o cupom envelhece nas janelas validas.",
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
                     "signal": "contract_failure_risk",
-                    "weight": 0.32
+                    "weight": 0.24
                   },
                   {
                     "signal": "travel_distance_norm",
                     "source": "runtime_context",
-                    "weight": 0.18
+                    "weight": 0.14
                   },
                   {
                     "signal": "freight_weakness_norm",
                     "source": "runtime_context",
-                    "weight": 0.28
+                    "weight": 0.24
                   },
                   {
                     "signal": "detour_pressure",
@@ -1972,7 +1939,7 @@
                   },
                   {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.14
+                    "weight": 0.30
                   }
                 ],
                 "clamp": {
@@ -1980,28 +1947,97 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.343
+              "play_threshold": 0.23
             },
             "extended_contract_deadline": {
-              "description": "Estende prazo quando o contrato cruza a fronteira estatistica de travessia e valor, e a pressao de prazo ja entrou em zona minima valida.",
+              "description": "Estende prazo para contratos ainda aproveitaveis quando a rota aperta, privilegiando uso antes do cupom envelhecer demais.",
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "signal": "contract_failure_risk",
+                    "weight": 0.22
+                  },
+                  {
+                    "signal": "remaining_round_pressure",
+                    "weight": 0.16
+                  },
+                  {
+                    "signal": "travel_distance_norm",
+                    "source": "runtime_context",
+                    "weight": 0.10
+                  },
+                  {
+                    "signal": "contract_value_band_norm",
+                    "source": "runtime_context",
+                    "weight": 0.14
+                  },
+                  {
+                    "signal": "freight_density_norm",
+                    "source": "runtime_context",
+                    "weight": 0.08
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.30
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.16
+            },
+            "double_freight": {
+              "description": "Dobra frete quando o contrato cruza a fronteira estatistica minima de valor e densidade economica, com leve pressao adicional por idade.",
               "play_conditions": [
                 {
-                  "signal": "remaining_round_pressure",
-                  "operator": ">=",
-                  "value": 0.333333
-                },
-                {
-                  "signal": "contract_failure_risk",
-                  "operator": ">=",
-                  "value": 0.30
-                },
-                {
-                  "signal": "travel_distance_norm",
-                  "operator": ">=",
-                  "value": 0.357143
-                },
-                {
                   "signal": "contract_value_band_norm",
+                  "operator": ">=",
+                  "value": 0.217391
+                },
+                {
+                  "signal": "freight_density_norm",
+                  "operator": ">=",
+                  "value": 0.257143
+                }
+              ],
+              "scoring_formula": {
+                "type": "weighted_sum",
+                "terms": [
+                  {
+                    "signal": "contract_value_band_norm",
+                    "source": "runtime_context",
+                    "weight": 0.72
+                  },
+                  {
+                    "signal": "freight_density_norm",
+                    "source": "runtime_context",
+                    "weight": 0.18
+                  },
+                  {
+                    "signal": "coupon_age_pressure",
+                    "weight": 0.1
+                  }
+                ],
+                "clamp": {
+                  "min": 0,
+                  "max": 1
+                }
+              },
+              "play_threshold": 0.356
+            },
+            "anti_monopoly_owner_share": {
+              "description": "Bloqueia comissao monopolista quando o monopolio esta presente e o valor economico evitado ja cruzou a mediana estatistica da comissao bloqueavel.",
+              "play_conditions": [
+                {
+                  "signal": "owner_monopoly_flag",
+                  "operator": ">=",
+                  "value": 1
+                },
+                {
+                  "signal": "commission_avoided_norm",
                   "operator": ">=",
                   "value": 0.217391
                 }
@@ -2010,27 +2046,9 @@
                 "type": "weighted_sum",
                 "terms": [
                   {
-                    "signal": "contract_failure_risk",
-                    "weight": 0.28
-                  },
-                  {
-                    "signal": "remaining_round_pressure",
-                    "weight": 0.12
-                  },
-                  {
-                    "signal": "travel_distance_norm",
+                    "signal": "commission_avoided_norm",
                     "source": "runtime_context",
-                    "weight": 0.12
-                  },
-                  {
-                    "signal": "contract_value_band_norm",
-                    "source": "runtime_context",
-                    "weight": 0.26
-                  },
-                  {
-                    "signal": "freight_density_norm",
-                    "source": "runtime_context",
-                    "weight": 0.12
+                    "weight": 0.9
                   },
                   {
                     "signal": "coupon_age_pressure",
@@ -2042,76 +2060,33 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.152
-            },
-            "double_freight": {
-              "description": "Dobra frete na primeira liquidacao elegivel, com pressao adicional se o cupom envelhecer.",
-              "scoring_formula": {
-                "type": "weighted_sum",
-                "terms": [
-                  {
-                    "constant": 0.74,
-                    "weight": 1.0
-                  },
-                  {
-                    "signal": "freight_value_norm",
-                    "weight": 0.08
-                  },
-                  {
-                    "signal": "coupon_age_pressure",
-                    "weight": 0.18
-                  }
-                ],
-                "clamp": {
-                  "min": 0,
-                  "max": 1
-                }
-              },
-              "play_threshold": 0.45
-            },
-            "anti_monopoly_owner_share": {
-              "description": "Bloqueia comissao monopolista na primeira liquidacao monopolista elegivel, com pressao adicional pela idade.",
-              "scoring_formula": {
-                "type": "weighted_sum",
-                "terms": [
-                  {
-                    "constant": 0.72,
-                    "weight": 1.0
-                  },
-                  {
-                    "signal": "coupon_age_pressure",
-                    "weight": 0.18
-                  },
-                  {
-                    "signal": "owner_monopoly_flag",
-                    "source": "runtime_context",
-                    "weight": 0.1
-                  }
-                ],
-                "clamp": {
-                  "min": 0,
-                  "max": 1
-                }
-              },
-              "play_threshold": 0.45
+              "play_threshold": 0.352
             },
             "skip_owner_share": {
-              "description": "Bloqueia comissao simples na primeira liquidacao elegivel, com pressao adicional pela idade.",
+              "description": "Bloqueia comissao simples quando ha dono elegivel e o valor economico evitado ja cruzou a mediana estatistica da comissao bloqueavel.",
+              "play_conditions": [
+                {
+                  "signal": "owner_present_flag",
+                  "operator": ">=",
+                  "value": 1
+                },
+                {
+                  "signal": "commission_avoided_norm",
+                  "operator": ">=",
+                  "value": 0.217391
+                }
+              ],
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
-                    "constant": 0.72,
-                    "weight": 1.0
+                    "signal": "commission_avoided_norm",
+                    "source": "runtime_context",
+                    "weight": 0.9
                   },
                   {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.2
-                  },
-                  {
-                    "signal": "owner_present_flag",
-                    "source": "runtime_context",
-                    "weight": 0.08
+                    "weight": 0.1
                   }
                 ],
                 "clamp": {
@@ -2119,7 +2094,7 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.45
+              "play_threshold": 0.352
             }
           }
         }
