@@ -189,6 +189,30 @@
     "freight_value": {
       "description": "Valor bruto de frete em disputa na acao atual."
     },
+    "direct_freight_distance": {
+      "description": "Distancia economica direta do contrato entre PP e PD."
+    },
+    "travel_route_distance": {
+      "description": "Distancia total de travessia do contrato entre PP e PE e PD."
+    },
+    "freight_density": {
+      "description": "Valor economico medio do contrato por unidade de distancia direta."
+    },
+    "contract_value_band_norm": {
+      "description": "Qualidade economica normalizada do contrato atual com faixas calibradas para frete."
+    },
+    "freight_density_norm": {
+      "description": "Qualidade normalizada da densidade economica do contrato atual."
+    },
+    "freight_weakness_norm": {
+      "description": "Fragilidade economica normalizada do contrato atual, alta quando o frete e fraco para a distancia."
+    },
+    "travel_distance_norm": {
+      "description": "Peso normalizado da travessia total PP -> PE -> PD."
+    },
+    "detour_pressure": {
+      "description": "Pressao normalizada do desvio entre a distancia direta do frete e a travessia total do contrato."
+    },
     "coupon_age_turns": {
       "description": "Quantidade de rodadas que o cupom atual ficou guardado na mao."
     },
@@ -1447,6 +1471,14 @@
             "insult_reject_margin": -0.12
           }
         },
+        "owned_property_barter": {
+          "mode": "bundle_balance",
+          "description": "Aplica as mesmas travas de mercado da negociacao patrimonial e exige equilibrio minimo entre o pacote oferecido e o ativo alvo.",
+          "thresholds": {
+            "seller_margin_min": 0,
+            "buyer_margin_min": 0
+          }
+        },
         "human_buy_negotiation": {
           "mode": "session_policy",
           "description": "Controla o roteiro de uma negociacao em que o humano quer comprar do robo.",
@@ -1776,25 +1808,58 @@
               "play_threshold": 0.45
             },
             "free_fuel_contract": {
-              "description": "Ativa viagem de graca assim que a rota ainda tem combustivel relevante ou quando o cupom envelhece demais.",
+              "description": "Ativa viagem de graca quando a travessia atinge a fronteira estatistica do estudo, existe combustivel relevante na rota e o contrato nao e economicamente fraco.",
+              "play_conditions": [
+                {
+                  "signal": "fuel_route_pressure",
+                  "operator": ">=",
+                  "value": 0.333333
+                },
+                {
+                  "signal": "travel_distance_norm",
+                  "operator": ">=",
+                  "value": 0.357143
+                },
+                {
+                  "signal": "contract_value_band_norm",
+                  "operator": ">=",
+                  "value": 0.217391
+                },
+                {
+                  "signal": "freight_density_norm",
+                  "operator": ">=",
+                  "value": 0.257143
+                }
+              ],
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
-                    "constant": 0.32,
-                    "weight": 1.0
+                    "signal": "fuel_route_pressure",
+                    "weight": 0.26
                   },
                   {
-                    "signal": "fuel_route_pressure",
-                    "weight": 0.34
+                    "signal": "travel_distance_norm",
+                    "source": "runtime_context",
+                    "weight": 0.22
+                  },
+                  {
+                    "signal": "contract_value_band_norm",
+                    "source": "runtime_context",
+                    "weight": 0.18
+                  },
+                  {
+                    "signal": "freight_density_norm",
+                    "source": "runtime_context",
+                    "weight": 0.1
                   },
                   {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.24
+                    "weight": 0.16
                   },
                   {
                     "signal": "remaining_steps_pressure",
-                    "weight": 0.06
+                    "weight": 0.08
                   }
                 ],
                 "clamp": {
@@ -1802,7 +1867,7 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.45
+              "play_threshold": 0.313
             },
             "shortcut_ignore_toll": {
               "description": "Atalho entra na primeira janela com pedagio obrigatorio, com pressao extra se o cupom envelhecer.",
@@ -1865,21 +1930,49 @@
               "play_threshold": 0.45
             },
             "cancel_contract": {
-              "description": "Cancela contrato quando a primeira janela forte de fracasso aparecer ou quando o cupom envelhecer demais.",
+              "description": "Cancela contrato quando a travessia cruza a fronteira estatistica do estudo, o risco tatico minimo ja apareceu e a densidade economica continua fraca.",
+              "play_conditions": [
+                {
+                  "signal": "contract_failure_risk",
+                  "operator": ">=",
+                  "value": 0.30
+                },
+                {
+                  "signal": "travel_distance_norm",
+                  "operator": ">=",
+                  "value": 0.357143
+                },
+                {
+                  "signal": "freight_density_norm",
+                  "operator": "<=",
+                  "value": 0.05
+                }
+              ],
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
                     "signal": "contract_failure_risk",
-                    "weight": 0.52
+                    "weight": 0.32
                   },
                   {
-                    "signal": "remaining_steps_pressure",
-                    "weight": 0.12
+                    "signal": "travel_distance_norm",
+                    "source": "runtime_context",
+                    "weight": 0.18
+                  },
+                  {
+                    "signal": "freight_weakness_norm",
+                    "source": "runtime_context",
+                    "weight": 0.28
+                  },
+                  {
+                    "signal": "detour_pressure",
+                    "source": "runtime_context",
+                    "weight": 0.08
                   },
                   {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.36
+                    "weight": 0.14
                   }
                 ],
                 "clamp": {
@@ -1887,24 +1980,61 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.5
+              "play_threshold": 0.343
             },
             "extended_contract_deadline": {
-              "description": "Estende prazo na primeira janela de aperto de prazo relevante ou quando o cupom envelhecer demais.",
+              "description": "Estende prazo quando o contrato cruza a fronteira estatistica de travessia e valor, e a pressao de prazo ja entrou em zona minima valida.",
+              "play_conditions": [
+                {
+                  "signal": "remaining_round_pressure",
+                  "operator": ">=",
+                  "value": 0.333333
+                },
+                {
+                  "signal": "contract_failure_risk",
+                  "operator": ">=",
+                  "value": 0.30
+                },
+                {
+                  "signal": "travel_distance_norm",
+                  "operator": ">=",
+                  "value": 0.357143
+                },
+                {
+                  "signal": "contract_value_band_norm",
+                  "operator": ">=",
+                  "value": 0.217391
+                }
+              ],
               "scoring_formula": {
                 "type": "weighted_sum",
                 "terms": [
                   {
                     "signal": "contract_failure_risk",
-                    "weight": 0.42
+                    "weight": 0.28
                   },
                   {
                     "signal": "remaining_round_pressure",
                     "weight": 0.12
                   },
                   {
+                    "signal": "travel_distance_norm",
+                    "source": "runtime_context",
+                    "weight": 0.12
+                  },
+                  {
+                    "signal": "contract_value_band_norm",
+                    "source": "runtime_context",
+                    "weight": 0.26
+                  },
+                  {
+                    "signal": "freight_density_norm",
+                    "source": "runtime_context",
+                    "weight": 0.12
+                  },
+                  {
                     "signal": "coupon_age_pressure",
-                    "weight": 0.46
+                    "weight": 0.1
                   }
                 ],
                 "clamp": {
@@ -1912,7 +2042,7 @@
                   "max": 1
                 }
               },
-              "play_threshold": 0.5
+              "play_threshold": 0.152
             },
             "double_freight": {
               "description": "Dobra frete na primeira liquidacao elegivel, com pressao adicional se o cupom envelhecer.",

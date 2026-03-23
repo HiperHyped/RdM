@@ -351,6 +351,7 @@ const state = {
     activeKey: 'cash-by-turn',
     cashHistory: [],
     snapshotKeys: [],
+    couponExpirationEvents: [],
     windowModes: {
       'cash-by-turn': 'full',
       'patrimony-by-turn': 'full',
@@ -1105,6 +1106,17 @@ function formatSignedCurrency(value) {
   return `${sign}${formatCurrency(Math.abs(amount))}`;
 }
 
+function formatLedgerCurrency(value, { forceSign = false } = {}) {
+  const amount = Number(value || 0);
+  if (amount < 0) {
+    return `- ${formatCurrency(Math.abs(amount))}`;
+  }
+  if (forceSign && amount > 0) {
+    return `+ ${formatCurrency(amount)}`;
+  }
+  return formatCurrency(amount);
+}
+
 function formatCompactCurrencyValue(value) {
   const amount = Number(value || 0);
   const absoluteAmount = Math.abs(amount);
@@ -1372,6 +1384,22 @@ function tollCountSnapshotValue(snapshot, playerId) {
 
 function permissionCountSnapshotValue(snapshot, playerId) {
   return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.permission_count || 0);
+}
+
+function couponUsedTurnSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.coupon_used_turn_count || 0);
+}
+
+function couponExpiredTurnSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.coupon_expired_turn_count || 0);
+}
+
+function couponUsedTotalSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.coupon_used_total || 0);
+}
+
+function couponExpiredTotalSnapshotValue(snapshot, playerId) {
+  return Number(reportPlayerSnapshotEntry(snapshot, playerId)?.coupon_expired_total || 0);
 }
 
 function reportCountMetricValue(snapshot, playerId, metricKey) {
@@ -1677,10 +1705,10 @@ function reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey = 'ti
           <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
           <span>${player.name}</span>
         </span>
-        <div class="report-player-spark-badges">
-          <strong class="report-player-spark-value">${Math.round(endValue)}</strong>
-          <span class="report-player-spark-delta${delta > 0 ? ' is-positive' : delta < 0 ? ' is-negative' : ''}">${deltaLabel}</span>
-        </div>
+      </div>
+      <div class="report-player-spark-badges report-player-spark-badges-below">
+        <strong class="report-player-spark-value">${Math.round(endValue)}</strong>
+        <span class="report-player-spark-delta${delta > 0 ? ' is-positive' : delta < 0 ? ' is-negative' : ''}">${deltaLabel}</span>
       </div>
       <svg class="report-player-spark-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}: ${player.name}">
         ${gridMarkup}
@@ -1696,7 +1724,7 @@ function reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey = 'ti
   `;
 }
 
-function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', ariaLabel = 'Grafico de contagem do relatorio', gridClass = '' } = {}) {
   if (!snapshots.length || !players.length) {
     return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
   }
@@ -1724,21 +1752,173 @@ function reportCountTrendChartMarkup(snapshots, players, { reportKey = 'holdings
   return `
     <div class="report-count-spark-shell">
       <div class="report-count-scale-note">Ordenado pelo valor final. Escala comum: 0-${Math.round(metricMax)}.</div>
-      <div class="report-player-spark-grid">
+      <div class="report-player-spark-grid${gridClass ? ` ${gridClass}` : ''}" style="--report-player-count:${rankedPlayers.length}">
         ${rankedPlayers.map((player) => reportPlayerSparkCardMarkup(player, visibleSnapshots, { metricKey, metricMax, ariaLabel })).join('')}
       </div>
     </div>
   `;
 }
 
-function reportCountTrendCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Grafico de contagem do relatorio' } = {}) {
+function reportCountTrendCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', metricKey = 'title_count', title = '', subtitle = '', ariaLabel = 'Grafico de contagem do relatorio', gridClass = '' } = {}) {
   return `
     <article class="report-metric-card report-trend-card">
       <div class="report-metric-card-head">
         <strong>${title}</strong>
         <span>${subtitle}</span>
       </div>
-      ${reportCountTrendChartMarkup(snapshots, players, { reportKey, metricKey, ariaLabel })}
+      ${reportCountTrendChartMarkup(snapshots, players, { reportKey, metricKey, ariaLabel, gridClass })}
+    </article>
+  `;
+}
+
+function reportSimpleSeriesPolylinePoints(visibleSnapshots, valueGetter, xFor, yFor) {
+  return visibleSnapshots.map((snapshot, index) => `${xFor(index).toFixed(2)},${yFor(valueGetter(snapshot)).toFixed(2)}`).join(' ');
+}
+
+function reportCouponExpirationEvents() {
+  return Array.isArray(state.report?.couponExpirationEvents) ? state.report.couponExpirationEvents : [];
+}
+
+function recordCouponExpirationEvent(player, coupon, turnNumber = currentTurnNumber()) {
+  if (!player || !coupon) return;
+  const events = reportCouponExpirationEvents();
+  const normalizedTurn = Number(turnNumber || 0);
+  events.unshift({
+    id: `${player.id || 'player'}|${couponCardKey(coupon)}|${normalizedTurn}|${Date.now()}`,
+    turnNumber: normalizedTurn,
+    turnLabel: state.session?.turn_label || (normalizedTurn > 0 ? `Turno ${String(normalizedTurn).padStart(2, '0')}` : 'Inicio'),
+    playerId: player.id,
+    playerName: player.name || player.id || 'Jogador',
+    playerColor: player.color_hex || '#8fd7ff',
+    couponLabel: couponDisplayLabel(coupon),
+  });
+  state.report.couponExpirationEvents = events.slice(0, 24);
+}
+
+function reportCouponExpirationFeedMarkup() {
+  const entries = reportCouponExpirationEvents();
+  if (!entries.length) {
+    return '<div class="report-coupon-expiration-empty">Nenhum cupom expirou nesta simulacao ate agora.</div>';
+  }
+  return `
+    <div class="report-coupon-expiration-list">
+      ${entries.map((entry) => `
+        <article class="report-coupon-expiration-item">
+          <span class="report-coupon-expiration-turn">${entry.turnLabel}</span>
+          <span class="report-player-head report-coupon-expiration-player">
+            <span class="report-player-dot" style="background:${entry.playerColor}"></span>
+            <span>${entry.playerName}</span>
+          </span>
+          <strong class="report-coupon-expiration-label">${entry.couponLabel}</strong>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function reportCouponActivityPlayerCardMarkup(player, visibleSnapshots, { ariaLabel = 'Grafico de cupons por turno' } = {}) {
+  const width = 250;
+  const height = 126;
+  const frame = { top: 12, right: 8, bottom: 26, left: 8 };
+  const innerWidth = width - frame.left - frame.right;
+  const innerHeight = height - frame.top - frame.bottom;
+  const xFor = (index) => {
+    if (visibleSnapshots.length <= 1) return frame.left + (innerWidth / 2);
+    return frame.left + ((index / (visibleSnapshots.length - 1)) * innerWidth);
+  };
+  const usedValues = visibleSnapshots.map((snapshot) => couponUsedTurnSnapshotValue(snapshot, player.id));
+  const expiredValues = visibleSnapshots.map((snapshot) => couponExpiredTurnSnapshotValue(snapshot, player.id));
+  const metricMax = Math.max(1, ...usedValues, ...expiredValues);
+  const yFor = (value) => frame.top + (((metricMax - value) / Math.max(1, metricMax)) * innerHeight);
+  const startSnapshot = visibleSnapshots[0] || null;
+  const endSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const usedTotal = couponUsedTotalSnapshotValue(endSnapshot, player.id);
+  const expiredTotal = couponExpiredTotalSnapshotValue(endSnapshot, player.id);
+  const gridValues = Array.from(new Set([0, Math.round(metricMax / 2), metricMax].filter((value) => value >= 0))).sort((left, right) => left - right);
+  const gridMarkup = gridValues.map((value) => {
+    const y = yFor(value);
+    return `<line class="report-player-spark-gridline" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>`;
+  }).join('');
+  const usedPolyline = reportSimpleSeriesPolylinePoints(visibleSnapshots, (snapshot) => couponUsedTurnSnapshotValue(snapshot, player.id), xFor, yFor);
+  const expiredPolyline = reportSimpleSeriesPolylinePoints(visibleSnapshots, (snapshot) => couponExpiredTurnSnapshotValue(snapshot, player.id), xFor, yFor);
+  const usedDots = visibleSnapshots.map((snapshot, index) => {
+    const value = couponUsedTurnSnapshotValue(snapshot, player.id);
+    if (!(value > 0)) return '';
+    return `<circle class="report-coupon-event-dot report-coupon-event-dot-use" cx="${xFor(index).toFixed(2)}" cy="${yFor(value).toFixed(2)}" r="2.8"></circle>`;
+  }).join('');
+  const expiredDots = visibleSnapshots.map((snapshot, index) => {
+    const value = couponExpiredTurnSnapshotValue(snapshot, player.id);
+    if (!(value > 0)) return '';
+    return `<circle class="report-coupon-event-dot report-coupon-event-dot-expired" cx="${xFor(index).toFixed(2)}" cy="${yFor(value).toFixed(2)}" r="2.8"></circle>`;
+  }).join('');
+  return `
+    <article class="report-player-spark-card report-coupon-player-card" style="--report-player-accent:${player.color_hex || '#8fd7ff'}">
+      <div class="report-player-spark-head">
+        <span class="report-player-head">
+          <span class="report-player-dot" style="background:${player.color_hex || '#8fd7ff'}"></span>
+          <span>${player.name}</span>
+        </span>
+      </div>
+      <div class="report-player-spark-badges report-player-spark-badges-below">
+        <span class="report-coupon-total-badge report-coupon-total-badge-use">Uso ${usedTotal}</span>
+        <span class="report-coupon-total-badge report-coupon-total-badge-expired">Exp ${expiredTotal}</span>
+      </div>
+      <svg class="report-player-spark-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}: ${player.name}">
+        ${gridMarkup}
+        <polyline class="report-player-spark-line report-coupon-activity-line report-coupon-activity-line-use" points="${usedPolyline}"></polyline>
+        <polyline class="report-player-spark-line report-coupon-activity-line report-coupon-activity-line-expired" points="${expiredPolyline}"></polyline>
+        ${usedDots}
+        ${expiredDots}
+      </svg>
+      <div class="report-player-spark-foot report-coupon-player-foot">
+        <span>${compactReportTurnLabel(startSnapshot)}</span>
+        <span>${compactReportTurnLabel(endSnapshot)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function reportCouponActivityChartMarkup(snapshots, players, { reportKey = 'holdings-by-turn', ariaLabel = 'Grafico de cupons por turno' } = {}) {
+  if (!snapshots.length || !players.length) {
+    return reportEmptyMarkup('Ainda nao ha dados suficientes para montar o grafico.');
+  }
+
+  const visibleSnapshots = reportVisibleSnapshots(snapshots, reportKey);
+  const latestSnapshot = visibleSnapshots[visibleSnapshots.length - 1] || null;
+  const rankedPlayers = players
+    .map((player) => ({
+      ...player,
+      usedTotal: couponUsedTotalSnapshotValue(latestSnapshot, player.id),
+      expiredTotal: couponExpiredTotalSnapshotValue(latestSnapshot, player.id),
+    }))
+    .sort((left, right) => {
+      if (right.usedTotal !== left.usedTotal) return right.usedTotal - left.usedTotal;
+      if (left.expiredTotal !== right.expiredTotal) return left.expiredTotal - right.expiredTotal;
+      return String(left.name || '').localeCompare(String(right.name || ''));
+    });
+
+  return `
+    <div class="report-count-spark-shell report-coupon-activity-shell">
+      <div class="report-count-scale-note">Linhas por evento. Verde = uso estrategico. Laranja = expiracao por rodada.</div>
+      <div class="report-player-spark-grid report-player-spark-grid-holdings" style="--report-player-count:${rankedPlayers.length}">
+        ${rankedPlayers.map((player) => reportCouponActivityPlayerCardMarkup(player, visibleSnapshots, { ariaLabel })).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function reportCouponActivityCardMarkup(snapshots, players, { reportKey = 'holdings-by-turn', title = '', subtitle = '', ariaLabel = 'Grafico de cupons por turno' } = {}) {
+  return `
+    <article class="report-metric-card report-trend-card report-coupon-activity-card">
+      <div class="report-metric-card-head">
+        <strong>${title}</strong>
+        <span>${subtitle}</span>
+      </div>
+      ${reportCouponActivityChartMarkup(snapshots, players, { reportKey, ariaLabel })}
+      <div class="report-coupon-expiration-shell">
+        <div class="report-count-scale-note">Ultimos cupons expirados: turno, jogador e cupom.</div>
+        ${reportCouponExpirationFeedMarkup()}
+      </div>
     </article>
   `;
 }
@@ -1828,6 +2008,7 @@ function holdingsByTurnReportMarkup() {
           title: 'Titulos',
           subtitle: 'Portos conquistados por turno.',
           ariaLabel: 'Grafico de titulos por turno',
+          gridClass: 'report-player-spark-grid-holdings',
         })}
         ${reportCountTrendCardMarkup(snapshots, players, {
           reportKey: 'holdings-by-turn',
@@ -1835,6 +2016,7 @@ function holdingsByTurnReportMarkup() {
           title: 'Pedagios',
           subtitle: 'Pedagios conquistados por turno.',
           ariaLabel: 'Grafico de pedagios por turno',
+          gridClass: 'report-player-spark-grid-holdings',
         })}
         ${reportCountTrendCardMarkup(snapshots, players, {
           reportKey: 'holdings-by-turn',
@@ -1842,6 +2024,13 @@ function holdingsByTurnReportMarkup() {
           title: 'Permissoes',
           subtitle: 'Permissoes ativas por turno.',
           ariaLabel: 'Grafico de permissoes por turno',
+          gridClass: 'report-player-spark-grid-holdings',
+        })}
+        ${reportCouponActivityCardMarkup(snapshots, players, {
+          reportKey: 'holdings-by-turn',
+          title: 'Cupons',
+          subtitle: 'Uso estrategico e perdas por expiracao ao longo da mesa.',
+          ariaLabel: 'Grafico de uso e expiracao de cupons por turno',
         })}
       </div>
     </section>
@@ -2061,6 +2250,36 @@ function playerPermissionCount(player) {
   return Array.isArray(player?.permissions) ? player.permissions.length : 0;
 }
 
+function playerCouponUsedTotal(player) {
+  return Math.max(0, Number(player?.coupon_usage_total || 0));
+}
+
+function playerCouponExpiredTotal(player) {
+  return Math.max(0, Number(player?.coupon_expired_total || 0));
+}
+
+function playerCouponUsedTurnCount(player) {
+  return Math.max(0, Number(player?.coupon_usage_turn_count || 0));
+}
+
+function playerCouponExpiredTurnCount(player) {
+  return Math.max(0, Number(player?.coupon_expired_turn_count || 0));
+}
+
+function incrementPlayerCouponMetrics(player, { used = 0, expired = 0 } = {}) {
+  if (!player) return;
+  player.coupon_usage_total = playerCouponUsedTotal(player) + Math.max(0, Number(used || 0));
+  player.coupon_expired_total = playerCouponExpiredTotal(player) + Math.max(0, Number(expired || 0));
+  player.coupon_usage_turn_count = playerCouponUsedTurnCount(player) + Math.max(0, Number(used || 0));
+  player.coupon_expired_turn_count = playerCouponExpiredTurnCount(player) + Math.max(0, Number(expired || 0));
+}
+
+function resetPlayerCouponTurnMetrics(player) {
+  if (!player) return;
+  player.coupon_usage_turn_count = 0;
+  player.coupon_expired_turn_count = 0;
+}
+
 function captureCashSnapshot({
   label = state.session?.turn_label || 'Turno --',
   turnNumber = Number(state.session?.turn_number || 0),
@@ -2092,6 +2311,10 @@ function captureCashSnapshot({
         title_count: titleCount,
         toll_count: tollCount,
         permission_count: permissionCount,
+        coupon_used_total: playerCouponUsedTotal(player),
+        coupon_expired_total: playerCouponExpiredTotal(player),
+        coupon_used_turn_count: playerCouponUsedTurnCount(player),
+        coupon_expired_turn_count: playerCouponExpiredTurnCount(player),
         property_count: titleCount + tollCount,
         color: player.color_hex || '#8fd7ff',
       };
@@ -2106,12 +2329,16 @@ function captureCashSnapshot({
     state.report.snapshotKeys.push(key);
     state.report.cashHistory.push(snapshot);
   }
+  (state.players || []).forEach((player) => {
+    resetPlayerCouponTurnMetrics(player);
+  });
   renderReportOverlay();
 }
 
 function resetReportData() {
   state.report.cashHistory = [];
   state.report.snapshotKeys = [];
+  state.report.couponExpirationEvents = [];
   captureCashSnapshot({
     label: 'Inicio',
     turnNumber: 0,
@@ -2473,6 +2700,7 @@ function consumeCouponForPlayer(player, coupon, { detail = '', statusLabel = nul
   if (!player || !coupon) return null;
   const label = couponDisplayLabel(coupon);
   removeCouponFromPlayer(player, coupon);
+  incrementPlayerCouponMetrics(player, { used: 1 });
   if (typeof coupon !== 'string' && coupon?.source_card_id) {
     releaseHeldChanceCardToDiscard(coupon.source_card_id);
   }
@@ -2491,7 +2719,9 @@ function expireCouponsForPlayer(player, { turnNumber = currentTurnNumber(), sile
   const expired = coupons.filter((coupon) => couponHasExpired(coupon, turnNumber));
   if (!expired.length) return [];
   player.coupons = coupons.filter((coupon) => !couponHasExpired(coupon, turnNumber));
+  incrementPlayerCouponMetrics(player, { expired: expired.length });
   expired.forEach((coupon) => {
+    recordCouponExpirationEvent(player, coupon, turnNumber);
     if (typeof coupon !== 'string' && coupon?.source_card_id) {
       releaseHeldChanceCardToDiscard(coupon.source_card_id);
     }
@@ -2625,9 +2855,43 @@ function buildContractCouponSignals(player, extra = {}) {
   const currentTargetRounds = Math.max(1, Number(contract?.target_rounds || state.rules.target_rounds || 4));
   const roundsElapsed = Math.max(1, Number(contract?.rounds_elapsed || 1));
   const remainingRounds = Math.max(0, currentTargetRounds - roundsElapsed);
+  const originCode = String(contract?.origin || '').toUpperCase();
+  const destinationCode = String(contract?.destination || '').toUpperCase();
+  const tollCode = contractNeedsMandatoryToll(contract)
+    ? String(contract?.mandatory_toll || '').toUpperCase()
+    : '';
   const routeContext = buildContractRouteContext(player);
   const forwardPath = Array.isArray(routeContext?.forwardPath) ? routeContext.forwardPath : [];
   const remainingSteps = Math.max(0, forwardPath.length ? forwardPath.length - 1 : 0);
+  const freightValue = Number(contract?.base_freight_value || contract?.freight_value || 0);
+  const directFreightDistance = Math.max(
+    0,
+    Number(contract?.distance_value || state.distances?.[originCode]?.[destinationCode] || 0),
+  );
+  const travelRouteDistance = tollCode
+    ? Math.max(
+        0,
+        Number(state.distances?.[originCode]?.[tollCode] || 0)
+          + Number(state.distances?.[tollCode]?.[destinationCode] || 0),
+      )
+    : directFreightDistance;
+  const freightDensity = directFreightDistance > 0 ? (freightValue / directFreightDistance) : 0;
+  const originOwned = Boolean(contract?.origin_owned);
+  const contractValueBandNorm = originOwned
+    ? Math.min(1, Math.max(0, (freightValue - 168) / 552))
+    : Math.min(1, Math.max(0, (freightValue - 51) / 111));
+  const freightDensityNorm = originOwned
+    ? Math.min(1, Math.max(0, (freightDensity - 15) / 35))
+    : Math.min(1, Math.max(0, (freightDensity - 4) / 6));
+  const freightWeaknessNorm = Math.min(
+    1,
+    Math.max(0, 1 - ((contractValueBandNorm * 0.55) + (freightDensityNorm * 0.45))),
+  );
+  const travelDistanceNorm = Math.min(1, Math.max(0, (travelRouteDistance - 17) / 14));
+  const detourPressure = Math.min(
+    1,
+    Math.max(0, (Math.max(0, travelRouteDistance - directFreightDistance) - 3) / 12),
+  );
   return {
     targetRounds: currentTargetRounds,
     currentTargetRounds,
@@ -2636,7 +2900,15 @@ function buildContractCouponSignals(player, extra = {}) {
     remainingSteps,
     fuelStopsRemaining: countFuelStopsOnPath(forwardPath),
     mandatoryToll: Boolean(contractNeedsMandatoryToll(contract) && !contract?.toll_passed),
-    freightValue: Number(contract?.base_freight_value || contract?.freight_value || 0),
+    freightValue,
+    directFreightDistance,
+    travelRouteDistance,
+    freightDensity,
+    contractValueBandNorm,
+    freightDensityNorm,
+    freightWeaknessNorm,
+    travelDistanceNorm,
+    detourPressure,
     ...extra,
   };
 }
@@ -2827,12 +3099,37 @@ function removePropertyFromPlayer(player, code) {
   refreshOwnedCounts(player);
 }
 
+function canExecuteAiSaleTransfer(fromPlayer, toPlayer, card, amount) {
+  if (!fromPlayer || !toPlayer || fromPlayer.is_human || toPlayer.is_human) return true;
+  const engine = aiPolicyEngine();
+  if (!engine?.decideOwnedPropertyNegotiation || !card) return true;
+  const decision = engine.decideOwnedPropertyNegotiation({
+    player: toPlayer,
+    owner: fromPlayer,
+    card,
+    price: amount,
+    context: aiDecisionContext(toPlayer, { reason: 'owned_property_negotiation' }),
+  });
+  return Boolean(decision?.accepted);
+}
+
+function canExecuteAiBarterTransfer(seller, buyer, card, bundleCodes = []) {
+  if (!seller || !buyer || seller.is_human || buyer.is_human) return true;
+  if (!card) return false;
+  const evaluation = evaluateOwnedPropertyBarterProposal(buyer, seller, card, bundleCodes, {
+    reason: 'owned_property_negotiation',
+  });
+  return Boolean(evaluation?.accepted);
+}
+
 function transferProperty(fromPlayer, toPlayer, code, amount) {
   const normalized = (code || '').toUpperCase();
+  const card = getPropertyCard(normalized);
   if (!fromPlayer || !toPlayer || fromPlayer.bankrupt || toPlayer.bankrupt) return false;
   if (!fromPlayer.property_codes?.includes(normalized)) return false;
   if (isPropertyMortgaged(normalized)) return false;
   if (toPlayer.cash < amount) return false;
+  if (!canExecuteAiSaleTransfer(fromPlayer, toPlayer, card, amount)) return false;
   updatePlayerCash(toPlayer, -amount);
   updatePlayerCash(fromPlayer, amount);
   removePropertyFromPlayer(fromPlayer, normalized);
@@ -2861,10 +3158,12 @@ function exchangePropertyBundle(seller, buyer, targetCode, bundleCodes = []) {
   const normalizedBundle = Array.from(new Set((Array.isArray(bundleCodes) ? bundleCodes : [])
     .map((code) => String(code || '').toUpperCase())
     .filter(Boolean)));
+  const targetCard = getPropertyCard(normalizedTarget);
   if (!canTransferPropertyOwnership(seller, buyer, normalizedTarget)) return false;
   if (!normalizedBundle.length) return false;
   if (normalizedBundle.includes(normalizedTarget)) return false;
   if (!normalizedBundle.every((code) => canTransferPropertyOwnership(buyer, seller, code))) return false;
+  if (!canExecuteAiBarterTransfer(seller, buyer, targetCard, normalizedBundle)) return false;
   if (!movePropertyOwnership(seller, buyer, normalizedTarget)) return false;
   normalizedBundle.forEach((code) => {
     movePropertyOwnership(buyer, seller, code);
@@ -3062,16 +3361,18 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
   const ownsOrigin = Boolean(player?.property_codes?.includes(resolvedOriginCode) && !isPropertyMortgaged(resolvedOriginCode));
   const currentPermissionId = String(player?.active_permission_id || '');
   const switchCost = Math.max(0, Number(state.rules?.permission_switch_cost || 50));
-  const choices = availablePermissionRecords(player).map((permission) => {
+  const rawChoices = availablePermissionRecords(player).map((permission) => {
     const rate = getRate(originCard, permission.kind || permission.id) || { fee: 0, multiplier: 1 };
     const fee = Number(rate.fee || 0);
     const multiplier = Number(rate.multiplier || 1);
+    const emValue = fee * Math.max(1, multiplier);
     const isCurrent = String(permission.id) === currentPermissionId;
     const permissionSwitchCost = isCurrent ? 0 : switchCost;
     return {
       permission,
       fee,
       multiplier,
+      emValue,
       comparisonValue: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
       projectedFreight: ownsOrigin ? (fee * Math.max(1, multiplier)) : fee,
       effectiveComparisonValue: Math.max(0, (ownsOrigin ? (fee * Math.max(1, multiplier)) : fee) - permissionSwitchCost),
@@ -3080,6 +3381,11 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
       canAffordSwitch: isCurrent || Number(player?.cash || 0) >= permissionSwitchCost,
     };
   });
+  const maxEmValue = rawChoices.reduce((maxValue, entry) => Math.max(maxValue, Number(entry.emValue || 0)), 0);
+  const choices = rawChoices.map((entry) => ({
+    ...entry,
+    isBestEmValue: Number(entry.emValue || 0) === maxEmValue,
+  }));
   return {
     originCode: resolvedOriginCode,
     ownsOrigin,
@@ -3144,8 +3450,10 @@ async function applyBestContractPermissionForRobot(player, originCode = null) {
     : null;
   const bestChoice = bestPermissionDecision?.choice || selection.choices.reduce((best, entry) => {
     if (!best) return entry;
-    if (entry.comparisonValue > best.comparisonValue) return entry;
-    if (entry.comparisonValue < best.comparisonValue) return best;
+    if (entry.emValue > best.emValue) return entry;
+    if (entry.emValue < best.emValue) return best;
+    if (entry.effectiveComparisonValue > best.effectiveComparisonValue) return entry;
+    if (entry.effectiveComparisonValue < best.effectiveComparisonValue) return best;
     if (entry.isCurrent) return entry;
     return best;
   }, null);
@@ -3723,6 +4031,12 @@ function evaluateOwnedPropertyBarterProposal(buyer, seller, card, offeredCodes, 
 
 function barterRejectionDetail(evaluation, receiverName) {
   if (!evaluation) return 'A proposta de troca nao pode ser avaliada agora.';
+  if (evaluation.reason === 'trade_locked' || evaluation.reason === 'seller_closed_market') {
+    return `${receiverName} nao abre troca nesta configuracao de mesa.`;
+  }
+  if (evaluation.reason === 'buyer_closed_market') {
+    return 'Seu perfil atual nao permite abrir troca nesta configuracao de mesa.';
+  }
   if (evaluation.reason === 'seller_value_shortfall') {
     return `${receiverName} achou o pacote fraco para compensar o ativo pedido.`;
   }
@@ -3735,12 +4049,18 @@ function barterRejectionDetail(evaluation, receiverName) {
   return 'A proposta de troca nao ficou equilibrada.';
 }
 
+function barterActionLabel(saleAction = 'Vendeu porto') {
+  if (saleAction === 'Vendeu pedagio') return 'Trocou pedagio';
+  if (saleAction === 'Vendeu porto') return 'Trocou porto';
+  return saleAction.replace(/^Vendeu\s+/i, 'Trocou ');
+}
+
 function logBarterNegotiationOutcome(buyer, seller, card, offeredCodes, evaluation, { saleAction = 'Vendeu porto' } = {}) {
   if (!buyer || !seller || !card || !evaluation) return;
   const bundleLabel = barterBundleLabel(offeredCodes) || '--';
   if (evaluation.accepted) {
     pushActionLog(buyer, 'Troca aceita', `${card.code} por ${bundleLabel} com ${seller.name}.`);
-    pushActionLog(seller, saleAction, `${card.code} por troca (${bundleLabel}) para ${buyer.name}.`);
+    pushActionLog(seller, barterActionLabel(saleAction), `${card.code} por troca (${bundleLabel}) para ${buyer.name}.`);
     return;
   }
   const detail = barterRejectionDetail(evaluation, seller.name);
@@ -7176,34 +7496,29 @@ async function completeContractForPlayer(player) {
   contract.settlement_adjustment = settlement.adjustment;
   contract.settlement_value = settlement.total;
   contract.freight_value = settlement.total;
+  contract.freight_label = `Frete ${formatLedgerCurrency(settlement.total)}`;
   contract.deadline_label = `${settlement.roundsElapsed} / ${settlement.targetRounds}`;
   contract.deadline_progress = `${settlement.roundsElapsed}/${settlement.targetRounds}`;
 
   const detailParts = [];
-  if (settlement.monopolyMultiplier > 1) {
-    detailParts.push('monopolio do porto de partida x2');
-  }
-  if (settlement.freightMultiplier > 1) {
-    detailParts.push(`cupom de frete x${settlement.freightMultiplier}`);
-  }
+  detailParts.push(`Valor Frete: ${formatCurrency(settlement.adjustedBase)}`);
   if (settlement.adjustment > 0) {
-    detailParts.push(`bonus ${formatCurrency(settlement.adjustment)}`);
+    detailParts.push(`bonus (${settlement.roundsElapsed}/${settlement.targetRounds} turnos): ${formatLedgerCurrency(settlement.adjustment, { forceSign: true })}`);
   } else if (settlement.adjustment < 0) {
-    detailParts.push(`onus ${formatCurrency(Math.abs(settlement.adjustment))}`);
+    detailParts.push(`onus (${settlement.roundsElapsed}/${settlement.targetRounds} turnos): ${formatCurrency(Math.abs(settlement.adjustment))}`);
   }
   if (settlement.originCommission > 0 && settlement.originOwner) {
-    detailParts.push(`comissao do porto inicial ${formatCurrency(settlement.originCommission)} para ${settlement.originOwner.name}`);
+    detailParts.push(`comissao inicial (${settlement.originOwner.name}): ${formatLedgerCurrency(-settlement.originCommission)}`);
   } else if (settlement.waiveOriginShare && settlement.originOwner) {
-    detailParts.push(`comissao do porto inicial de ${settlement.originOwner.name} bloqueada`);
+    detailParts.push(`comissao inicial (${settlement.originOwner.name}): bloqueada`);
   }
   if (settlement.tollShare > 0 && settlement.tollOwner) {
-    detailParts.push(`comissao do pedagio ${formatCurrency(settlement.tollShare)} para ${settlement.tollOwner.name}`);
+    detailParts.push(`comissao de pedagio (${settlement.tollOwner.name}): ${formatLedgerCurrency(-settlement.tollShare)}`);
   }
-  const detailLine = detailParts.length
-    ? `${formatCurrency(settlement.total)} liquidos (${detailParts.join(' | ')}).`
-    : `${formatCurrency(settlement.total)} sem ajuste adicional.`;
+  detailParts.push(`Total: ${formatLedgerCurrency(settlement.total)}`);
+  const detailLine = detailParts.join(' | ');
 
-  contract.note = `${playerActionName(player)} concluiu o contrato e ${contractSettlementNarrative(settlement.total)}.`;
+  contract.note = `${playerActionName(player)} concluiu o contrato. ${detailLine}.`;
   player.status_label = contractSettlementStatus(settlement.total);
   pushActionLog(player, 'Contrato concluido', detailLine);
   renderHud();
@@ -8165,6 +8480,7 @@ function renderPermissionChoice() {
         <span class="permission-choice-card-badge">${entry.isCurrent ? 'Atual' : 'Usar'}</span>
         <span class="permission-choice-card-metrics">
           <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
+          ${entry.isBestEmValue ? `<span class="permission-choice-card-best-chip">Melhor E x M</span>` : ''}
           ${entry.isCurrent ? '' : `<span class="permission-choice-card-switch-chip">Troca: - ${formatCurrency(entry.switchCost || 0)}</span>`}
         </span>
       </button>
@@ -9896,6 +10212,10 @@ function buildPlayerSaveSnapshot(player) {
     permissions: (player.permissions || []).map(buildPermissionSaveSnapshot).filter(Boolean),
     property_codes: (player.property_codes || []).map((code) => String(code || '').toUpperCase()),
     coupons: Array.isArray(player.coupons) ? player.coupons : [],
+    coupon_used_total: playerCouponUsedTotal(player),
+    coupon_expired_total: playerCouponExpiredTotal(player),
+    coupon_used_turn_count: playerCouponUsedTurnCount(player),
+    coupon_expired_turn_count: playerCouponExpiredTurnCount(player),
     monopoly_regions: monopolyRegionsForPlayer(player),
     active_contract: player.active_contract || null,
     status_label: player.status_label || '--',
@@ -9947,6 +10267,10 @@ function buildMilestoneSnapshotSummary(snapshot) {
       toll_count: Number(player.toll_count || 0),
       permission_count: Number(player.permission_count || 0),
       property_count: Number(player.property_count || 0),
+      coupon_used_total: Number(player.coupon_used_total || 0),
+      coupon_expired_total: Number(player.coupon_expired_total || 0),
+      coupon_used_turn_count: Number(player.coupon_used_turn_count || 0),
+      coupon_expired_turn_count: Number(player.coupon_expired_turn_count || 0),
     })),
   };
 }
@@ -9960,6 +10284,7 @@ function buildReportSaveSnapshot() {
   return {
     activeKey: state.report?.activeKey || 'cash-by-turn',
     milestones: milestoneSnapshots.map(buildMilestoneSnapshotSummary),
+    couponExpirationEvents: reportCouponExpirationEvents(),
   };
 }
 
@@ -10064,6 +10389,17 @@ function restoreReportFromSnapshot(reportSnapshot) {
   const playersById = Object.fromEntries((state.players || []).map((player) => [player.id, player]));
   state.report.activeKey = reportSnapshot?.activeKey || 'cash-by-turn';
   state.report.cashHistory = milestones.map((snapshot) => {
+  state.report.couponExpirationEvents = Array.isArray(reportSnapshot?.couponExpirationEvents)
+    ? reportSnapshot.couponExpirationEvents.slice(0, 24).map((entry, index) => ({
+      id: entry?.id || `restored-expiration-${index}`,
+      turnNumber: Number(entry?.turnNumber || 0),
+      turnLabel: String(entry?.turnLabel || '').trim() || 'Inicio',
+      playerId: entry?.playerId || '',
+      playerName: entry?.playerName || 'Jogador',
+      playerColor: entry?.playerColor || '#8fd7ff',
+      couponLabel: entry?.couponLabel || 'Cupom',
+    }))
+    : [];
     const turnNumber = Number(snapshot?.turnNumber || 0);
     const label = String(snapshot?.label || '').trim() || (turnNumber > 0 ? `Turno ${String(turnNumber).padStart(2, '0')}` : 'Inicio');
     return {
@@ -10087,6 +10423,10 @@ function restoreReportFromSnapshot(reportSnapshot) {
           toll_count: tollCount,
           permission_count: Number(player?.permission_count || 0),
           property_count: Number(player?.property_count || (titleCount + tollCount)),
+          coupon_used_total: Number(player?.coupon_used_total || 0),
+          coupon_expired_total: Number(player?.coupon_expired_total || 0),
+          coupon_used_turn_count: Number(player?.coupon_used_turn_count || 0),
+          coupon_expired_turn_count: Number(player?.coupon_expired_turn_count || 0),
           color: currentPlayer.color_hex || '#8fd7ff',
         };
       }),
@@ -10196,6 +10536,10 @@ function applyBootstrapPayload(payload) {
   const defaultPermissionPrice = Number(state.rules.extra_permission_cost || 2000);
   state.players = (payload.players || []).map((player) => ({
     coupons: [],
+    coupon_usage_total: 0,
+    coupon_expired_total: 0,
+    coupon_usage_turn_count: 0,
+    coupon_expired_turn_count: 0,
     last_roll: null,
     skip_turns: 0,
     needs_new_contract: false,
@@ -10211,6 +10555,10 @@ function applyBootstrapPayload(payload) {
       mortgaged: Boolean(permission.mortgaged),
     })).filter(Boolean),
     coupons: player.coupons || [],
+    coupon_usage_total: Number(player.coupon_used_total || 0),
+    coupon_expired_total: Number(player.coupon_expired_total || 0),
+    coupon_usage_turn_count: Number(player.coupon_used_turn_count || 0),
+    coupon_expired_turn_count: Number(player.coupon_expired_turn_count || 0),
     last_roll: player.last_roll || null,
     skip_turns: player.skip_turns || 0,
     needs_new_contract: Boolean(player.needs_new_contract),

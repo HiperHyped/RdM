@@ -84,10 +84,10 @@
     rules = {},
   } = {}) {
     const config = normalizeRules(rules);
-    const settledBase = Math.max(0, asNumber(baseFreightValue, 0));
+    const settledBase = asNumber(baseFreightValue, 0);
     const effectiveFreightMultiplier = Math.max(1, asNumber(freightMultiplier, 1));
     const monopolyMultiplier = originMonopolyDouble && config.monopoly_origin_doubles_freight ? 2 : 1;
-    const adjustedBase = Math.max(0, Math.round(settledBase * monopolyMultiplier * effectiveFreightMultiplier));
+    const adjustedBase = Math.round(settledBase * monopolyMultiplier * effectiveFreightMultiplier);
     const resolvedTargetRounds = Math.max(1, asNumber(targetRounds, 4));
     const resolvedRoundsElapsed = Math.max(1, asNumber(roundsElapsed, 1));
     const earlyRounds = Math.max(0, resolvedTargetRounds - resolvedRoundsElapsed);
@@ -95,17 +95,19 @@
     const bonusPerRound = Math.max(0, asNumber(config.bonus_per_early_round, 0));
     const penaltyPerRound = Math.max(0, asNumber(config.penalty_per_late_round, 0));
     const adjustment = (earlyRounds * bonusPerRound) - (lateRounds * penaltyPerRound);
+    const commissionBase = Math.max(0, adjustedBase);
     const gross = adjustedBase + adjustment;
     const originCommission = originOwnerEligible && !waiveOriginShare
-      ? Math.max(0, Math.floor(gross * config.origin_owner_commission_share))
+      ? Math.max(0, Math.floor(commissionBase * config.origin_owner_commission_share))
       : 0;
     const tollShare = tollOwnerEligible
-      ? Math.max(0, Math.floor(gross * config.toll_owner_share))
+      ? Math.max(0, Math.floor(commissionBase * config.toll_owner_share))
       : 0;
 
     return {
       base: settledBase,
       adjustedBase,
+      commissionBase,
       gross,
       targetRounds: resolvedTargetRounds,
       roundsElapsed: resolvedRoundsElapsed,

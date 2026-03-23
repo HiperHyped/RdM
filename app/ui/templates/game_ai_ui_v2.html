@@ -160,6 +160,27 @@
     gap: 10px;
   }
 
+  .report-player-spark-grid-holdings {
+    grid-template-columns: repeat(var(--report-player-count, 4), minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  .report-player-spark-grid-holdings .report-player-spark-card {
+    min-width: 0;
+    padding: 8px;
+  }
+
+  .report-player-spark-grid-holdings .report-player-head {
+    min-width: 0;
+  }
+
+  .report-player-spark-grid-holdings .report-player-head span:last-child {
+    overflow-wrap: anywhere;
+  }
+
   .report-player-spark-card {
     display: grid;
     gap: 8px;
@@ -181,6 +202,12 @@
 
   .report-player-spark-badges {
     justify-content: flex-end;
+  }
+
+  .report-player-spark-badges-below {
+    margin-top: -2px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .report-player-spark-value,
@@ -231,6 +258,113 @@
     stroke-linejoin: round;
     stroke-linecap: round;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.24));
+  }
+
+  .report-coupon-activity-line-use {
+    stroke: #75e693;
+  }
+
+  .report-coupon-activity-line-expired {
+    stroke: #ffb25b;
+    stroke-dasharray: 8 6;
+  }
+
+  .report-coupon-event-dot {
+    stroke-width: 1.5;
+  }
+
+  .report-coupon-event-dot-use {
+    fill: #75e693;
+    stroke: rgba(10, 34, 18, 0.9);
+  }
+
+  .report-coupon-event-dot-expired {
+    fill: #ffb25b;
+    stroke: rgba(52, 24, 4, 0.9);
+  }
+
+  .report-coupon-total-badge {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .report-coupon-total-badge-use {
+    background: rgba(117, 230, 147, 0.14);
+    color: #9df0b4;
+  }
+
+  .report-coupon-total-badge-expired {
+    background: rgba(255, 178, 91, 0.14);
+    color: #ffc985;
+  }
+
+  .report-coupon-player-foot {
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .report-coupon-expiration-shell {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(215, 230, 245, 0.08);
+  }
+
+  .report-coupon-expiration-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .report-coupon-expiration-item {
+    display: grid;
+    grid-template-columns: minmax(72px, auto) minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(215, 230, 245, 0.07);
+  }
+
+  .report-coupon-expiration-turn {
+    color: rgba(214, 229, 245, 0.7);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .report-coupon-expiration-player {
+    min-width: 0;
+  }
+
+  .report-coupon-expiration-player span:last-child,
+  .report-coupon-expiration-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .report-coupon-expiration-label {
+    color: #edf6ff;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-align: right;
+  }
+
+  .report-coupon-expiration-empty {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(215, 230, 245, 0.12);
+    color: rgba(214, 229, 245, 0.7);
+    font-size: 0.74rem;
+    font-weight: 700;
   }
 
   .report-player-spark-foot {
@@ -1813,7 +1947,7 @@
   window.__RDM_AI_V2_CONFIG__ = JSON.parse(document.getElementById('rdm-ai-v2-config').textContent);
   window.__RDM_AI_V2_RULES__ = JSON.parse(document.getElementById('rdm-ai-v2-rules').textContent);
 </script>
-<script src="{{ request.url_for('static', path='js/ai-profiles-v2.js') }}?v=ai-profiles-v2-v1"></script>
-<script src="{{ request.url_for('static', path='js/ai-policy-engine-v2.js') }}?v=ai-policy-engine-v2-v1"></script>
-<script src="{{ request.url_for('static', path='js/game-ai-ui-v2.js') }}?v=game-ai-ui-v2-v1"></script>
+<script src="{{ request.url_for('static', path='js/ai-profiles-v2.js') }}?v=ai-profiles-v2-v2"></script>
+<script src="{{ request.url_for('static', path='js/ai-policy-engine-v2.js') }}?v=ai-policy-engine-v2-v2"></script>
+<script src="{{ request.url_for('static', path='js/game-ai-ui-v2.js') }}?v=game-ai-ui-v2-v2"></script>
 {% endblock %}

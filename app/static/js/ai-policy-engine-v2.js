@@ -39,6 +39,13 @@
     return Math.max(0, Math.round(numeric(value, 0)));
   }
 
+  function toSnakeCase(value) {
+    return String(value || '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[\s-]+/g, '_')
+      .toLowerCase();
+  }
+
   function activeRulesConfig() {
     return rulesLib && typeof rulesLib === 'object' ? rulesLib : {};
   }
@@ -185,6 +192,79 @@
     return clamp(numeric(value, 0), 0, 1);
   }
 
+  function resolveConditionTarget(condition, env) {
+    if (!condition || typeof condition !== 'object') return 0;
+    if (condition.value !== undefined) return numeric(condition.value, 0);
+    if (condition.constant !== undefined) return numeric(condition.constant, 0);
+    if (condition.signal) return resolveSignalValue(condition.signal, env);
+    return 0;
+  }
+
+  function evaluateRuleCondition(condition, env) {
+    if (!condition || typeof condition !== 'object') return true;
+    const operator = String(condition.operator || '>=').trim();
+    const left = condition.signal ? resolveSignalValue(condition.signal, env) : numeric(condition.left, 0);
+    const right = resolveConditionTarget(condition.target !== undefined ? condition.target : condition.value_definition, env)
+      || resolveConditionTarget(condition, env);
+    if (operator === '>=') return left >= right;
+    if (operator === '>') return left > right;
+    if (operator === '<=') return left <= right;
+    if (operator === '<') return left < right;
+    if (operator === '==') return Math.abs(left - right) <= 0.000001;
+    if (operator === '!=') return Math.abs(left - right) > 0.000001;
+    return true;
+  }
+
+  function evaluateRuleConditions(conditions, env) {
+    if (!Array.isArray(conditions) || !conditions.length) return true;
+    return conditions.every((condition) => evaluateRuleCondition(condition, env));
+  }
+
+  function buildCouponRuntimeSignals({
+    signals = {},
+    reserveTarget = 0,
+    cash = 0,
+    charge = 0,
+    freightValue = 0,
+    candidateCount = 0,
+    remainingRounds = 0,
+    remainingSteps = 0,
+    fuelStopsRemaining = 0,
+    couponAgeTurns = 0,
+    couponExpirationTurns = 50,
+    turnsUntilCouponExpiry = 0,
+  } = {}) {
+    const runtimeSignals = {
+      reserve_cash_target_amount: reserveTarget,
+      current_cash: cash,
+      cash_after_action: Math.max(0, cash - charge),
+      action_cost: charge,
+      charge,
+      candidate_count: candidateCount,
+      remaining_rounds: remainingRounds,
+      remaining_steps: remainingSteps,
+      fuel_stops_remaining: fuelStopsRemaining,
+      mandatory_toll_flag: signals.mandatoryToll ? 1 : numeric(signals.mandatoryTollFlag, 0),
+      owner_present_flag: signals.ownerPresent ? 1 : numeric(signals.ownerPresentFlag, 0),
+      owner_monopoly_flag: signals.ownerMonopoly ? 1 : numeric(signals.ownerMonopolyFlag, 0),
+      freight_value: freightValue,
+      coupon_age_turns: couponAgeTurns,
+      coupon_expiration_turns: couponExpirationTurns,
+      turns_until_coupon_expiry: turnsUntilCouponExpiry,
+      route_unlock_gain_norm: clamp(numeric(signals.routeUnlockGainNorm, 0), 0, 1),
+      region_completion_after_action_norm: clamp(numeric(signals.regionCompletionRatio, 0), 0, 1),
+      opponent_region_completion_norm: clamp(numeric(signals.opponentRegionCompletionRatio, 0), 0, 1),
+      opponent_income_swing_norm: clamp(numeric(signals.opponentIncomeSwingNorm, signals.ownerPresent ? 0.75 : 0.15), 0, 1),
+    };
+    Object.entries(signals || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      const signalId = toSnakeCase(key);
+      if (!signalId || Object.prototype.hasOwnProperty.call(runtimeSignals, signalId)) return;
+      runtimeSignals[signalId] = numeric(value, 0);
+    });
+    return runtimeSignals;
+  }
+
   function estimateLateGameSignal(signals = {}) {
     const explicit = numeric(signals.lateGame, -1);
     if (explicit >= 0) return clamp(explicit, 0, 1);
@@ -306,6 +386,15 @@
           reason,
         },
       ],
+    };
+  }
+
+  function buildBlockedOwnedBarterDecision({ resolvedContext, reason = 'trade_locked' } = {}) {
+    return {
+      accepted: false,
+      reason,
+      offeredEntries: [],
+      context: resolvedContext,
     };
   }
 
@@ -1036,6 +1125,29 @@
     const resolvedContext = buildDecisionContext(player, context);
     const buyerProfile = resolvedContext.profile || ensureProfile(player, resolvedContext.tableConfig);
     const ownerProfile = ensureProfile(owner, resolvedContext.tableConfig);
+    const buyerFlags = resolveNegotiationProfileFlags(buyerProfile);
+    const sellerFlags = resolveNegotiationProfileFlags(ownerProfile);
+    if (buyerFlags.tradeLocked || sellerFlags.tradeLocked) {
+      return buildBlockedOwnedBarterDecision({
+        resolvedContext,
+        reason: 'trade_locked',
+      });
+    }
+    if (buyerFlags.buyBlocked || buyerFlags.sellBlocked) {
+      return buildBlockedOwnedBarterDecision({
+        resolvedContext,
+        reason: 'buyer_closed_market',
+      });
+    }
+    if (sellerFlags.buyBlocked || sellerFlags.sellBlocked) {
+      return buildBlockedOwnedBarterDecision({
+        resolvedContext,
+        reason: 'seller_closed_market',
+      });
+    }
+
+    const barterRule = getDecisionRule('negotiation', 'owned_property_barter');
+    const barterThresholds = barterRule?.thresholds || {};
     const targetPrice = Math.max(1, money(price || card?.price || 0));
     const targetSignals = resolvedContext.negotiationSignals || {};
     const targetDecision = decideOwnedPropertyNegotiation({
@@ -1093,7 +1205,9 @@
     const offeredGiverCost = money(offeredEntries.reduce((total, entry) => total + numeric(entry.giverCost, 0), 0));
     const sellerMargin = money(offeredReceiverValue - sellerNeed);
     const buyerMargin = money(buyerCap - offeredGiverCost);
-    const accepted = offeredReceiverValue >= sellerNeed && offeredGiverCost <= buyerCap;
+    const sellerMarginMin = money(numeric(barterThresholds.seller_margin_min, 0));
+    const buyerMarginMin = money(numeric(barterThresholds.buyer_margin_min, 0));
+    const accepted = sellerMargin >= sellerMarginMin && buyerMargin >= buyerMarginMin;
 
     return {
       accepted,
@@ -2179,7 +2293,8 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
     const scale = Math.max(1, freightScale(resolvedChoices));
 
     const scoredChoices = resolvedChoices.map((entry) => {
-      const freight = Math.max(0, numeric(entry.projectedFreight, numeric(entry.fee, 0) * Math.max(1, numeric(entry.multiplier, 1))));
+      const emValue = Math.max(0, numeric(entry.emValue, numeric(entry.fee, 0) * Math.max(1, numeric(entry.multiplier, 1))));
+      const freight = Math.max(0, numeric(entry.projectedFreight, emValue));
       const switchCost = Math.max(0, numeric(entry.switchCost, 0));
       const netFreight = Math.max(0, numeric(entry.effectiveComparisonValue, freight - switchCost));
       const env = buildRuleEvaluationEnv({
@@ -2197,15 +2312,22 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
       score = clamp(score, 0, 1);
       return {
         ...entry,
+        emValue,
         netFreight,
         aiScore: score,
       };
     });
 
-    const bestChoice = scoredChoices.reduce((best, entry) => {
+    const affordableChoices = scoredChoices.filter((entry) => entry.isCurrent || entry.canAffordSwitch);
+    const candidateChoices = affordableChoices.length ? affordableChoices : scoredChoices;
+    const bestChoice = candidateChoices.reduce((best, entry) => {
       if (!best) return entry;
+      if (entry.emValue > best.emValue) return entry;
+      if (entry.emValue < best.emValue) return best;
       if (entry.aiScore > best.aiScore) return entry;
       if (entry.aiScore < best.aiScore) return best;
+      if (entry.effectiveComparisonValue > best.effectiveComparisonValue) return entry;
+      if (entry.effectiveComparisonValue < best.effectiveComparisonValue) return best;
       if (entry.isCurrent) return entry;
       return best;
     }, null);
@@ -2295,39 +2417,34 @@ function chooseBestPermission({ player, selection = null, choices = [], originCo
     const couponRule = couponFamilyRule?.coupon_rules?.[kind] || null;
     const env = buildRuleEvaluationEnv({
       profile,
-      runtimeSignals: {
-        reserve_cash_target_amount: reserveTarget,
-        current_cash: cash,
-        cash_after_action: Math.max(0, cash - charge),
-        action_cost: charge,
-        candidate_count: candidateCount,
-        remaining_rounds: remainingRounds,
-        remaining_steps: remainingSteps,
-        fuel_stops_remaining: fuelStopsRemaining,
-        mandatory_toll_flag: signals.mandatoryToll ? 1 : numeric(signals.mandatoryTollFlag, 0),
-        owner_present_flag: signals.ownerPresent ? 1 : numeric(signals.ownerPresentFlag, 0),
-        owner_monopoly_flag: signals.ownerMonopoly ? 1 : numeric(signals.ownerMonopolyFlag, 0),
-        freight_value: freightValue,
-        coupon_age_turns: couponAgeTurns,
-        coupon_expiration_turns: couponExpirationTurns,
-        turns_until_coupon_expiry: turnsUntilCouponExpiry,
-        route_unlock_gain_norm: clamp(numeric(signals.routeUnlockGainNorm, 0), 0, 1),
-        region_completion_after_action_norm: clamp(numeric(signals.regionCompletionRatio, 0), 0, 1),
-        opponent_region_completion_norm: clamp(numeric(signals.opponentRegionCompletionRatio, 0), 0, 1),
-        opponent_income_swing_norm: clamp(numeric(signals.opponentIncomeSwingNorm, signals.ownerPresent ? 0.75 : 0.15), 0, 1),
-      },
+      runtimeSignals: buildCouponRuntimeSignals({
+        signals,
+        reserveTarget,
+        cash,
+        charge,
+        freightValue,
+        candidateCount,
+        remainingRounds,
+        remainingSteps,
+        fuelStopsRemaining,
+        couponAgeTurns,
+        couponExpirationTurns,
+        turnsUntilCouponExpiry,
+      }),
     });
     let score = normalizeRuleScore(evaluateFormulaDefinition(couponRule?.scoring_formula, env));
     score += evaluateNoise(couponFamilyRule?.noise, env);
     score = clamp(score, 0, 1);
     const threshold = numeric(couponRule?.play_threshold, 0.56);
-    const shouldUse = Boolean(autoUse) && score >= threshold;
+    const conditionsMet = evaluateRuleConditions(couponRule?.play_conditions, env);
+    const shouldUse = Boolean(autoUse) && conditionsMet && score >= threshold;
     return {
       shouldUse,
       accepted: shouldUse,
       kind,
       score,
       threshold,
+      conditionsMet,
       profileId: resolvedContext.profile?.id || 'legacy_open',
       tableConfigId: resolvedContext.tableConfig?.id || 'legacy_open_table',
       context: resolvedContext,

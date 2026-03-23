@@ -2352,18 +2352,6 @@
     "id": "fuel-150"
   },
   {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1581.3158824529983,
-    "y": 322.19802755024847,
-    "route_id": null,
-    "order": null,
-    "lat": 74.4844038673886,
-    "lon": 72.30318251924177,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-154"
-  },
-  {
     "kind": "chance",
     "label": "",
     "x": 1635.9183560807537,
@@ -2376,30 +2364,6 @@
     "id": "chance-046"
   },
   {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1706.244667396744,
-    "y": 325.415930310074,
-    "route_id": null,
-    "order": null,
-    "lat": 77.62516431622163,
-    "lon": 90.51961730072799,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-155"
-  },
-  {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1933.1352354870867,
-    "y": 366.6747942757266,
-    "route_id": null,
-    "order": null,
-    "lat": 77.62516431622163,
-    "lon": 120.93324457181998,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-158"
-  },
-  {
     "kind": "chance",
     "label": "",
     "x": 1993.556647833107,
@@ -2410,18 +2374,6 @@
     "lon": 128.81059568036954,
     "notes": "manual-chance",
     "id": "chance-047"
-  },
-  {
-    "kind": "fuel",
-    "label": "5",
-    "x": 2053.844089154987,
-    "y": 394.4686849734114,
-    "route_id": null,
-    "order": null,
-    "lat": 75.30457026891882,
-    "lon": 136.74253761299153,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-159"
   },
   {
     "kind": "chance",
@@ -2578,5 +2530,29 @@
     "lon": 4.371265982473211,
     "notes": "fuel_level=5; fuel_value=25; manual=true",
     "id": "fuel-177"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 2150.075356540703,
+    "y": 400.4941339532272,
+    "route_id": null,
+    "order": null,
+    "lat": 74.54931035230439,
+    "lon": 149.65074012207089,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-178"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1772.413083910349,
+    "y": 338.0102652259364,
+    "route_id": null,
+    "order": null,
+    "lat": 77.89804017654174,
+    "lon": 99.68500006146758,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-179"
   }
 ]
