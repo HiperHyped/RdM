@@ -444,6 +444,60 @@
     gap: 8px;
   }
 
+  .negotiation-barter-panel {
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(143, 215, 255, 0.16);
+    background: rgba(143, 215, 255, 0.08);
+  }
+
+  .negotiation-barter-panel.is-hidden {
+    display: none;
+  }
+
+  .negotiation-barter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .negotiation-barter-head strong {
+    color: #edf6ff;
+    font-size: 0.84rem;
+    font-weight: 800;
+  }
+
+  .negotiation-barter-copy {
+    margin: 0;
+    color: rgba(237, 246, 255, 0.8);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  .negotiation-barter-stage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .negotiation-barter-empty {
+    margin: 0;
+    color: rgba(237, 246, 255, 0.62);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .negotiation-barter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
   .negotiation-counter-row label {
     font-size: 0.8rem;
     font-weight: 700;
@@ -1474,6 +1528,7 @@
           <button id="preview-save-button" type="button" class="preview-ghost-button" aria-label="Salvar">&#128190;</button>
           <button id="preview-settings-button" type="button" class="preview-ghost-button" aria-label="Configuracoes">&#9881;</button>
           <button id="preview-report-button" type="button" class="preview-ghost-button" aria-label="Relatorio">&#128202;</button>
+          <button id="preview-robot-ai-button" type="button" class="preview-ghost-button" aria-label="Configuracoes avancadas dos robos">&#129302;</button>
         </div>
         <h1 id="preview-turn">Turno 01</h1>
       </div>
@@ -1665,9 +1720,23 @@
         <label id="negotiation-counter-label" for="negotiation-counter-input">Sua proposta</label>
         <input id="negotiation-counter-input" class="negotiation-counter-input" type="number" min="0" step="1" inputmode="numeric" />
       </div>
+      <div id="negotiation-barter-panel" class="negotiation-barter-panel is-hidden">
+        <div class="negotiation-barter-head">
+          <strong id="negotiation-barter-title">Proposta de troca</strong>
+          <span id="negotiation-barter-summary" class="preview-soft-badge">Nenhum ativo selecionado</span>
+        </div>
+        <p id="negotiation-barter-copy" class="negotiation-barter-copy">Selecione os ativos para montar a troca.</p>
+        <div id="negotiation-barter-stage" class="negotiation-barter-stage"></div>
+        <p id="negotiation-barter-empty" class="negotiation-barter-empty is-hidden">Nenhum porto ou pedagio elegivel para troca.</p>
+        <div class="negotiation-barter-actions">
+          <button id="negotiation-barter-clear" type="button" class="decision-button secondary">Limpar</button>
+          <button id="negotiation-barter-confirm" type="button" class="decision-button primary">Confirmar troca</button>
+        </div>
+      </div>
       <p id="negotiation-helper" class="settings-note negotiation-helper">Faca uma proposta fechada ou aceite o pedido atual.</p>
       <div class="decision-actions">
         <button id="negotiation-refuse" type="button" class="decision-button secondary">Sair</button>
+        <button id="negotiation-barter-toggle" type="button" class="decision-button secondary">Troca</button>
         <button id="negotiation-counter" type="button" class="decision-button secondary">Enviar proposta</button>
         <button id="negotiation-accept" type="button" class="decision-button primary">Aceitar pedido</button>
       </div>

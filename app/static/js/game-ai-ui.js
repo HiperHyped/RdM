@@ -595,6 +595,7 @@ function persistSetupRobotConfig(slotIndex = 0, config = null) {
   }
   state.setup.manualRobotConfigs[slotIndex] = normalized;
   state.setup.manualRobotProfiles[slotIndex] = normalized.archetypeId;
+  applyCurrentAiSetupToRunningGame({ refreshUi: false });
   return normalized;
 }
 
@@ -606,6 +607,13 @@ function ensureSetupRobotConfig(slotIndex = 0) {
     return existing;
   }
   return persistSetupRobotConfig(slotIndex, buildManualRobotConfig(defaultSetupArchetypeIdForSlot(slotIndex)));
+}
+
+function seedSetupRobotConfigs(slotCount = setupRobotSlotCount()) {
+  const resolvedSlotCount = Math.max(0, Number(slotCount || 0));
+  for (let index = 0; index < resolvedSlotCount; index += 1) {
+    ensureSetupRobotConfig(index);
+  }
 }
 
 function resetSetupRobotConfig(slotIndex = 0) {
@@ -8724,6 +8732,9 @@ async function fetchJson(url, options = {}) {
 function buildCurrentSetupDefaults() {
   const company = (state.players || []).find((player) => player?.is_human) || null;
   const rivalCount = (state.players || []).filter((player) => !player?.is_human).length || state.setup.rivalCount || 5;
+  if (state.setup.aiAdvancedProfiles) {
+    seedSetupRobotConfigs(Number(rivalCount));
+  }
   return buildAiSetupDefaults({}, {
     company_name: String(state.setup.companyName || company?.name || 'Minha Companhia'),
     human_color_id: String(state.setup.selectedColorId || company?.color_id || state.playerColors[0]?.id || ''),
@@ -8754,6 +8765,34 @@ function buildActiveActionFeedSnapshot() {
     color: entry.color,
     glow: entry.glow,
   }));
+}
+
+let liveAiSetupRefreshFrame = 0;
+
+function scheduleLiveAiSetupUiRefresh() {
+  if (liveAiSetupRefreshFrame) {
+    window.cancelAnimationFrame(liveAiSetupRefreshFrame);
+  }
+  liveAiSetupRefreshFrame = window.requestAnimationFrame(() => {
+    liveAiSetupRefreshFrame = 0;
+    renderHud({ force: true });
+    renderNodeOverlay();
+    renderShipOverlay();
+    if (!getReportOverlay()?.classList.contains('is-hidden')) {
+      renderReportOverlay();
+    }
+  });
+}
+
+function applyCurrentAiSetupToRunningGame({ refreshUi = true } = {}) {
+  if (!state.setup.started || !Array.isArray(state.players) || !state.players.length) return null;
+  const tableConfig = applyAiStageConfiguration({
+    setup_defaults: buildCurrentSetupDefaults(),
+  });
+  if (refreshUi) {
+    scheduleLiveAiSetupUiRefresh();
+  }
+  return tableConfig;
 }
 
 function buildPermissionSaveSnapshot(permission) {
@@ -9512,12 +9551,14 @@ function renderSetupAiEditor() {
 function openSetupAiEditor(robotIndex = 0) {
   if (!setupRobotSlotCount()) return;
   state.setup.aiAdvancedProfiles = true;
+  seedSetupRobotConfigs();
   state.setup.aiEditorOpen = true;
   state.setup.aiEditorRobotIndex = Math.max(0, Math.min(robotIndex, setupRobotSlotCount() - 1));
   renderSetupAiAdvancedToggle();
   renderSetupAiProfileGrid();
   renderSetupAiModeVisibility();
   renderSetupAiEditor();
+  applyCurrentAiSetupToRunningGame({ refreshUi: false });
 }
 
 function deactivateSetupAiAdvanced() {
@@ -9527,11 +9568,13 @@ function deactivateSetupAiAdvanced() {
   renderSetupAiAdvancedToggle();
   renderSetupAiProfileGrid();
   renderSetupAiModeVisibility();
+  applyCurrentAiSetupToRunningGame();
 }
 
 function closeSetupAiEditor() {
   state.setup.aiEditorOpen = false;
   setSetupAiEditorVisible(false);
+  applyCurrentAiSetupToRunningGame();
 }
 
 function renderSetupAiModeVisibility() {
@@ -10163,6 +10206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   byId('preview-report-button')?.addEventListener('click', () => {
     openReportOverlay();
+  });
+  byId('preview-robot-ai-button')?.addEventListener('click', () => {
+    openSetupAiEditor(activeSetupEditorRobotIndex());
   });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();

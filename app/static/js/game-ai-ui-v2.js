@@ -1,5 +1,6 @@
 const DEFAULT_PROPERTY_STYLE = { fill: '#07b14d', text: '#edf6ff' };
 const DEFAULT_PERMISSION_STYLE = { accent: '#17C51A', text: '#FFFFFF' };
+const ROUTE_HALO_COLOR = '#8fd7ff';
 const FUEL_STYLES = {
   1: { fillFraction: 0, size: 10 },
   2: { fillFraction: 0.25, size: 10 },
@@ -310,6 +311,13 @@ const state = {
     buyerName: '',
     feedback: '',
     draftCounter: '',
+    barterEnabled: false,
+    barterOpen: false,
+    barterSourcePlayerId: '',
+    barterSourceName: '',
+    barterAvailableCodes: [],
+    barterSelectedCodes: [],
+    barterCopy: '',
   },
   permissionChoice: {
     resolver: null,
@@ -360,6 +368,11 @@ const state = {
     selectedMiniCardsByPlayer: {},
     expandedActionFeedsByPlayer: {},
     paused: false,
+    overlayPause: {
+      settingsWasPaused: false,
+      reportWasPaused: false,
+      aiEditorWasPaused: false,
+    },
     actionFeedExpanded: false,
     propertyInspectorCode: '',
     propertyInspectorAnchor: null,
@@ -644,6 +657,7 @@ function persistSetupRobotConfig(slotIndex = 0, config = null) {
   }
   state.setup.manualRobotConfigs[slotIndex] = normalized;
   state.setup.manualRobotProfiles[slotIndex] = normalized.archetypeId;
+  applyCurrentAiSetupToRunningGame({ refreshUi: false });
   return normalized;
 }
 
@@ -655,6 +669,13 @@ function ensureSetupRobotConfig(slotIndex = 0) {
     return existing;
   }
   return persistSetupRobotConfig(slotIndex, buildManualRobotConfig(defaultSetupArchetypeIdForSlot(slotIndex)));
+}
+
+function seedSetupRobotConfigs(slotCount = setupRobotSlotCount()) {
+  const resolvedSlotCount = Math.max(0, Number(slotCount || 0));
+  for (let index = 0; index < resolvedSlotCount; index += 1) {
+    ensureSetupRobotConfig(index);
+  }
 }
 
 function resetSetupRobotConfig(slotIndex = 0) {
@@ -1176,6 +1197,35 @@ function setSettingsVisible(visible) {
   overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
+function isOverlayVisible(overlay) {
+  return Boolean(overlay && !overlay.classList.contains('is-hidden'));
+}
+
+function hasBlockingToolbarOverlayOpen() {
+  return [
+    getSettingsOverlay(),
+    getReportOverlay(),
+    getSetupAiEditorOverlay(),
+    getSaveNameOverlay(),
+    byId('load-browser-overlay'),
+  ].some((overlay) => isOverlayVisible(overlay));
+}
+
+function pauseForToolbarOverlay(key) {
+  const pauseState = state.view.overlayPause || (state.view.overlayPause = {});
+  pauseState[key] = state.view.paused;
+  setPaused(true);
+}
+
+function resumeAfterToolbarOverlay(key) {
+  const pauseState = state.view.overlayPause || (state.view.overlayPause = {});
+  const wasPaused = Boolean(pauseState[key]);
+  pauseState[key] = false;
+  if (!wasPaused && !hasBlockingToolbarOverlayOpen()) {
+    setPaused(false);
+  }
+}
+
 function renderSettingsOverlay() {
   const cpuInput = getSettingsCpuSpeedInput();
   const cpuValue = getSettingsCpuSpeedValue();
@@ -1217,11 +1267,13 @@ function renderSettingsOverlay() {
 
 function openSettingsOverlay() {
   renderSettingsOverlay();
+  pauseForToolbarOverlay('settingsWasPaused');
   setSettingsVisible(true);
 }
 
 function closeSettingsOverlay() {
   setSettingsVisible(false);
+  resumeAfterToolbarOverlay('settingsWasPaused');
 }
 
 function setReportVisible(visible) {
@@ -1943,11 +1995,13 @@ function renderReportOverlay() {
 
 function openReportOverlay() {
   renderReportOverlay();
+  pauseForToolbarOverlay('reportWasPaused');
   setReportVisible(true);
 }
 
 function closeReportOverlay() {
   setReportVisible(false);
+  resumeAfterToolbarOverlay('reportWasPaused');
 }
 
 function playerAssetBookValue(player) {
@@ -2742,6 +2796,38 @@ function transferProperty(fromPlayer, toPlayer, code, amount) {
   return true;
 }
 
+function canTransferPropertyOwnership(fromPlayer, toPlayer, code) {
+  const normalized = String(code || '').toUpperCase();
+  if (!fromPlayer || !toPlayer || fromPlayer.bankrupt || toPlayer.bankrupt) return false;
+  if (!normalized || !fromPlayer.property_codes?.includes(normalized)) return false;
+  if (isPropertyMortgaged(normalized)) return false;
+  return true;
+}
+
+function movePropertyOwnership(fromPlayer, toPlayer, code) {
+  const normalized = String(code || '').toUpperCase();
+  if (!canTransferPropertyOwnership(fromPlayer, toPlayer, normalized)) return false;
+  removePropertyFromPlayer(fromPlayer, normalized);
+  addPropertyToPlayer(toPlayer, normalized);
+  return true;
+}
+
+function exchangePropertyBundle(seller, buyer, targetCode, bundleCodes = []) {
+  const normalizedTarget = String(targetCode || '').toUpperCase();
+  const normalizedBundle = Array.from(new Set((Array.isArray(bundleCodes) ? bundleCodes : [])
+    .map((code) => String(code || '').toUpperCase())
+    .filter(Boolean)));
+  if (!canTransferPropertyOwnership(seller, buyer, normalizedTarget)) return false;
+  if (!normalizedBundle.length) return false;
+  if (normalizedBundle.includes(normalizedTarget)) return false;
+  if (!normalizedBundle.every((code) => canTransferPropertyOwnership(buyer, seller, code))) return false;
+  if (!movePropertyOwnership(seller, buyer, normalizedTarget)) return false;
+  normalizedBundle.forEach((code) => {
+    movePropertyOwnership(buyer, seller, code);
+  });
+  return true;
+}
+
 function getPropertyStopRate(player, card) {
   const shipType = player?.active_permission_id || player?.ship_type || '';
   const row = getRate(card, shipType) || { fee: 0, multiplier: 1 };
@@ -3434,6 +3520,143 @@ function buildAiNegotiationSignals(buyer, seller, card, { reason = 'owned_proper
   };
 }
 
+function barterEligiblePropertyCards(player, { excludeCodes = [] } = {}) {
+  if (!player || player.bankrupt) return [];
+  const excluded = new Set((Array.isArray(excludeCodes) ? excludeCodes : []).map((code) => String(code || '').toUpperCase()));
+  return (player.property_codes || [])
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card && (card.kind === 'port' || card.kind === 'toll' || card.is_toll))
+    .filter((card) => !excluded.has(String(card.code || '').toUpperCase()))
+    .filter((card) => !card.mortgaged);
+}
+
+function barterBundleLabel(codes = []) {
+  return (Array.isArray(codes) ? codes : [])
+    .map((code) => String(code || '').toUpperCase())
+    .filter(Boolean)
+    .join(' + ');
+}
+
+function buildBarterOfferEntries(giver, receiver, codes, { reason = 'owned_property_negotiation', stop = null } = {}) {
+  return Array.from(new Set((Array.isArray(codes) ? codes : [])
+    .map((code) => String(code || '').toUpperCase())
+    .filter(Boolean)))
+    .map((code) => getPropertyCard(code))
+    .filter((card) => card && giver?.property_codes?.includes(card.code) && !card.mortgaged)
+    .map((offerCard) => ({
+      card: offerCard,
+      price: offerCard.price,
+      negotiationSignals: buildAiNegotiationSignals(receiver, giver, offerCard, {
+        reason: `${reason}_barter_offer`,
+        stop,
+        listPrice: offerCard.price,
+      }),
+    }));
+}
+
+function evaluateOwnedPropertyBarterProposal(buyer, seller, card, offeredCodes, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+} = {}) {
+  const targetSignals = buildAiNegotiationSignals(buyer, seller, card, { reason, stop, listPrice });
+  const offeredBundle = buildBarterOfferEntries(buyer, seller, offeredCodes, { reason, stop });
+  return aiPolicyEngine()?.evaluateOwnedPropertyBarter
+    ? aiPolicyEngine().evaluateOwnedPropertyBarter({
+        player: buyer,
+        owner: seller,
+        card,
+        price: listPrice,
+        offeredBundle,
+        context: aiDecisionContext(buyer, {
+          reason,
+          negotiationSignals: targetSignals,
+        }),
+      })
+    : { accepted: false, reason: 'engine_missing', offeredEntries: [] };
+}
+
+function barterRejectionDetail(evaluation, receiverName) {
+  if (!evaluation) return 'A proposta de troca nao pode ser avaliada agora.';
+  if (evaluation.reason === 'seller_value_shortfall') {
+    return `${receiverName} achou o pacote fraco para compensar o ativo pedido.`;
+  }
+  if (evaluation.reason === 'buyer_overpay') {
+    return 'A troca exigiria ativos demais do ofertante.';
+  }
+  if (evaluation.reason === 'empty_bundle') {
+    return 'Selecione pelo menos um porto ou pedagio para propor a troca.';
+  }
+  return 'A proposta de troca nao ficou equilibrada.';
+}
+
+function logBarterNegotiationOutcome(buyer, seller, card, offeredCodes, evaluation, { saleAction = 'Vendeu porto' } = {}) {
+  if (!buyer || !seller || !card || !evaluation) return;
+  const bundleLabel = barterBundleLabel(offeredCodes) || '--';
+  if (evaluation.accepted) {
+    pushActionLog(buyer, 'Troca aceita', `${card.code} por ${bundleLabel} com ${seller.name}.`);
+    pushActionLog(seller, saleAction, `${card.code} por troca (${bundleLabel}) para ${buyer.name}.`);
+    return;
+  }
+  const detail = barterRejectionDetail(evaluation, seller.name);
+  pushActionLog(buyer, 'Troca recusada', `${card.code} com ${seller.name}: ${detail}`);
+  pushActionLog(seller, 'Troca recusada', `${card.code} ficou com ${seller.name}.`);
+}
+
+function findCpuOwnedPropertyBarterOffer(buyer, seller, card, {
+  listPrice = 0,
+  reason = 'owned_property_negotiation',
+  stop = null,
+} = {}) {
+  const eligibleCards = barterEligiblePropertyCards(buyer, { excludeCodes: [card?.code] });
+  if (!eligibleCards.length) return null;
+  const rankedCards = eligibleCards
+    .map((offerCard) => {
+      const evaluation = evaluateOwnedPropertyBarterProposal(buyer, seller, card, [offerCard.code], {
+        listPrice,
+        reason,
+        stop,
+      });
+      const entry = evaluation?.offeredEntries?.[0] || null;
+      return {
+        card: offerCard,
+        receiverValue: Number(entry?.receiverValue || offerCard.price || 0),
+      };
+    })
+    .sort((left, right) => right.receiverValue - left.receiverValue)
+    .slice(0, 8)
+    .map((entry) => entry.card);
+
+  let best = null;
+  const maxBundleSize = Math.min(3, rankedCards.length);
+  const walk = (startIndex, bundle) => {
+    if (bundle.length) {
+      const offeredCodes = bundle.map((entry) => entry.code);
+      const evaluation = evaluateOwnedPropertyBarterProposal(buyer, seller, card, offeredCodes, {
+        listPrice,
+        reason,
+        stop,
+      });
+      if (evaluation?.accepted) {
+        const score = Math.abs(Number(evaluation.sellerMargin || 0))
+          + (Math.abs(Number(evaluation.buyerMargin || 0)) * 0.35)
+          + (bundle.length * 10);
+        if (!best || score < best.score) {
+          best = { offeredCodes, evaluation, score };
+        }
+      }
+    }
+    if (bundle.length >= maxBundleSize) return;
+    for (let index = startIndex; index < rankedCards.length; index += 1) {
+      bundle.push(rankedCards[index]);
+      walk(index + 1, bundle);
+      bundle.pop();
+    }
+  };
+  walk(0, []);
+  return best;
+}
+
 function logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction = 'Vendeu porto' } = {}) {
   if (!buyer || !seller || !card || !decision) return;
   const opening = (decision.transcript || []).find((entry) => entry.phase === 'opening_offer' && entry.amount > 0);
@@ -3499,6 +3722,24 @@ function executeCpuOwnedPropertyNegotiation(buyer, seller, card, {
       };
 
   if (!decision?.accepted || !(decision.finalPrice > 0)) {
+    const barterOffer = findCpuOwnedPropertyBarterOffer(buyer, seller, card, {
+      listPrice,
+      reason,
+      stop,
+    });
+    if (barterOffer?.evaluation?.accepted && exchangePropertyBundle(seller, buyer, card.code, barterOffer.offeredCodes)) {
+      buyer.status_label = `trocou por ${card.code}`;
+      logBarterNegotiationOutcome(buyer, seller, card, barterOffer.offeredCodes, barterOffer.evaluation, { saleAction });
+      renderHud();
+      return {
+        accepted: true,
+        finalPrice: 0,
+        barter: true,
+        offeredCodes: barterOffer.offeredCodes,
+        decision: barterOffer.evaluation,
+        statusLabel: buyer.status_label,
+      };
+    }
     if (decision?.mode === 'dynamic') {
       logCpuNegotiationTranscript(buyer, seller, card, decision, { saleAction });
       renderHud();
@@ -3513,6 +3754,24 @@ function executeCpuOwnedPropertyNegotiation(buyer, seller, card, {
 
   const finalPrice = Math.round(Number(decision.finalPrice || 0));
   if (!(finalPrice > 0) || !transferProperty(seller, buyer, card.code, finalPrice)) {
+    const barterOffer = findCpuOwnedPropertyBarterOffer(buyer, seller, card, {
+      listPrice,
+      reason,
+      stop,
+    });
+    if (barterOffer?.evaluation?.accepted && exchangePropertyBundle(seller, buyer, card.code, barterOffer.offeredCodes)) {
+      buyer.status_label = `trocou por ${card.code}`;
+      logBarterNegotiationOutcome(buyer, seller, card, barterOffer.offeredCodes, barterOffer.evaluation, { saleAction });
+      renderHud();
+      return {
+        accepted: true,
+        finalPrice: 0,
+        barter: true,
+        offeredCodes: barterOffer.offeredCodes,
+        decision: barterOffer.evaluation,
+        statusLabel: buyer.status_label,
+      };
+    }
     if (decision?.mode === 'dynamic') {
       pushActionLog(buyer, 'Negociacao recusada', `${card.code} com ${seller.name}: nao conseguiu fechar por ${formatCurrency(finalPrice)}.`);
       pushActionLog(seller, 'Negociacao recusada', `${card.code} permaneceu com ${seller.name}.`);
@@ -3715,6 +3974,8 @@ async function runHumanSaleToRobotNegotiation(seller, buyer, card, {
   logHumanSaleNegotiationStart(buyer, seller, card, session);
   renderHud();
 
+  const barterCards = barterEligiblePropertyCards(buyer, { excludeCodes: [card.code] });
+
   while (session?.canNegotiate) {
     const response = await openHumanNegotiationRound({
       session,
@@ -3724,6 +3985,13 @@ async function runHumanSaleToRobotNegotiation(seller, buyer, card, {
       sellerName: seller.name,
       buyerName: buyer.name,
       mode: 'sell',
+      barter: {
+        enabled: barterCards.length > 0,
+        sourcePlayerId: buyer.id,
+        sourceName: buyer.name,
+        availableCodes: barterCards.map((entry) => entry.code),
+        copy: `Selecione os portos e pedagios de ${buyer.name} para pedir em troca do ativo.`,
+      },
     });
 
     if (!response || response.action === 'refuse') {
@@ -3753,6 +4021,27 @@ async function runHumanSaleToRobotNegotiation(seller, buyer, card, {
       logHumanSaleNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
       renderHud();
       return { accepted: true, finalPrice, decision };
+    }
+
+    if (response.action === 'barter') {
+      const evaluation = evaluateOwnedPropertyBarterProposal(buyer, seller, card, response.codes, {
+        listPrice,
+        reason,
+        stop,
+      });
+      if (evaluation?.accepted && exchangePropertyBundle(seller, buyer, card.code, response.codes)) {
+        buyer.status_label = `trocou por ${card.code}`;
+        logBarterNegotiationOutcome(buyer, seller, card, response.codes, evaluation, { saleAction });
+        renderHud();
+        return { accepted: true, finalPrice: 0, barter: true, offeredCodes: response.codes, decision: evaluation };
+      }
+      session = {
+        ...session,
+        buyerLine: barterRejectionDetail(evaluation, seller.name),
+      };
+      pushActionLog(buyer, 'Troca recusada', `${card.code} para ${seller.name}: ${session.buyerLine}`);
+      renderHud();
+      continue;
     }
 
     logHumanSaleNegotiationCounter(buyer, seller, card, response.amount);
@@ -3828,6 +4117,8 @@ async function runHumanOwnedPropertyNegotiation(buyer, seller, card, {
   logHumanNegotiationStart(buyer, seller, card, session);
   renderHud();
 
+  const barterCards = barterEligiblePropertyCards(buyer, { excludeCodes: [card.code] });
+
   while (session?.canNegotiate) {
     const response = await openHumanNegotiationRound({
       session,
@@ -3835,6 +4126,14 @@ async function runHumanOwnedPropertyNegotiation(buyer, seller, card, {
       copy,
       cardCode: card.code,
       sellerName: seller.name,
+      buyerName: buyer.name,
+      barter: {
+        enabled: barterCards.length > 0,
+        sourcePlayerId: buyer.id,
+        sourceName: buyer.name,
+        availableCodes: barterCards.map((entry) => entry.code),
+        copy: `Selecione os seus portos e pedagios para oferecer a ${seller.name} em troca do ativo.`,
+      },
     });
 
     if (!response || response.action === 'refuse') {
@@ -3864,6 +4163,27 @@ async function runHumanOwnedPropertyNegotiation(buyer, seller, card, {
       logHumanNegotiationOutcome(buyer, seller, card, { ...decision, accepted: true, finalPrice }, { saleAction });
       renderHud();
       return { accepted: true, finalPrice, decision };
+    }
+
+    if (response.action === 'barter') {
+      const evaluation = evaluateOwnedPropertyBarterProposal(buyer, seller, card, response.codes, {
+        listPrice,
+        reason,
+        stop,
+      });
+      if (evaluation?.accepted && exchangePropertyBundle(seller, buyer, card.code, response.codes)) {
+        buyer.status_label = `trocou por ${card.code}`;
+        logBarterNegotiationOutcome(buyer, seller, card, response.codes, evaluation, { saleAction });
+        renderHud();
+        return { accepted: true, finalPrice: 0, barter: true, offeredCodes: response.codes, decision: evaluation };
+      }
+      session = {
+        ...session,
+        sellerLine: barterRejectionDetail(evaluation, seller.name),
+      };
+      pushActionLog(buyer, 'Troca recusada', `${card.code} com ${seller.name}: ${session.sellerLine}`);
+      renderHud();
+      continue;
     }
 
     logHumanNegotiationCounter(buyer, seller, card, response.amount);
@@ -4434,17 +4754,18 @@ function propertyChipButtonMarkup(playerId, card, selected = false) {
 }
 
 
-function routeStopMarkup(code, { large = false, halo = false, haloColor = '' } = {}) {
+function routeStopMarkup(code, { large = false, halo = false, haloColor = '', emptyKind = 'port' } = {}) {
   const normalized = String(code || '').toUpperCase();
   const largeClass = large ? ' is-large' : '';
   const haloClass = halo ? ' has-halo' : '';
   const haloStyle = halo && haloColor ? ` --halo-color:${haloColor};` : '';
+  const emptyType = emptyKind === 'toll' ? 'toll' : 'port';
   if (!normalized || normalized === '--') {
-    return `<span class="preview-route-stop port is-empty${largeClass}"><span class="preview-route-stop-label">--</span></span>`;
+    return `<span class="preview-route-stop ${emptyType} is-empty${largeClass}"><span class="preview-route-stop-label">--</span></span>`;
   }
   const card = getPropertyCard(normalized);
   if (!card) {
-    return `<span class="preview-route-stop port is-empty${largeClass}"><span class="preview-route-stop-label">${normalized}</span></span>`;
+    return `<span class="preview-route-stop ${emptyType} is-empty${largeClass}"><span class="preview-route-stop-label">${normalized}</span></span>`;
   }
   return `
     <span class="preview-route-stop ${card.is_toll ? 'toll' : 'port'}${largeClass}${haloClass}" style="--route-fill:${card.fill}; --route-text:${card.text};${haloStyle}">
@@ -4461,7 +4782,7 @@ function contractRouteMarkup(contract, { emptyText = 'primeiro turno pendente', 
   if (!hasAnySelection) {
     return `<span class="preview-route-empty">${emptyText}</span>`;
   }
-  const haloColor = player?.color_hex || '';
+  const haloColor = ROUTE_HALO_COLOR;
   const loc = String(player?.location_code || '').toUpperCase();
   const originCode = String(contract.origin || '').toUpperCase();
   const originHalo = Boolean(haloColor && originCode && originCode !== '--' && loc !== originCode);
@@ -4469,11 +4790,11 @@ function contractRouteMarkup(contract, { emptyText = 'primeiro turno pendente', 
   const destHalo = Boolean(haloColor && (contract.route_stage === 'arrived' || contract.completed));
   return `
     <div class="preview-route-inline${large ? ' is-large' : ''}">
-      ${routeStopMarkup(contract.origin, { large, halo: originHalo, haloColor })}
+      ${routeStopMarkup(contract.origin, { large, halo: originHalo, haloColor, emptyKind: 'port' })}
       <span class="preview-route-arrow">&rsaquo;</span>
-      ${routeStopMarkup(contract.mandatory_toll, { large, halo: tollHalo, haloColor })}
+      ${routeStopMarkup(contract.mandatory_toll, { large, halo: tollHalo, haloColor, emptyKind: 'toll' })}
       <span class="preview-route-arrow">&rsaquo;</span>
-      ${routeStopMarkup(contract.destination, { large, halo: destHalo, haloColor })}
+      ${routeStopMarkup(contract.destination, { large, halo: destHalo, haloColor, emptyKind: 'port' })}
     </div>
   `;
 }
@@ -7121,6 +7442,42 @@ function getNegotiationCounterLabel() {
   return byId('negotiation-counter-label');
 }
 
+function getNegotiationBarterPanel() {
+  return byId('negotiation-barter-panel');
+}
+
+function getNegotiationBarterTitle() {
+  return byId('negotiation-barter-title');
+}
+
+function getNegotiationBarterCopy() {
+  return byId('negotiation-barter-copy');
+}
+
+function getNegotiationBarterSummary() {
+  return byId('negotiation-barter-summary');
+}
+
+function getNegotiationBarterStage() {
+  return byId('negotiation-barter-stage');
+}
+
+function getNegotiationBarterEmpty() {
+  return byId('negotiation-barter-empty');
+}
+
+function getNegotiationBarterToggle() {
+  return byId('negotiation-barter-toggle');
+}
+
+function getNegotiationBarterClear() {
+  return byId('negotiation-barter-clear');
+}
+
+function getNegotiationBarterConfirm() {
+  return byId('negotiation-barter-confirm');
+}
+
 function getNegotiationHelper() {
   return byId('negotiation-helper');
 }
@@ -7162,6 +7519,22 @@ function suggestedNegotiationAsk(session) {
   return Math.max(currentBid + 1, Math.round(currentBid * 1.1));
 }
 
+function toggleNegotiationBarterPanel(forceOpen = null) {
+  const next = forceOpen === null ? !state.negotiation.barterOpen : Boolean(forceOpen);
+  state.negotiation.barterOpen = state.negotiation.barterEnabled && next;
+  renderHumanNegotiation();
+}
+
+function toggleNegotiationBarterSelection(code) {
+  const normalized = String(code || '').toUpperCase();
+  if (!normalized) return;
+  const selected = new Set(state.negotiation.barterSelectedCodes || []);
+  if (selected.has(normalized)) selected.delete(normalized);
+  else selected.add(normalized);
+  state.negotiation.barterSelectedCodes = Array.from(selected);
+  renderHumanNegotiation();
+}
+
 function renderHumanNegotiation() {
   const session = state.negotiation.session;
   const mode = state.negotiation.mode === 'sell' ? 'sell' : 'buy';
@@ -7183,6 +7556,20 @@ function renderHumanNegotiation() {
   const acceptButton = getNegotiationAccept();
   const counterButton = getNegotiationCounterButton();
   const refuseButton = getNegotiationRefuse();
+  const barterPanel = getNegotiationBarterPanel();
+  const barterTitle = getNegotiationBarterTitle();
+  const barterCopy = getNegotiationBarterCopy();
+  const barterSummary = getNegotiationBarterSummary();
+  const barterStage = getNegotiationBarterStage();
+  const barterEmpty = getNegotiationBarterEmpty();
+  const barterToggle = getNegotiationBarterToggle();
+  const barterClear = getNegotiationBarterClear();
+  const barterConfirm = getNegotiationBarterConfirm();
+  const barterEnabled = Boolean(state.negotiation.barterEnabled);
+  const barterCards = (state.negotiation.barterAvailableCodes || [])
+    .map((code) => getPropertyCard(code))
+    .filter(Boolean);
+  const barterSelected = new Set((state.negotiation.barterSelectedCodes || []).map((code) => String(code || '').toUpperCase()));
 
   if (titleNode) titleNode.textContent = state.negotiation.title || 'Negociacao';
   if (roundNode) {
@@ -7251,6 +7638,44 @@ function renderHumanNegotiation() {
     helper.classList.toggle('is-error', Boolean(state.negotiation.feedback));
   }
 
+  if (barterPanel) {
+    barterPanel.classList.toggle('is-hidden', !(barterEnabled && state.negotiation.barterOpen));
+  }
+  if (barterTitle) {
+    barterTitle.textContent = mode === 'sell'
+      ? `Pedir ativos de ${buyerName}`
+      : `Oferecer ativos para ${sellerName}`;
+  }
+  if (barterCopy) {
+    barterCopy.textContent = state.negotiation.barterCopy
+      || (mode === 'sell'
+        ? `Selecione os portos e pedagios de ${buyerName} que voce quer receber em troca.`
+        : `Selecione os seus portos e pedagios para oferecer a ${sellerName}.`);
+  }
+  if (barterSummary) {
+    barterSummary.textContent = barterSelected.size
+      ? `${barterSelected.size} ativo${barterSelected.size > 1 ? 's' : ''}: ${Array.from(barterSelected).join(' + ')}`
+      : 'Nenhum ativo selecionado';
+  }
+  if (barterStage) {
+    barterStage.innerHTML = barterCards.map((offerCard) => propertyChipButtonMarkup(
+      state.negotiation.barterSourcePlayerId || 'negotiation',
+      offerCard,
+      barterSelected.has(String(offerCard.code || '').toUpperCase()),
+    )).join('');
+  }
+  if (barterEmpty) {
+    barterEmpty.classList.toggle('is-hidden', barterCards.length > 0);
+  }
+  if (barterToggle) {
+    barterToggle.textContent = barterEnabled
+      ? (state.negotiation.barterOpen ? 'Fechar troca' : 'Troca')
+      : 'Troca indisponivel';
+    barterToggle.disabled = !barterEnabled;
+  }
+  if (barterClear) barterClear.disabled = !barterSelected.size;
+  if (barterConfirm) barterConfirm.disabled = !barterSelected.size;
+
   if (acceptButton) {
     acceptButton.textContent = mode === 'sell'
       ? `Aceitar ${formatCurrency(session?.currentBid || 0)}`
@@ -7282,6 +7707,13 @@ function resetHumanNegotiationState() {
   state.negotiation.buyerName = '';
   state.negotiation.feedback = '';
   state.negotiation.draftCounter = '';
+  state.negotiation.barterEnabled = false;
+  state.negotiation.barterOpen = false;
+  state.negotiation.barterSourcePlayerId = '';
+  state.negotiation.barterSourceName = '';
+  state.negotiation.barterAvailableCodes = [];
+  state.negotiation.barterSelectedCodes = [];
+  state.negotiation.barterCopy = '';
 }
 
 function closeHumanNegotiation(result = { action: 'refuse' }) {
@@ -7291,7 +7723,7 @@ function closeHumanNegotiation(result = { action: 'refuse' }) {
   if (resolver) resolver(result);
 }
 
-function openHumanNegotiationRound({ session, title, copy, cardCode = '', sellerName = '', buyerName = '', mode = 'buy' } = {}) {
+function openHumanNegotiationRound({ session, title, copy, cardCode = '', sellerName = '', buyerName = '', mode = 'buy', barter = null } = {}) {
   state.negotiation.session = session;
   state.negotiation.mode = mode === 'sell' ? 'sell' : 'buy';
   state.negotiation.title = title || 'Negociacao';
@@ -7301,6 +7733,13 @@ function openHumanNegotiationRound({ session, title, copy, cardCode = '', seller
   state.negotiation.buyerName = buyerName || 'Comprador';
   state.negotiation.feedback = '';
   state.negotiation.draftCounter = String((mode === 'sell' ? suggestedNegotiationAsk(session) : suggestedNegotiationOffer(session)) || '');
+  state.negotiation.barterEnabled = Boolean(barter?.enabled);
+  state.negotiation.barterOpen = false;
+  state.negotiation.barterSourcePlayerId = String(barter?.sourcePlayerId || '');
+  state.negotiation.barterSourceName = String(barter?.sourceName || '');
+  state.negotiation.barterAvailableCodes = Array.isArray(barter?.availableCodes) ? barter.availableCodes.slice() : [];
+  state.negotiation.barterSelectedCodes = [];
+  state.negotiation.barterCopy = String(barter?.copy || '');
   renderHumanNegotiation();
   setNegotiationVisible(true);
   window.setTimeout(() => {
@@ -7314,6 +7753,19 @@ function openHumanNegotiationRound({ session, title, copy, cardCode = '', seller
 }
 
 function submitHumanNegotiation(action = 'accept') {
+  if (action === 'barter') {
+    const codes = Array.from(new Set((state.negotiation.barterSelectedCodes || [])
+      .map((code) => String(code || '').toUpperCase())
+      .filter(Boolean)));
+    if (!codes.length) {
+      state.negotiation.feedback = 'Selecione ao menos um ativo para montar a troca.';
+      state.negotiation.barterOpen = true;
+      renderHumanNegotiation();
+      return;
+    }
+    closeHumanNegotiation({ action: 'barter', codes });
+    return;
+  }
   if (action !== 'counter') {
     closeHumanNegotiation({ action });
     return;
@@ -8003,7 +8455,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
         const moved = await movePlayerByRouteSteps(player, lastRollTotal, { stepDelay });
         const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
         note = `${playerActionName(player)} ativou ${card.title} e repetiu o valor da ultima rolagem (${lastRollTotal}). ${landing?.note || ''}`.trim();
-        detail = `Moveu novamente ${lastRollTotal} casa(s). ${landing?.note || ''}`.trim();
+        detail = `Moveu novamente ${lastRollTotal} casa(s).`;
         statusLabel = landing?.statusLabel || moved.label || player.location_label;
       } else {
         note = `${playerActionName(player)} revelou ${card.title}, mas nao havia uma rolagem anterior valida para duplicar.`;
@@ -8020,7 +8472,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       const segmentLabel = moved.segment === 'pe_to_pd' ? 'trecho final' : (moved.segment === 'pp_to_pe' ? 'trecho inicial' : 'rota atual');
       const originSuffix = moved.reachedOrigin ? ' O recuo parou no porto de origem.' : '';
       note = `${playerActionName(player)} ${verb} ${shownSteps} casa(s) pela rota ${segmentLabel} e foi para ${moved.label}.${originSuffix} ${landing?.note || ''}`.trim();
-      detail = `${verb[0].toUpperCase() + verb.slice(1)} ${shownSteps} casa(s) ate ${moved.label}.${originSuffix} ${landing?.note || ''}`.trim();
+      detail = `${verb[0].toUpperCase() + verb.slice(1)} ${shownSteps} casa(s) ate ${moved.label}.${originSuffix}`.trim();
       statusLabel = landing?.statusLabel || moved.label;
       break;
     }
@@ -8028,7 +8480,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       const moved = await movePlayerToContractToll(player, { stepDelay });
       const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
       note = `${playerActionName(player)} foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}. ${landing?.note || ''}`.trim();
-      detail = `Foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Foi para o pedagio ${player.active_contract?.mandatory_toll || moved.label}.`;
       statusLabel = landing?.statusLabel || moved.label;
       break;
     }
@@ -8036,7 +8488,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       const moved = await movePlayerByPortOffset(player, effect.offset || 0, { stepDelay });
       const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
       note = `${playerActionName(player)} foi para ${moved.label}. ${landing?.note || ''}`.trim();
-      detail = `Reposicionado para ${moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Reposicionado para ${moved.label}.`;
       statusLabel = landing?.statusLabel || moved.label;
       break;
     }
@@ -8044,7 +8496,7 @@ async function applyChanceCardEffect(player, card, { stepDelay = 260 } = {}) {
       const moved = await movePlayerToOriginPort(player, { stepDelay });
       const landing = moved.moved ? await resolveLandingAfterForcedMovement(player, { stepDelay }) : null;
       note = `${playerActionName(player)} voltou ao porto de origem ${player.active_contract?.origin || moved.label}. ${landing?.note || ''}`.trim();
-      detail = `Voltou ao porto de origem ${player.active_contract?.origin || moved.label}. ${landing?.note || ''}`.trim();
+      detail = `Voltou ao porto de origem ${player.active_contract?.origin || moved.label}.`;
       statusLabel = landing?.statusLabel || moved.label;
       break;
     }
@@ -9037,6 +9489,9 @@ async function fetchJson(url, options = {}) {
 function buildCurrentSetupDefaults() {
   const company = (state.players || []).find((player) => player?.is_human) || null;
   const rivalCount = (state.players || []).filter((player) => !player?.is_human).length || state.setup.rivalCount || 5;
+  if (state.setup.aiAdvancedProfiles) {
+    seedSetupRobotConfigs(Number(rivalCount));
+  }
   return buildAiSetupDefaults({}, {
     company_name: String(state.setup.companyName || company?.name || 'Minha Companhia'),
     human_color_id: String(state.setup.selectedColorId || company?.color_id || state.playerColors[0]?.id || ''),
@@ -9067,6 +9522,34 @@ function buildActiveActionFeedSnapshot() {
     color: entry.color,
     glow: entry.glow,
   }));
+}
+
+let liveAiSetupRefreshFrame = 0;
+
+function scheduleLiveAiSetupUiRefresh() {
+  if (liveAiSetupRefreshFrame) {
+    window.cancelAnimationFrame(liveAiSetupRefreshFrame);
+  }
+  liveAiSetupRefreshFrame = window.requestAnimationFrame(() => {
+    liveAiSetupRefreshFrame = 0;
+    renderHud({ force: true });
+    renderNodeOverlay();
+    renderShipOverlay();
+    if (!getReportOverlay()?.classList.contains('is-hidden')) {
+      renderReportOverlay();
+    }
+  });
+}
+
+function applyCurrentAiSetupToRunningGame({ refreshUi = true } = {}) {
+  if (!state.setup.started || !Array.isArray(state.players) || !state.players.length) return null;
+  const tableConfig = applyAiStageConfiguration({
+    setup_defaults: buildCurrentSetupDefaults(),
+  });
+  if (refreshUi) {
+    scheduleLiveAiSetupUiRefresh();
+  }
+  return tableConfig;
 }
 
 function buildPermissionSaveSnapshot(permission) {
@@ -9928,6 +10411,7 @@ function renderSetupAiEditor() {
 function openSetupAiEditor(robotIndex = 0) {
   if (!setupRobotSlotCount()) return;
   state.setup.aiAdvancedProfiles = true;
+  seedSetupRobotConfigs();
   state.setup.aiEditorOpen = true;
   state.setup.aiEditorApplyAll = false;
   state.setup.aiEditorRobotIndex = Math.max(0, Math.min(robotIndex, setupRobotSlotCount() - 1));
@@ -9935,6 +10419,8 @@ function openSetupAiEditor(robotIndex = 0) {
   renderSetupAiProfileGrid();
   renderSetupAiModeVisibility();
   renderSetupAiEditor();
+  applyCurrentAiSetupToRunningGame({ refreshUi: false });
+  pauseForToolbarOverlay('aiEditorWasPaused');
 }
 
 function deactivateSetupAiAdvanced() {
@@ -9944,11 +10430,14 @@ function deactivateSetupAiAdvanced() {
   renderSetupAiAdvancedToggle();
   renderSetupAiProfileGrid();
   renderSetupAiModeVisibility();
+  applyCurrentAiSetupToRunningGame();
 }
 
 function closeSetupAiEditor() {
   state.setup.aiEditorOpen = false;
   setSetupAiEditorVisible(false);
+  applyCurrentAiSetupToRunningGame();
+  resumeAfterToolbarOverlay('aiEditorWasPaused');
 }
 
 function renderSetupAiModeVisibility() {
@@ -10524,6 +11013,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
   getNegotiationAccept()?.addEventListener('click', () => submitHumanNegotiation('accept'));
+  getNegotiationBarterToggle()?.addEventListener('click', () => toggleNegotiationBarterPanel());
+  getNegotiationBarterClear()?.addEventListener('click', () => {
+    state.negotiation.barterSelectedCodes = [];
+    renderHumanNegotiation();
+  });
+  getNegotiationBarterConfirm()?.addEventListener('click', () => submitHumanNegotiation('barter'));
+  getNegotiationBarterStage()?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-mini-type="property"][data-mini-key]');
+    if (!button) return;
+    toggleNegotiationBarterSelection(button.dataset.miniKey || '');
+  });
   getNegotiationCounterButton()?.addEventListener('click', () => submitHumanNegotiation('counter'));
   getNegotiationRefuse()?.addEventListener('click', () => submitHumanNegotiation('refuse'));
 
@@ -10580,6 +11080,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   byId('preview-report-button')?.addEventListener('click', () => {
     openReportOverlay();
+  });
+  byId('preview-robot-ai-button')?.addEventListener('click', () => {
+    openSetupAiEditor(activeSetupEditorRobotIndex());
   });
   byId('settings-close-button')?.addEventListener('click', () => {
     closeSettingsOverlay();
