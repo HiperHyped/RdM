@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "kind": "port",
     "label": "ATE",
@@ -109,7 +109,7 @@
   },
   {
     "kind": "port",
-    "label": "GIO",
+    "label": "GEN",
     "x": 1187.7693258377544,
     "y": 528.0208065587897,
     "route_id": null,
@@ -117,7 +117,7 @@
     "lat": 43.31808045526777,
     "lon": 8.609981505159508,
     "notes": "manual-port",
-    "id": "gio"
+    "id": "gen"
   },
   {
     "kind": "port",

@@ -1,4 +1,4 @@
-{
+﻿{
   "AF": {
     "ports": [
       "DAK",
@@ -22,7 +22,7 @@
   "EU": {
     "ports": [
       "ATE",
-      "GIO",
+      "GEN",
       "HAM",
       "LON",
       "SPE"
@@ -72,3 +72,4 @@
     "text": "#edf6ff"
   }
 }
+

@@ -1,4 +1,4 @@
-{
+﻿{
   "image_width": 2526,
   "image_height": 1786,
   "source_image_url": "/static/assets/board-source-updated.png",
@@ -144,8 +144,8 @@
       "lon": -5.3536
     },
     {
-      "id": "gio",
-      "label": "GIO",
+      "id": "gen",
+      "label": "GEN",
       "x": 1239.43,
       "y": 628.9,
       "lat": 38.425,

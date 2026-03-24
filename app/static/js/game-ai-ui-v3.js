@@ -4882,10 +4882,12 @@ function contractPermissionChoicesForOrigin(player, originCode = null) {
       canAffordSwitch: isCurrent || Number(player?.cash || 0) >= permissionSwitchCost,
     };
   });
-  const maxEmValue = rawChoices.reduce((maxValue, entry) => Math.max(maxValue, Number(entry.emValue || 0)), 0);
+  const maxDisplayedValue = rawChoices.reduce((maxValue, entry) => (
+    Math.max(maxValue, Number(entry.comparisonValue || 0))
+  ), 0);
   const choices = rawChoices.map((entry) => ({
     ...entry,
-    isBestEmValue: Number(entry.emValue || 0) === maxEmValue,
+    isBestDisplayedValue: Number(entry.comparisonValue || 0) === maxDisplayedValue,
   }));
   return {
     originCode: resolvedOriginCode,
@@ -10017,13 +10019,10 @@ function renderPermissionChoice() {
   copyNode.textContent = `Permissao atual: ${player?.active_permission_label || '--'}. Trocar de permissao custa ${formatCurrency(Math.max(0, Number(state.rules?.permission_switch_cost || 50)))} ao banco.`;
 
   stage.innerHTML = selection.choices.map((entry) => {
-    const factorLabel = `${Number(entry.multiplier || 1).toFixed(2).replace('.', ',')}x`;
-    const baseDetailLabel = selection.ownsOrigin
-      ? `Frete base ${formatCurrency(entry.fee)} | Multiplicador ${factorLabel}`
-      : `Estadia ${formatCurrency(entry.fee)}`;
-    const detailLabel = entry.isCurrent
-      ? `${baseDetailLabel} | Permissao ativa atual`
-      : `${baseDetailLabel} | Troca custa ${formatCurrency(entry.switchCost || 0)} ao banco`;
+    const factorLabel = `${Number(entry.multiplier || 1).toFixed(0)}x`;
+    const detailLabel = selection.ownsOrigin
+      ? `Frete base: ${formatCurrency(entry.fee)} | Multiplicador: ${factorLabel}`
+      : `Estadia: ${formatCurrency(entry.fee)}`;
     return `
       <button type="button" class="permission-choice-card${entry.isCurrent ? ' is-current' : ''}" data-permission-choice-id="${entry.permission.id}">
         <span class="permission-choice-card-icon">${cargoIconMarkup(entry.permission.kind, 'permission-choice-icon-image')}</span>
@@ -10033,8 +10032,7 @@ function renderPermissionChoice() {
         </span>
         <span class="permission-choice-card-badge">${entry.isCurrent ? 'Atual' : 'Usar'}</span>
         <span class="permission-choice-card-metrics">
-          <span class="permission-choice-card-total">Total ${formatCurrency(entry.comparisonValue)}</span>
-          ${entry.isBestEmValue ? `<span class="permission-choice-card-best-chip">Melhor E x M</span>` : ''}
+          <span class="permission-choice-card-total${entry.isBestDisplayedValue ? ' is-best' : ''}">Valor: ${Number(entry.comparisonValue || 0).toFixed(0)}x</span>
           ${entry.isCurrent ? '' : `<span class="permission-choice-card-switch-chip">Troca: - ${formatCurrency(entry.switchCost || 0)}</span>`}
         </span>
       </button>

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "code": "ATE",
     "name": "Athens",
@@ -306,8 +306,8 @@
     "continent": "EU"
   },
   {
-    "code": "GIO",
-    "name": "Gioia Tauro",
+    "code": "GEN",
+    "name": "Genova",
     "country": "ITA",
     "kind": "port",
     "purchase_price": 410,
