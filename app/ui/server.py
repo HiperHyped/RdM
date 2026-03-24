@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from pathlib import Path
 
-from app.config import DATA_DIR, STATIC_DIR, TEMPLATE_DIR
+from app.config import GAME_V3_TUTORIAL_CONFIG_PATH, STATIC_DIR, TEMPLATE_DIR
 from app.maptools import (
     BoardEdgeRecord,
     BoardNodeCreate,
@@ -191,7 +191,10 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
     workspace = BoardWorkspaceRepository()
     save_store = SaveStore(save_root_dir)
     data = load_game_data()
-    tutorial_config_path = DATA_DIR / 'game_v3_tutorial_v2.json'
+    tutorial_config_path = GAME_V3_TUTORIAL_CONFIG_PATH
+
+    save_store.root_dir.mkdir(parents=True, exist_ok=True)
+    tutorial_config_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _load_tutorial_config() -> list[dict[str, Any]]:
         if not tutorial_config_path.exists():
@@ -221,6 +224,15 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             name='index.html',
             context={'page_title': 'Rei dos Mares'},
         )
+
+    @app.get('/api/health')
+    async def healthcheck() -> dict[str, Any]:
+        return {
+            'status': 'ok',
+            'service': 'rei-dos-mares',
+            'save_root': str(save_store.root_dir),
+            'tutorial_config': str(tutorial_config_path),
+        }
 
     @app.get('/tools/map', response_class=HTMLResponse)
     async def map_tool(request: Request) -> HTMLResponse:
@@ -519,7 +531,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         saved = _save_tutorial_config(payload)
         return {
             'saved': True,
-            'path': str(tutorial_config_path.relative_to(DATA_DIR.parent)).replace('\\', '/'),
+            'path': str(tutorial_config_path),
             'tutorial': saved,
         }
 

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: rdm-game-v3
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health

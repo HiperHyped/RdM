@@ -72,6 +72,18 @@ def test_game_save_endpoint_persists_snapshot(tmp_path) -> None:
     assert record['label'] == 'Turno 03'
 
 
+def test_healthcheck_reports_service_status(tmp_path) -> None:
+    client = TestClient(create_app(save_root_dir=tmp_path))
+
+    response = client.get('/api/health')
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload['status'] == 'ok'
+    assert payload['service'] == 'rei-dos-mares'
+    assert payload['save_root'] == str(tmp_path)
+
+
 def test_robots_save_endpoint_persists_snapshot_in_robot_folder(tmp_path) -> None:
     client = TestClient(create_app(save_root_dir=tmp_path))
 
