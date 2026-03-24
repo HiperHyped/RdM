@@ -1,0 +1,1232 @@
+{
+  "label": "game_2026_03_23_-_23_01_38",
+  "mode": "game",
+  "save_id": "20260324T020140850863Z-game-ai-ui-v2-game-2026-03-23-23-01-38",
+  "saved_at": "2026-03-24T02:01:40.850863Z",
+  "snapshot": {
+    "active_action_feed": [
+      {
+        "action": "Abastecimento",
+        "color": "#ef4444",
+        "createdAt": 1774317698274,
+        "detail": "Pagou $ 20 ao banco.",
+        "expiresAt": 1774317710274,
+        "glow": "#f69393",
+        "id": "1774317698274-843bb12601109",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 02"
+      },
+      {
+        "action": "Pedagio ao banco",
+        "color": "#22c55e",
+        "createdAt": 1774317694057,
+        "detail": "USH: $ 20.",
+        "expiresAt": 1774317706057,
+        "glow": "#7fdda2",
+        "id": "1774317694057-fdc68b7d82af8",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 02"
+      },
+      {
+        "action": "Dados duplos",
+        "color": "#22c55e",
+        "createdAt": 1774317690902,
+        "detail": "Jogador 2 rolou 2 + 2 e vai jogar novamente.",
+        "expiresAt": 1774317702902,
+        "glow": "#7fdda2",
+        "id": "1774317690902-d800e236db9db8",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 02"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#22c55e",
+        "createdAt": 1774317690858,
+        "detail": "Pagou $ 25 ao banco.",
+        "expiresAt": 1774317702858,
+        "glow": "#7fdda2",
+        "id": "1774317690858-cc5102431c3158",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 02"
+      },
+      {
+        "action": "Sorte: Corrente a favor",
+        "color": "#eab308",
+        "createdAt": 1774317690145,
+        "detail": "Moveu novamente 11 casa(s).",
+        "expiresAt": 1774317702145,
+        "glow": "#f3d370",
+        "id": "1774317690145-a7606fefb6eea",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 02"
+      },
+      {
+        "action": "Contrato concluido",
+        "color": "#eab308",
+        "createdAt": 1774317690110,
+        "detail": "Valor Frete: $ 600 | bonus (2/4 turnos): + $ 100 | Total: $ 700",
+        "expiresAt": 1774317702110,
+        "glow": "#f3d370",
+        "id": "1774317690110-6b4e17b3a8bc",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 02"
+      }
+    ],
+    "ai": {
+      "aiDifficultyId": "normal",
+      "aiProfileModeId": "balanced",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [
+        "maelstrom",
+        "corrente_a_favor"
+      ],
+      "draw_pile": [
+        "tempestade",
+        "viagem_de_graca",
+        "gasolina_livre",
+        "piratas",
+        "pedagio_livre",
+        "nova_especie",
+        "vento_a_favor",
+        "atalho",
+        "baleias",
+        "motim",
+        "porto_livre",
+        "pedagio_extra",
+        "vazamento",
+        "manutencao_total",
+        "greve",
+        "nautilus",
+        "banco_de_gelo",
+        "quebra_de_contrato",
+        "aposta",
+        "atlantida",
+        "prazo_estendido",
+        "contra_o_monopolio",
+        "sabotagem",
+        "iceberg",
+        "mudanca_de_rota",
+        "lula_gigante",
+        "naufrago",
+        "desastre_maritimo",
+        "bermudas",
+        "reliquias",
+        "contrato_cancelado",
+        "ataque_submarino",
+        "sardinhas",
+        "atraso_de_entrega",
+        "alfandega",
+        "time_campeao",
+        "lucro_extra"
+      ],
+      "held_card_ids": []
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 704,
+          "cargo_label": "Container",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "AUC",
+          "distance_label": "Distancia 22",
+          "distance_value": 22,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 704",
+          "freight_value": 704,
+          "mandatory_toll": "PAN",
+          "note": "Rev\u00e9s: Maelstr\u00f6m. Minha Companhia vai parar 1 rodada(s).",
+          "origin": "VAN",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 704,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "container",
+        "active_permission_label": "Container",
+        "bankrupt": false,
+        "board_node_id": "chance-014",
+        "cash": 1600,
+        "cash_display": "$ 1.600",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "human",
+        "is_human": true,
+        "last_roll": [
+          6,
+          4
+        ],
+        "location_code": null,
+        "location_label": "Sorte / Reves",
+        "monopoly_regions": [],
+        "name": "Minha Companhia",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "VAN"
+        ],
+        "ship_type": "container",
+        "ship_type_label": "Container",
+        "skip_turns": 1,
+        "status_label": "parado 1 rodada(s)"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 600,
+          "cargo_label": "Cruzeiro",
+          "completed": true,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "DAR",
+          "distance_label": "Distancia 15",
+          "distance_value": 15,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 700",
+          "freight_value": 700,
+          "mandatory_toll": "PAN",
+          "note": "Sorte: Corrente a favor. Jogador 1 ativou Corrente a favor e repetiu o valor da ultima rolagem (11). Jogador 1 chegou em DAR depois de passar por PAN e concluiu o contrato, recebendo $ 700.",
+          "origin": "NYC",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "arrived",
+          "settlement_adjustment": 100,
+          "settlement_value": 700,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cruise",
+        "active_permission_label": "Cruzeiro",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "dar",
+        "cash": 1875,
+        "cash_display": "$ 1.875",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          5,
+          6
+        ],
+        "location_code": "DAR",
+        "location_label": "DAR",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": true,
+        "permissions": [
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          }
+        ],
+        "property_codes": [
+          "NYC",
+          "CAR"
+        ],
+        "ship_type": "cruise",
+        "ship_type_label": "Cruzeiro",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 700"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 780,
+          "cargo_label": "G\u00e1s",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "DUB",
+          "distance_label": "Distancia 13",
+          "distance_value": 13,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 780",
+          "freight_value": 780,
+          "mandatory_toll": "USH",
+          "note": "Jogador 2 pagou $ 20 ao banco em USH.",
+          "origin": "SPE",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 780,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "active_permission_label": "G\u00e1s",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "ush",
+        "cash": 1538,
+        "cash_display": "$ 1.538",
+        "color_hex": "#22c55e",
+        "color_id": "green",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          5,
+          6
+        ],
+        "location_code": "USH",
+        "location_label": "USH",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "SPE"
+        ],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "pagou $ 20"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 525,
+          "cargo_label": "Cruzeiro",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "SYD",
+          "distance_label": "Distancia 21",
+          "distance_value": 21,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 525",
+          "freight_value": 525,
+          "mandatory_toll": "PAN",
+          "note": "Jogador 3 parou em Abastecimento 20 e pagou $ 20 ao banco.",
+          "origin": "HAM",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 525,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cruise",
+        "active_permission_label": "Cruzeiro",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-061",
+        "cash": 1490,
+        "cash_display": "$ 1.490",
+        "color_hex": "#ef4444",
+        "color_id": "red",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-3",
+        "is_human": false,
+        "last_roll": [
+          3,
+          1
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Jogador 3",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          }
+        ],
+        "property_codes": [
+          "HAM"
+        ],
+        "ship_type": "cruise",
+        "ship_type_label": "Cruzeiro",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 20"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 64,
+          "cargo_label": "G\u00e1s",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "HAM",
+          "distance_label": "Distancia 16",
+          "distance_value": 16,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 64",
+          "freight_value": 64,
+          "mandatory_toll": "CAP",
+          "note": "Jogador 4 parou em Abastecimento 25 e pagou $ 25 ao banco.",
+          "origin": "VAL",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 2,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 64,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "active_permission_label": "G\u00e1s",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-082",
+        "cash": 1935,
+        "cash_display": "$ 1.935",
+        "color_hex": "#f97316",
+        "color_id": "orange",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-4",
+        "is_human": false,
+        "last_roll": [
+          5,
+          4
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Jogador 4",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 25"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 504,
+          "cargo_label": "G\u00e1s",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "JED",
+          "distance_label": "Distancia 14",
+          "distance_value": 14,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 504",
+          "freight_value": 504,
+          "mandatory_toll": "SIN",
+          "note": "Jogador 5 parou em Abastecimento 20 e pagou $ 20 ao banco.",
+          "origin": "HOU",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 504,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "active_permission_label": "G\u00e1s",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-148",
+        "cash": 1560,
+        "cash_display": "$ 1.560",
+        "color_hex": "#a855f7",
+        "color_id": "purple",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-5",
+        "is_human": false,
+        "last_roll": [
+          4,
+          5
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Jogador 5",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "HOU"
+        ],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 20"
+      }
+    ],
+    "report": {
+      "activeKey": "cash-by-turn",
+      "couponExpirationEvents": [],
+      "milestones": []
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 1",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-2": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 2",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-3": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 3",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-4": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 4",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-5": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 5",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_normal"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Jogador 4: navio em movimento",
+      "active_player_id": "cpu-4",
+      "dice": [
+        5,
+        4
+      ],
+      "note": "O navio vai percorrer 9 casas no menor caminho ate HAM, passando por CAP.",
+      "phase": "Turno 02",
+      "turn_label": "Turno 02",
+      "turn_number": 2
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": true,
+      "ai_difficulty": "normal",
+      "ai_manual_profiles": [
+        "balanced_trader",
+        "balanced_trader",
+        "balanced_trader",
+        "balanced_trader",
+        "balanced_trader"
+      ],
+      "ai_manual_robot_configs": [
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0.7,
+              "desperation_discount": 0.2,
+              "discount_tolerance": 0.4,
+              "premium_tolerance": 0.6,
+              "sell_openness": 0.6,
+              "strategic_lock": 0.4
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        }
+      ],
+      "ai_profile_mode": "balanced",
+      "ai_profile_order": [
+        "balanced_trader"
+      ],
+      "company_name": "Minha Companhia",
+      "human_color_id": "blue",
+      "rival_count": 5
+    }
+  },
+  "variant": "game-ai-ui-v2",
+  "version": 1
+}

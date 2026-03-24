@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from typing import Any, Literal
 
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from pathlib import Path
 
-from app.config import STATIC_DIR, TEMPLATE_DIR
+from app.config import DATA_DIR, STATIC_DIR, TEMPLATE_DIR
 from app.maptools import (
     BoardEdgeRecord,
     BoardNodeCreate,
@@ -190,6 +191,28 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
     workspace = BoardWorkspaceRepository()
     save_store = SaveStore(save_root_dir)
     data = load_game_data()
+    tutorial_config_path = DATA_DIR / 'game_v3_tutorial_v2.json'
+
+    def _load_tutorial_config() -> list[dict[str, Any]]:
+        if not tutorial_config_path.exists():
+            raise HTTPException(status_code=404, detail='Tutorial config not found.')
+        try:
+            payload = json.loads(tutorial_config_path.read_text(encoding='utf-8'))
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=500, detail='Tutorial config is invalid JSON.') from exc
+        if not isinstance(payload, list):
+            raise HTTPException(status_code=500, detail='Tutorial config must be a JSON array.')
+        if not all(isinstance(item, dict) for item in payload):
+            raise HTTPException(status_code=500, detail='Each tutorial step must be a JSON object.')
+        return payload
+
+    def _save_tutorial_config(payload: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        tutorial_config_path.parent.mkdir(parents=True, exist_ok=True)
+        tutorial_config_path.write_text(
+            json.dumps(payload, ensure_ascii=True, indent=2) + '\n',
+            encoding='utf-8',
+        )
+        return payload
 
     @app.get('/', response_class=HTMLResponse)
     async def index(request: Request) -> HTMLResponse:
@@ -238,6 +261,18 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             name='game_ai_ui_v2.html',
             context={
                 'page_title': 'Preview do Jogo AI V2',
+                'ai_v2_config': load_ai_v2_config(),
+                'ai_v2_rules': load_ai_v2_rules_config(),
+            },
+        )
+
+    @app.get('/preview/game-ai-ui-v3', response_class=HTMLResponse)
+    async def game_ai_preview_v3(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='game_ai_ui_v3.html',
+            context={
+                'page_title': 'Preview do Jogo AI V3',
                 'ai_v2_config': load_ai_v2_config(),
                 'ai_v2_rules': load_ai_v2_rules_config(),
             },
@@ -468,6 +503,22 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         return {
             'runtime': runtime,
             'saves': saves,
+        }
+
+    @app.get('/api/tutorials/game-ai-ui-v3')
+    async def load_game_ai_v3_tutorial() -> list[dict[str, Any]]:
+        return _load_tutorial_config()
+
+    @app.put('/api/tutorials/game-ai-ui-v3')
+    async def save_game_ai_v3_tutorial(request: Request) -> dict[str, Any]:
+        payload = await request.json()
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            raise HTTPException(status_code=400, detail='Tutorial config payload must be an array of step objects.')
+        saved = _save_tutorial_config(payload)
+        return {
+            'saved': True,
+            'path': str(tutorial_config_path.relative_to(DATA_DIR.parent)).replace('\\', '/'),
+            'tutorial': saved,
         }
 
     @app.get('/api/saves/runtime/{runtime}/{file_name}')

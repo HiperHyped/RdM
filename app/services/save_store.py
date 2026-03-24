@@ -9,7 +9,7 @@ from typing import Any, Literal
 from app.config import SAVE_ROOT_DIR
 
 SaveMode = Literal['game', 'robots']
-SaveRuntime = Literal['game-ui', 'game-ai-ui', 'game-ai-ui-v2', 'robots-ui', 'robots-ai-ui', 'robots-ai-ui-v2']
+SaveRuntime = Literal['game-ui', 'game-ai-ui', 'game-ai-ui-v2', 'game-ai-ui-v3', 'robots-ui', 'robots-ai-ui', 'robots-ai-ui-v2']
 
 SAVE_FILE_VERSION = 1
 _VALID_MODES: set[str] = {'game', 'robots'}
@@ -26,6 +26,10 @@ _RUNTIME_RULES: dict[str, dict[str, Any]] = {
     'game-ai-ui-v2': {
         'mode': 'game',
         'variants': {'game-ai-ui-v2'},
+    },
+    'game-ai-ui-v3': {
+        'mode': 'game',
+        'variants': {'game-ai-ui-v2', 'game-ai-ui-v3'},
     },
     'robots-ui': {
         'mode': 'robots',
