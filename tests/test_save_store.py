@@ -84,6 +84,15 @@ def test_healthcheck_reports_service_status(tmp_path) -> None:
     assert payload['save_root'] == str(tmp_path)
 
 
+def test_root_redirects_to_game_ai_ui_v3(tmp_path) -> None:
+    client = TestClient(create_app(save_root_dir=tmp_path))
+
+    response = client.get('/', follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers['location'] == '/preview/game-ai-ui-v3'
+
+
 def test_robots_save_endpoint_persists_snapshot_in_robot_folder(tmp_path) -> None:
     client = TestClient(create_app(save_root_dir=tmp_path))
 

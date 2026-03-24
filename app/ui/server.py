@@ -5,7 +5,7 @@ import re
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -217,7 +217,11 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         )
         return payload
 
-    @app.get('/', response_class=HTMLResponse)
+    @app.get('/', response_class=RedirectResponse, include_in_schema=False)
+    async def root() -> RedirectResponse:
+        return RedirectResponse(url='/preview/game-ai-ui-v3', status_code=307)
+
+    @app.get('/home', response_class=HTMLResponse)
     async def index(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
             request=request,
