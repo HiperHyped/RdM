@@ -5,11 +5,43 @@
 <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
 <style>
   :root {
-    --game-v3-page-zoom: 0.9;
+    --game-v3-ui-scale: 0.9;
   }
 
-  .game-preview-shell {
-    zoom: var(--game-v3-page-zoom);
+  .game-preview-shell.is-ui-compact .preview-left-stack {
+    transform: scale(var(--game-v3-ui-scale));
+    transform-origin: top left;
+  }
+
+  .game-preview-shell.is-ui-compact .game-action-log {
+    transform: scale(var(--game-v3-ui-scale));
+    transform-origin: top right;
+  }
+
+  .game-preview-shell.is-ui-compact .game-pause-indicator {
+    transform: translateX(-50%) scale(var(--game-v3-ui-scale));
+    transform-origin: center top;
+  }
+
+  .game-preview-shell.is-ui-compact .preview-rivals {
+    width: calc((100vw - 40px) / var(--game-v3-ui-scale));
+    right: auto;
+    transform: scale(var(--game-v3-ui-scale));
+    transform-origin: left bottom;
+  }
+
+  .game-preview-shell.is-ui-compact .game-setup-modal,
+  .game-preview-shell.is-ui-compact .decision-modal,
+  .game-preview-shell.is-ui-compact .save-name-modal,
+  .game-preview-shell.is-ui-compact .load-browser-modal,
+  .game-preview-shell.is-ui-compact .settings-modal,
+  .game-preview-shell.is-ui-compact .report-modal,
+  .game-preview-shell.is-ui-compact .property-inspector-modal,
+  .game-preview-shell.is-ui-compact .tutorial-authoring-toggle,
+  .game-preview-shell.is-ui-compact .tutorial-authoring-panel,
+  .game-preview-shell.is-ui-compact .tutorial-preview-card {
+    transform: scale(var(--game-v3-ui-scale));
+    transform-origin: center center;
   }
 
   .report-overlay {
@@ -2282,7 +2314,7 @@
 {% endblock %}
 
 {% block body %}
-<main class="game-preview-shell" data-tutorial-anchor="shell" data-tutorial-anchor-label="Tela principal">
+<main class="game-preview-shell is-ui-compact" data-tutorial-anchor="shell" data-tutorial-anchor-label="Tela principal">
   <div id="game-preview-map" class="game-preview-map" data-tutorial-anchor="map" data-tutorial-anchor-label="Mapa"></div>
   <svg id="game-preview-routes" class="game-preview-routes" aria-hidden="true"></svg>
   <svg id="game-preview-nodes" class="game-preview-nodes" aria-hidden="true"></svg>
