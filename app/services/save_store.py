@@ -87,7 +87,7 @@ class SaveStore:
         return rule
 
     def _load_record(self, path: Path) -> dict[str, Any]:
-        return json.loads(path.read_text(encoding='utf-8'))
+        return json.loads(path.read_text(encoding='utf-8-sig'))
 
     def _build_meta(self, record: dict[str, Any], path: Path) -> dict[str, Any]:
         snapshot = record.get('snapshot') if isinstance(record, dict) else None

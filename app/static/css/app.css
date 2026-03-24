@@ -4307,6 +4307,16 @@ kbd {
   background: rgba(4, 12, 20, 0.08);
 }
 
+.property-inspector-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 12, 20, 0.08);
+}
+
 .property-inspector-overlay.is-hidden {
   display: none;
 }
@@ -4336,10 +4346,73 @@ kbd {
   pointer-events: none;
 }
 
+.property-inspector-modal {
+  width: min(212px, calc(100vw - 20px));
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 10px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(8, 18, 30, 0.96), rgba(10, 24, 38, 0.94));
+  border: 1px solid rgba(143, 165, 187, 0.22);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+}
+
+.property-inspector-owner-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 2px 4px 0;
+  box-sizing: border-box;
+}
+
+.property-inspector-owner-bar {
+  width: 8px;
+  height: 100%;
+  min-height: 34px;
+  border-radius: 999px;
+  background: var(--property-owner-accent, #8fa5bb);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 16px color-mix(in srgb, var(--property-owner-accent, #8fa5bb) 50%, transparent);
+}
+
+.property-inspector-owner-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.property-inspector-owner-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(211, 224, 236, 0.74);
+}
+
+.property-inspector-owner-name {
+  font-size: 1.05rem;
+  line-height: 1.1;
+  color: #f3f7fb;
+}
+
 .property-inspector-stage.is-anchored .property-inspector-card {
   position: absolute;
   top: var(--inspector-top, 16px);
   left: var(--inspector-left, 16px);
+}
+
+.property-inspector-stage.is-anchored .property-inspector-modal {
+  position: absolute;
+  top: var(--inspector-top, 16px);
+  left: var(--inspector-left, 16px);
+}
+
+.property-inspector-stage.is-anchored .property-inspector-card {
+  position: relative;
+  top: auto;
+  left: auto;
 }
 
 

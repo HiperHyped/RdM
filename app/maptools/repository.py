@@ -33,7 +33,7 @@ class BoardWorkspaceRepository:
         self.save_calibration(snapshot.calibration)
 
     def load_nodes(self) -> list[BoardNodeRecord]:
-        payload = json.loads(self.nodes_path.read_text(encoding='utf-8'))
+        payload = json.loads(self.nodes_path.read_text(encoding='utf-8-sig'))
         return [BoardNodeRecord.model_validate(item) for item in payload]
 
     def save_nodes(self, nodes: list[BoardNodeRecord]) -> None:
@@ -63,7 +63,7 @@ class BoardWorkspaceRepository:
         return True
 
     def load_edges(self) -> list[BoardEdgeRecord]:
-        payload = json.loads(self.edges_path.read_text(encoding='utf-8'))
+        payload = json.loads(self.edges_path.read_text(encoding='utf-8-sig'))
         return [BoardEdgeRecord.model_validate(item) for item in payload]
 
     def save_edges(self, edges: list[BoardEdgeRecord]) -> None:
@@ -73,7 +73,7 @@ class BoardWorkspaceRepository:
         )
 
     def load_calibration(self) -> CalibrationConfig:
-        payload = json.loads(self.calibration_path.read_text(encoding='utf-8'))
+        payload = json.loads(self.calibration_path.read_text(encoding='utf-8-sig'))
         return CalibrationConfig.model_validate(payload)
 
     def save_calibration(self, calibration: CalibrationConfig) -> CalibrationConfig:

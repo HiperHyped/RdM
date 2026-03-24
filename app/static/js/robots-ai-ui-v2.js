@@ -893,7 +893,7 @@ function renderPauseIndicator() {
 
 function propertyInspectorMarkup(card) {
   if (!card) return '';
-  return `
+  const propertyCardMarkup = `
     <article class="port-draw-card${card.is_toll ? ' toll-draw-card' : ''} property-inspector-card" style="--title-fill:${card.fill}; --title-text:${card.text};">
       <header class="port-draw-card-head${card.is_toll ? ' toll-draw-title-head' : ''}">
         ${card.is_toll ? `<span class="port-draw-toll-side-icon">${tollDiamondSvg()}</span>` : `<span class="port-draw-title-number">${card.number_display}</span>`}
@@ -917,6 +917,11 @@ function propertyInspectorMarkup(card) {
       </footer>
     </article>
   `;
+  return `
+    <section class="property-inspector-modal">
+      ${propertyCardMarkup}
+    </section>
+  `;
 }
 
 function renderPropertyInspector({ force = false } = {}) {
@@ -936,7 +941,7 @@ function renderPropertyInspector({ force = false } = {}) {
   stage.classList.toggle('is-anchored', false);
   if (!card) return;
   const anchor = state.view.propertyInspectorAnchor;
-  const cardNode = stage.firstElementChild;
+  const cardNode = stage.querySelector('.property-inspector-card');
   if (!anchor || !cardNode) return;
   const margin = 16;
   const horizontalOffset = 18;

@@ -2296,9 +2296,6 @@ function propertyInspectorMarkup(card, { centered = false } = {}) {
       </footer>
     </article>
   `;
-  if (!centered) {
-    return propertyCardMarkup;
-  }
   return `
     <section class="property-inspector-modal">
       <div class="property-inspector-owner-row" style="--property-owner-accent:${ownerAccent};">
@@ -2331,19 +2328,17 @@ function renderPropertyInspector({ force = false } = {}) {
   stage.classList.toggle('is-anchored', false);
   if (!card) return;
   const anchor = state.view.propertyInspectorAnchor;
-  const cardNode = centered
-    ? stage.querySelector('.property-inspector-card')
-    : stage.firstElementChild;
-  if (!anchor || !cardNode) return;
+  const modalNode = stage.querySelector('.property-inspector-modal');
+  if (!anchor || !modalNode) return;
   const margin = 16;
   const horizontalOffset = 18;
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  const cardWidth = Math.ceil(cardNode.getBoundingClientRect().width || cardNode.offsetWidth || 0);
-  const cardHeight = Math.ceil(cardNode.getBoundingClientRect().height || cardNode.offsetHeight || 0);
-  if (!cardWidth || !cardHeight || !viewportWidth || !viewportHeight) return;
-  const left = Math.max(margin, Math.min(viewportWidth - cardWidth - margin, Number(anchor.x || 0) + horizontalOffset));
-  const top = Math.max(margin, Math.min(viewportHeight - cardHeight - margin, Number(anchor.y || 0) - (cardHeight / 2)));
+  const modalWidth = Math.ceil(modalNode.getBoundingClientRect().width || modalNode.offsetWidth || 0);
+  const modalHeight = Math.ceil(modalNode.getBoundingClientRect().height || modalNode.offsetHeight || 0);
+  if (!modalWidth || !modalHeight || !viewportWidth || !viewportHeight) return;
+  const left = Math.max(margin, Math.min(viewportWidth - modalWidth - margin, Number(anchor.x || 0) + horizontalOffset));
+  const top = Math.max(margin, Math.min(viewportHeight - modalHeight - margin, Number(anchor.y || 0) - (modalHeight / 2)));
   stage.style.setProperty('--inspector-left', `${Math.round(left)}px`);
   stage.style.setProperty('--inspector-top', `${Math.round(top)}px`);
   stage.classList.toggle('is-anchored', true);

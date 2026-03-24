@@ -197,7 +197,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         if not tutorial_config_path.exists():
             raise HTTPException(status_code=404, detail='Tutorial config not found.')
         try:
-            payload = json.loads(tutorial_config_path.read_text(encoding='utf-8'))
+            payload = json.loads(tutorial_config_path.read_text(encoding='utf-8-sig'))
         except json.JSONDecodeError as exc:
             raise HTTPException(status_code=500, detail='Tutorial config is invalid JSON.') from exc
         if not isinstance(payload, list):

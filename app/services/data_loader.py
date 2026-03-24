@@ -9,7 +9,7 @@ from app.domain import ChanceCard, GameData, GameRules, PropertyCard, PropertyKi
 
 
 def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def load_player_colors(data_dir: Path | None = None) -> list[dict[str, Any]]:
