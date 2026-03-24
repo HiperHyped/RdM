@@ -21,8 +21,11 @@ dev = [
   "pytest>=8.0,<9.0",
 ]
 
-[tool.setuptools]
-packages = []
+[tool.poetry]
+package-mode = false
+
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

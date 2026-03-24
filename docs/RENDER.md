@@ -52,3 +52,17 @@ Se quiser persistencia, monte um disco no Render e configure variaveis de ambien
 3. Use o repositorio atual.
 4. Configure o health check como `/api/health`.
 5. Publique o servico.
+
+## Se o Render criar um servico Python em vez de Docker
+
+Se o log mostrar `Installing Python version ...` e `Running build command 'poetry install'`, o Render criou um `Python Web Service`, nao um servico Docker.
+
+Voce tem duas opcoes:
+
+1. Recriar o servico como `Docker`, que e o caminho recomendado para este projeto.
+2. Manter como `Python Web Service` usando:
+
+- Build Command: `poetry install`
+- Start Command: `python -m uvicorn run:app --host 0.0.0.0 --port $PORT`
+
+O `pyproject.toml` foi ajustado para o `poetry install` nao falhar ao instalar o projeto no Render.
