@@ -1,0 +1,553 @@
+[
+  {
+    "order": 1,
+    "id": "welcome",
+    "title": "Bem-vindo ao Rei dos Mares",
+    "body": "Em Rei dos Mares voce administra uma companhia de navegacao, fecha contratos e transforma boas rotas em lucro.",
+    "hint": "Este tutorial acompanha sua primeira partida sem tirar voce do fluxo do jogo.",
+    "target": "",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "shell"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 56,
+      "y": 72,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 2,
+    "id": "objective",
+    "title": "Qual \u00e9 o objetivo?",
+    "body": "O objetivo \u00e9 montar fretes valiosos, cumprir o trajeto dentro do prazo e fortalecer sua empresa com caixa, portos e ped\u00e1gios.",
+    "hint": "Cada contrato combina ganho imediato com decisao estrategica para os turnos seguintes.",
+    "target": "",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "contract-panel"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 47,
+      "y": 405,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 3,
+    "id": "setup-overview",
+    "title": "Tela inicial da partida",
+    "body": "Aqui voce prepara a mesa: define sua companhia, escolhe a quantidade de adversarios e ajusta o comportamento inicial dos robos.",
+    "hint": "",
+    "target": "setup-form",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-form"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 1241,
+      "y": 137,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 4,
+    "id": "setup-name",
+    "title": "Nome da companhia",
+    "body": "Escolha o nome da sua empresa. Ele aparece no painel do jogador, nos registros e nas informacoes da partida.",
+    "hint": "Prefira um nome curto para a leitura ficar limpa durante o jogo.",
+    "target": "setup-company-name",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-company-name"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "top",
+    "card": {
+      "x": 92,
+      "y": 90,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 5,
+    "id": "setup-color",
+    "title": "Cor da companhia",
+    "body": "A cor identifica seu navio, seus destaques, suas atividades e os ativos ligados a voc\u00ea no tabuleiro.",
+    "hint": "",
+    "target": "setup-color-grid",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-color-grid"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "top",
+    "card": {
+      "x": 52,
+      "y": 92,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 6,
+    "id": "setup-rivals",
+    "title": "Numero de adversarios",
+    "body": "Escolha quantos rob\u00f4s participam da disputa. Mais rivais significam mais concorr\u00eancia por contratos e ativos.",
+    "hint": "Para aprender o jogo, vale come\u00e7ar com 3 advers\u00e1rios",
+    "target": "setup-rival-counts",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-rival-counts"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 76,
+      "y": 270,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 7,
+    "id": "setup-ai-mode",
+    "title": "IA basica ou avancada",
+    "body": "O modo basico usa configuracoes prontas. O modo avancado abre ajustes detalhados de cada robo.",
+    "hint": "Na primeira partida, use o modo basico para aprender o fluxo principal do jogo.",
+    "target": "setup-ai-advanced-field",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-ai-advanced-field"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 73,
+      "y": 355,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 8,
+    "id": "setup-ai-difficulty",
+    "title": "Dificuldade dos robos",
+    "body": "A dificuldade define o quanto os robos tendem a jogar de forma eficiente. Facil pune menos erros; dificil aproveita melhor as oportunidades.",
+    "hint": "Normal costuma ser o melhor ponto de partida para entender a economia do jogo.",
+    "target": "setup-ai-difficulties",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-ai-difficulties"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 61,
+      "y": 443,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 9,
+    "id": "setup-profiles",
+    "title": "Perfis dos robos",
+    "body": "Os perfis mudam o estilo geral dos adversarios: alguns compram mais, outros protegem caixa e outros disputam ativos com mais agressividade.",
+    "hint": "Use perfis variados quando quiser uma mesa menos previsivel.",
+    "target": "setup-ai-profile-modes",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-ai-profile-modes"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 63,
+      "y": 350,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 10,
+    "id": "setup-continue",
+    "title": "Botao Continuar",
+    "body": "O botao Continuar tenta retomar rapidamente o save compativel mais recente.",
+    "hint": "Ele e util quando voce ja estava jogando e quer voltar direto para a ultima partida valida.",
+    "target": "setup-continue-button",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-continue-button"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "right",
+    "card": {
+      "x": 72,
+      "y": 490,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 11,
+    "id": "setup-load-button",
+    "title": "Botao Carregar",
+    "body": "O botao Carregar abre a lista de saves compativeis para voce escolher exatamente qual partida deseja retomar.",
+    "hint": "Use esta opcao quando quiser revisar ou continuar um save especifico.",
+    "target": "setup-load-button",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "setup-load-button"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "right",
+    "card": {
+      "x": 80,
+      "y": 461,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 12,
+    "id": "setup-start-button",
+    "title": "Iniciar partida",
+    "body": "Quando a configura\u00e7\u00e3o estiver pronta, clique em \"Iniciar Partida\"",
+    "hint": "",
+    "target": "setup-start-button",
+    "triggerEvent": "",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "setup-start-button"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "top",
+    "card": {
+      "x": 1251,
+      "y": 422,
+      "width": 336,
+      "height": 180
+    }
+  },
+  {
+    "order": 13,
+    "id": "first-contract",
+    "title": "Como nasce o primeiro frete",
+    "body": "Seu primeiro contrato \u00e9 montado em etapas:  PERMISS\u00c3O, PORTO DE ORIGEM, PED\u00c1GIO e PORTO DE DESTINO.",
+    "hint": "No fim dessas escolhas voc\u00ea ter\u00e1 o frete completo e estar\u00e1 pronto para navegar!",
+    "target": "permission-draw-overlay",
+    "triggerEvent": "permission_draw_opened",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "permission-draw-overlay"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 153,
+      "y": 255,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 14,
+    "id": "permission-click",
+    "title": "Sortear a permissao",
+    "body": "A PERMISS\u00c3O define qual tipo de carga seu navio pode transportar neste contrato. Clique em Sortear para sortear sua primeira PERMISS\u00c3O",
+    "hint": "",
+    "target": "start-permission-draw",
+    "triggerEvent": "",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "start-permission-draw"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1242,
+      "y": 239,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 15,
+    "id": "origin-click",
+    "title": "Sortear o porto de origem",
+    "body": "Agora o jogo escolhe de onde a carga vai sair. Esse porto pode virar uma oportunidade de compra logo em seguida.",
+    "hint": "Quando a janela abrir, clique em Sortear para revelar a origem.",
+    "target": "port-draw-button",
+    "triggerEvent": "origin_port_draw_opened",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "port-draw-button"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1257,
+      "y": 232,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 16,
+    "id": "origin-card-details",
+    "title": "Como ler a carta de origem",
+    "body": "A carta mostra a carga atendida, a estadia cobrada naquele porto e o multiplicador que entra no frete se a origem for sua.",
+    "hint": "Carga, estadia e multiplicador ajudam a entender por que alguns contratos rendem mais do que outros.",
+    "target": "port-draw-stage",
+    "triggerEvent": "origin_purchase_ready",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "port-draw-stage"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 332,
+      "y": 230,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 17,
+    "id": "origin-buy-decision",
+    "title": "Comprar a origem ou seguir",
+    "body": "Se a origem estiver disponivel, voce pode comprar o porto agora para fortalecer o contrato e sua posicao futura. Escolha Sim ou Nao para continuar.",
+    "hint": "",
+    "target": "port-draw-extra-actions",
+    "triggerEvent": "",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "port-draw-extra-primary",
+      "port-draw-extra-secondary"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1056,
+      "y": 258,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 18,
+    "id": "toll-click",
+    "title": "Sortear o pedagio obrigatorio",
+    "body": "Todo contrato exige a passagem por um dos seis ped\u00e1gio espalhados pelo mundo.",
+    "hint": "Quando a janela abrir, clique em Sortear para definir o pedagio da rota.",
+    "target": "port-draw-button",
+    "triggerEvent": "toll_port_draw_opened",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "port-draw-button"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1179,
+      "y": 221,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 19,
+    "id": "destination-click",
+    "title": "Sortear o porto de destino",
+    "body": "Com o pedagio definido, falta apenas o destino final. Esse sorteio fecha a estrutura do contrato.",
+    "hint": "Clique em Sortear para revelar para onde a carga deve ser entregue.",
+    "target": "port-draw-button",
+    "triggerEvent": "destination_port_draw_opened",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "port-draw-button"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "top",
+    "card": {
+      "x": 1165,
+      "y": 202,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 20,
+    "id": "contract-confirm",
+    "title": "Calculo do frete e confirmacao",
+    "body": "Agora o jogo mostra a formula do contrato com distancia, estadia e multiplicador. Revise esse resumo e confirme o frete para seguir.",
+    "hint": "Clique em Confirmar contrato",
+    "target": "contract-confirm-button",
+    "triggerEvent": "contract_confirmation_ready",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "port-draw-extra-primary"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1044,
+      "y": 255,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 21,
+    "id": "dice-click",
+    "title": "Rolar os dados",
+    "body": "Com o contrato confirmado, chega a hora de mover o navio. Clique em Rolar Dados para descobrir quantas casas voce podera avancar neste turno.",
+    "hint": "A rolagem precisa acontecer pelo botao real da interface.",
+    "target": "movement-dice-button",
+    "triggerEvent": "movement_dice_opened",
+    "advanceMode": "button",
+    "advanceTargets": [
+      "movement-dice-button"
+    ],
+    "focusStyle": "button",
+    "clickLabel": "",
+    "badgePosition": "bottom",
+    "card": {
+      "x": 1129,
+      "y": 233,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 22,
+    "id": "human-player-bar",
+    "title": "Resumo da sua Empresa",
+    "body": "Aqui ficam as informa\u00e7\u00f5es mais importantes da partida. Aqui voc\u00ea v\u00ea a permiss\u00e3o ativa, a rota do contrato, o contador de turnos, o valor do frete e o total de dinheiro da sua companhia.",
+    "hint": "Clique na caixa para abrir ou fechar a gaveta de cada jogador",
+    "target": "human-player-bar",
+    "triggerEvent": "movement_dice_resolved",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "human-player-bar"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 311,
+      "y": 358,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 23,
+    "id": "rivals-bars",
+    "title": "Barra dos jogadores rob\u00f4s",
+    "body": "As barras dos rob\u00f4s mostram a mesma leitura essencial: nome da companhia, caixa atual, permiss\u00e3o ativa, rota do contrato, prazo e valor do frete. ",
+    "hint": "Clique nas caixas de cada um deles para saber quais s\u00e3o seus portos, suas permiss\u00f5es e seus ped\u00e1gios",
+    "target": "rivals-panel",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "rivals-panel"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 688,
+      "y": 337,
+      "width": 372,
+      "height": 250
+    }
+  },
+  {
+    "order": 24,
+    "id": "top-toolbar",
+    "title": "Barra de op\u00e7\u00f5es",
+    "body": "Nesta barra ficam os atalhos principais da partida: voltar para a tela inicial, carregar jogo, salvar, abrir configura\u00e7\u00f5es, ver os gr\u00e1ficos e ajustar a IA dos rob\u00f4s.",
+    "hint": "",
+    "target": "preview-toolbar",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "preview-toolbar"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 17,
+      "y": 92,
+      "width": 395,
+      "height": 252
+    }
+  },
+  {
+    "order": 25,
+    "id": "novo-passo-intermediario",
+    "title": "Fim do Tutorial",
+    "body": "Parab\u00e9ns! Voc\u00ea terminou o Tutorial!\n\nVoc\u00ea tamb\u00e9m pode ler o manual caso tenha qualquer d\u00favida espec\u00edfica. O link \u00e9 : ",
+    "hint": "Bom Jogo!",
+    "target": "preview-toolbar",
+    "triggerEvent": "",
+    "advanceMode": "manual",
+    "advanceTargets": [
+      "preview-toolbar"
+    ],
+    "focusStyle": "frame",
+    "clickLabel": "",
+    "badgePosition": "auto",
+    "card": {
+      "x": 678,
+      "y": 196,
+      "width": 395,
+      "height": 252
+    }
+  }
+]
