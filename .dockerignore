@@ -1,0 +1,13 @@
+.git
+.gitignore
+.pytest_cache
+__pycache__
+.deps
+.codex
+*.pyc
+*.pyo
+*.pyd
+*.log
+tests
+docs/image.png
+saves
