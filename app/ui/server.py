@@ -268,6 +268,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
 
     @app.get('/preview/game-ai-ui-v3', response_class=HTMLResponse)
     async def game_ai_preview_v3(request: Request) -> HTMLResponse:
+        tutorial_mode = str(request.query_params.get('tutorial') or 'runtime').strip().lower()
         return templates.TemplateResponse(
             request=request,
             name='game_ai_ui_v3.html',
@@ -275,6 +276,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
                 'page_title': 'Preview do Jogo AI V3',
                 'ai_v2_config': load_ai_v2_config(),
                 'ai_v2_rules': load_ai_v2_rules_config(),
+                'tutorial_mode': tutorial_mode,
             },
         )
 

@@ -4,6 +4,186 @@
 <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
 <style>
+  .report-overlay {
+    z-index: 24;
+  }
+
+  .report-modal {
+    width: min(1220px, calc(100vw - 24px));
+    max-width: 1220px;
+    height: min(calc(100vh - 48px), 90vh);
+    max-height: calc((100vh - 24px) * 0.9);
+    min-height: min(520px, calc((100vh - 24px) * 0.9));
+    box-sizing: border-box;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .report-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .report-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .report-body {
+    min-height: 0;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .report-panel {
+    display: grid;
+    gap: 12px;
+  }
+
+  .report-panel-trend {
+    gap: 10px;
+  }
+
+  .report-body[data-report-key="cash-by-turn"],
+  .report-body[data-report-key="patrimony-by-turn"] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-panel-trend,
+  .report-body[data-report-key="patrimony-by-turn"] .report-panel-trend {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .report-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .report-summary-copy {
+    display: grid;
+    gap: 4px;
+  }
+
+  .report-summary-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .report-chart-shell {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-chart-shell,
+  .report-body[data-report-key="patrimony-by-turn"] .report-chart-shell {
+    min-height: 0;
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .report-chart-scroll {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-chart-scroll,
+  .report-body[data-report-key="patrimony-by-turn"] .report-chart-scroll {
+    min-height: 0;
+    height: 100%;
+    display: block;
+    overflow: hidden;
+  }
+
+  .report-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-chart,
+  .report-body[data-report-key="patrimony-by-turn"] .report-chart {
+    width: 100%;
+    height: 100%;
+  }
+
+  .report-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .report-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #edf6ff;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .report-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+
+  .report-grid-line {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+  }
+
+  .report-axis-label,
+  .report-axis-xlabel {
+    fill: rgba(214, 229, 245, 0.72);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .report-series-line {
+    fill: none;
+    stroke-width: 2.8;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.22));
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-summary,
+  .report-body[data-report-key="patrimony-by-turn"] .report-summary {
+    gap: 10px;
+  }
+
+  .report-body[data-report-key="cash-by-turn"] .report-metric-card,
+  .report-body[data-report-key="patrimony-by-turn"] .report-metric-card,
+  .report-body[data-report-key="cash-by-turn"] .report-chart-shell,
+  .report-body[data-report-key="patrimony-by-turn"] .report-chart-shell {
+    gap: 8px;
+  }
+
   .report-body {
     overflow: auto;
   }
@@ -318,6 +498,22 @@
   .report-coupon-expiration-list {
     display: grid;
     gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .report-modal {
+      width: min(100vw - 16px, 1220px);
+      height: min(calc(100vh - 32px), 90vh);
+      max-height: calc((100vh - 16px) * 0.9);
+      min-height: min(460px, calc((100vh - 16px) * 0.9));
+      gap: 10px;
+    }
+
+    .report-head,
+    .report-summary {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 
   .report-coupon-expiration-item {
@@ -2094,7 +2290,7 @@
     <span>||</span>
   </div>
 
-  <button id="tutorial-authoring-toggle" type="button" class="tutorial-authoring-toggle" aria-expanded="false" hidden aria-hidden="true">Editor do tutorial</button>
+  <button id="tutorial-authoring-toggle" type="button" class="tutorial-authoring-toggle" aria-expanded="false"{% if tutorial_mode != 'editing' %} hidden aria-hidden="true"{% else %} aria-hidden="false"{% endif %}>Editor do tutorial</button>
 
   <aside id="tutorial-authoring-panel" class="tutorial-authoring-panel is-hidden" aria-hidden="true">
     <div class="tutorial-authoring-head">
@@ -2242,8 +2438,8 @@
     </section>
   </div>
 
-  <div id="game-settings-overlay" class="settings-overlay is-hidden" aria-hidden="true">
-    <section class="settings-modal" aria-labelledby="settings-title">
+  <div id="game-settings-overlay" class="settings-overlay is-hidden" aria-hidden="true" data-tutorial-anchor="settings-overlay" data-tutorial-anchor-label="Overlay de configuracoes">
+    <section class="settings-modal" aria-labelledby="settings-title" data-tutorial-anchor="settings-modal" data-tutorial-anchor-label="Janela de configuracoes">
       <div class="settings-head">
         <div>
           <p class="eyebrow">Configuracoes</p>
@@ -2345,8 +2541,8 @@
     </section>
   </div>
 
-  <div id="game-report-overlay" class="report-overlay is-hidden" aria-hidden="true">
-    <section class="report-modal" aria-labelledby="report-title">
+  <div id="game-report-overlay" class="report-overlay is-hidden" aria-hidden="true" data-tutorial-anchor="report-overlay" data-tutorial-anchor-label="Overlay de relatorios">
+    <section class="report-modal" aria-labelledby="report-title" data-tutorial-anchor="report-modal" data-tutorial-anchor-label="Janela de relatorios">
       <div class="report-head">
         <div>
           <p class="eyebrow">Relatorios</p>
@@ -2408,8 +2604,8 @@
     </section>
   </div>
 
-    <div id="setup-ai-editor-overlay" class="settings-overlay is-hidden" aria-hidden="true">
-    <section class="settings-modal setup-ai-editor-modal" aria-labelledby="setup-ai-editor-title">
+    <div id="setup-ai-editor-overlay" class="settings-overlay is-hidden" aria-hidden="true" data-tutorial-anchor="setup-ai-editor-overlay" data-tutorial-anchor-label="Overlay da IA dos robos">
+    <section class="settings-modal setup-ai-editor-modal" aria-labelledby="setup-ai-editor-title" data-tutorial-anchor="setup-ai-editor-modal" data-tutorial-anchor-label="Janela da IA dos robos">
       <div class="settings-head">
         <h2 id="setup-ai-editor-title" class="setup-ai-editor-heading">Configuracoes iniciais avancadas</h2>
         <div class="setup-ai-editor-head-actions">

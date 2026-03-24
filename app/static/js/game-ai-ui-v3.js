@@ -2872,9 +2872,10 @@ function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn
   const domainMin = Math.max(0, minValue - padding);
   const domainMax = maxValue + padding;
   const domainRange = Math.max(1, domainMax - domainMin);
-  const height = 460;
-  const frame = { top: 22, right: 22, bottom: 56, left: 96 };
-  const width = Math.max(860, Math.min(980, frame.left + frame.right + (visibleSnapshots.length * 28)));
+  const height = 240;
+  const frame = { top: 12, right: 16, bottom: 34, left: 76 };
+  const targetStepWidth = visibleSnapshots.length > 18 ? 16 : 18;
+  const width = Math.max(760, Math.min(940, frame.left + frame.right + (visibleSnapshots.length * targetStepWidth)));
   const innerWidth = width - frame.left - frame.right;
   const innerHeight = height - frame.top - frame.bottom;
   const xFor = (index) => {
@@ -2889,7 +2890,7 @@ function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn
     return `
       <g>
         <line class="report-grid-line" x1="${frame.left}" y1="${y.toFixed(2)}" x2="${(width - frame.right).toFixed(2)}" y2="${y.toFixed(2)}"></line>
-        <text class="report-axis-label" x="${frame.left - 10}" y="${(y + 4).toFixed(2)}" text-anchor="end">${formatCurrency(Math.round(value))}</text>
+        <text class="report-axis-label" x="${frame.left - 8}" y="${(y + 3).toFixed(2)}" text-anchor="end">${formatCurrency(Math.round(value))}</text>
       </g>
     `;
   }).join('');
@@ -2898,7 +2899,7 @@ function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn
   const xLabelsMarkup = visibleSnapshots.map((snapshot, index) => {
     if (index !== 0 && index !== visibleSnapshots.length - 1 && (index % labelStride) !== 0) return '';
     const x = xFor(index);
-    return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 12}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
+    return `<text class="report-axis-xlabel" x="${x.toFixed(2)}" y="${height - 7}" text-anchor="middle">${compactReportTurnLabel(snapshot)}</text>`;
   }).join('');
 
   const seriesMarkup = players.map((player) => {
@@ -2917,7 +2918,7 @@ function reportMetricChartMarkup(snapshots, players, { reportKey = 'cash-by-turn
     <div class="report-chart-shell">
       <div class="report-legend">${legendMarkup}</div>
       <div class="report-chart-scroll">
-        <svg class="report-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ariaLabel}">
+        <svg class="report-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${ariaLabel}">
           ${gridMarkup}
           ${seriesMarkup}
           ${xLabelsMarkup}
@@ -3291,7 +3292,7 @@ function cashByTurnReportMarkup() {
 
   const visibleSnapshots = reportVisibleSnapshots(snapshots, 'cash-by-turn');
   return `
-    <section class="report-panel">
+    <section class="report-panel report-panel-trend">
       <div class="report-summary">
         <div class="report-summary-copy">
           <strong>Dinheiro de jogador por turno</strong>
@@ -3316,7 +3317,7 @@ function patrimonyByTurnReportMarkup() {
 
   const visibleSnapshots = reportVisibleSnapshots(snapshots, 'patrimony-by-turn');
   return `
-    <section class="report-panel">
+    <section class="report-panel report-panel-trend">
       <div class="report-summary">
         <div class="report-summary-copy">
           <strong>Patrimonio de jogador por turno</strong>
@@ -3530,6 +3531,7 @@ function renderReportOverlay() {
   if (!tabs || !body) return;
 
   const activeKey = state.report?.activeKey || 'cash-by-turn';
+  body.dataset.reportKey = activeKey;
   tabs.innerHTML = `
     <button type="button" class="report-tab${activeKey === 'cash-by-turn' ? ' is-active' : ''}" data-report-key="cash-by-turn" role="tab" aria-selected="${activeKey === 'cash-by-turn' ? 'true' : 'false'}">Dinheiro por turno</button>
     <button type="button" class="report-tab${activeKey === 'patrimony-by-turn' ? ' is-active' : ''}" data-report-key="patrimony-by-turn" role="tab" aria-selected="${activeKey === 'patrimony-by-turn' ? 'true' : 'false'}">Patrimonio por turno</button>

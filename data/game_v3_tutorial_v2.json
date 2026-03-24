@@ -323,8 +323,8 @@
     "clickLabel": "",
     "badgePosition": "bottom",
     "card": {
-      "x": 1265,
-      "y": 202,
+      "x": 1257,
+      "y": 232,
       "width": 372,
       "height": 250
     }
@@ -478,8 +478,8 @@
     "clickLabel": "",
     "badgePosition": "auto",
     "card": {
-      "x": 118,
-      "y": 286,
+      "x": 311,
+      "y": 358,
       "width": 372,
       "height": 250
     }
@@ -487,9 +487,9 @@
   {
     "order": 23,
     "id": "rivals-bars",
-    "title": "Barras dos jogadores robos",
-    "body": "As barras dos rob\u00f4s mostram a mesma leitura essencial: nome da companhia, caixa atual, permiss\u00e3o ativa, rota do contrato, prazo e valor do frete. Assim voc\u00ea compara sua situa\u00e7\u00e3o com a deles sem abrir nenhuma tela extra.",
-    "hint": "",
+    "title": "Barra dos jogadores rob\u00f4s",
+    "body": "As barras dos rob\u00f4s mostram a mesma leitura essencial: nome da companhia, caixa atual, permiss\u00e3o ativa, rota do contrato, prazo e valor do frete. ",
+    "hint": "Clique nas caixas de cada um deles para saber quais s\u00e3o seus portos, suas permiss\u00f5es e seus ped\u00e1gios",
     "target": "rivals-panel",
     "triggerEvent": "",
     "advanceMode": "manual",
@@ -500,8 +500,8 @@
     "clickLabel": "",
     "badgePosition": "auto",
     "card": {
-      "x": 186,
-      "y": 238,
+      "x": 688,
+      "y": 337,
       "width": 372,
       "height": 250
     }
@@ -522,7 +522,7 @@
     "clickLabel": "",
     "badgePosition": "auto",
     "card": {
-      "x": 33,
+      "x": 17,
       "y": 92,
       "width": 395,
       "height": 252
