@@ -4,6 +4,14 @@
 <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
 <style>
+  :root {
+    --game-v3-page-zoom: 0.9;
+  }
+
+  .game-preview-shell {
+    zoom: var(--game-v3-page-zoom);
+  }
+
   .report-overlay {
     z-index: 24;
   }

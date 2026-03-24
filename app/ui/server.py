@@ -5,7 +5,7 @@ import re
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -217,9 +217,22 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         )
         return payload
 
-    @app.get('/', response_class=RedirectResponse, include_in_schema=False)
-    async def root() -> RedirectResponse:
-        return RedirectResponse(url='/preview/game-ai-ui-v3', status_code=307)
+    def _game_ai_ui_v3_context(request: Request) -> dict[str, Any]:
+        tutorial_mode = str(request.query_params.get('tutorial') or 'runtime').strip().lower()
+        return {
+            'page_title': 'Preview do Jogo AI V3',
+            'ai_v2_config': load_ai_v2_config(),
+            'ai_v2_rules': load_ai_v2_rules_config(),
+            'tutorial_mode': tutorial_mode,
+        }
+
+    @app.get('/', response_class=HTMLResponse, include_in_schema=False)
+    async def root(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name='game_ai_ui_v3.html',
+            context=_game_ai_ui_v3_context(request),
+        )
 
     @app.get('/home', response_class=HTMLResponse)
     async def index(request: Request) -> HTMLResponse:
@@ -284,16 +297,10 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
 
     @app.get('/preview/game-ai-ui-v3', response_class=HTMLResponse)
     async def game_ai_preview_v3(request: Request) -> HTMLResponse:
-        tutorial_mode = str(request.query_params.get('tutorial') or 'runtime').strip().lower()
         return templates.TemplateResponse(
             request=request,
             name='game_ai_ui_v3.html',
-            context={
-                'page_title': 'Preview do Jogo AI V3',
-                'ai_v2_config': load_ai_v2_config(),
-                'ai_v2_rules': load_ai_v2_rules_config(),
-                'tutorial_mode': tutorial_mode,
-            },
+            context=_game_ai_ui_v3_context(request),
         )
 
 
