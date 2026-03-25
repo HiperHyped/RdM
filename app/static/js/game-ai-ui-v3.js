@@ -612,6 +612,8 @@ const state = {
 };
 
 let saveBrowser = null;
+let ephemeralSaveSpaceId = '';
+const SAVE_SPACE_STORAGE_KEY = 'ultramarine.save-space-id';
 
 function safeLocalStorage() {
   try {
@@ -619,6 +621,31 @@ function safeLocalStorage() {
   } catch (_error) {
     return null;
   }
+}
+
+function generateSaveSpaceId() {
+  if (window.crypto?.randomUUID) {
+    return String(window.crypto.randomUUID()).toLowerCase();
+  }
+  const randomChunk = Math.random().toString(36).slice(2, 10);
+  return `space-${Date.now().toString(36)}-${randomChunk}`.toLowerCase();
+}
+
+function getOrCreateSaveSpaceId() {
+  const storage = safeLocalStorage();
+  if (!storage) {
+    if (!ephemeralSaveSpaceId) {
+      ephemeralSaveSpaceId = generateSaveSpaceId();
+    }
+    return ephemeralSaveSpaceId;
+  }
+  const existing = String(storage.getItem(SAVE_SPACE_STORAGE_KEY) || '').trim().toLowerCase();
+  if (existing) {
+    return existing;
+  }
+  const created = generateSaveSpaceId();
+  storage.setItem(SAVE_SPACE_STORAGE_KEY, created);
+  return created;
 }
 
 function readTutorialStorageFlag(key) {
@@ -12046,6 +12073,7 @@ async function saveCurrentGame() {
       body: JSON.stringify({
         variant: 'game-ai-ui-v2',
         label: saveLabel,
+        save_space_id: getOrCreateSaveSpaceId(),
         snapshot,
       }),
     });
@@ -13230,6 +13258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setPaused,
     openDecisionModal,
     runtime: 'game-ai-ui-v3',
+    getSaveSpaceId: getOrCreateSaveSpaceId,
     onLoad: loadGameFromSavePayload,
     onAfterSuccess: async () => {
       if (state.setup.started && !state.flow.turnCycleRunning) {

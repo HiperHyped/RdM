@@ -9074,6 +9074,7 @@ async function saveCurrentGame() {
       body: JSON.stringify({
         variant: 'game-ai-ui',
         label: saveLabel,
+        save_space_id: window.getOrCreateRdMSaveSpaceId?.() || '',
         snapshot,
       }),
     });

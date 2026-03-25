@@ -1,0 +1,2555 @@
+{
+  "label": "game_2026_03_24_-_19_56_10",
+  "mode": "game",
+  "save_id": "20260324T225613467344Z-game-ai-ui-v2-game-2026-03-24-19-56-10",
+  "save_space_id": "b3d9566c-442f-4f35-9102-10f6b1da60ca",
+  "saved_at": "2026-03-24T22:56:13.467344Z",
+  "snapshot": {
+    "active_action_feed": [],
+    "ai": {
+      "aiDifficultyId": "expert",
+      "aiProfileModeId": "liquid_market",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [
+        "vazamento",
+        "lula_gigante",
+        "sardinhas",
+        "vento_a_favor",
+        "atraso_de_entrega",
+        "greve",
+        "ataque_submarino",
+        "corrente_a_favor",
+        "alfandega"
+      ],
+      "draw_pile": [
+        "time_campeao",
+        "pedagio_extra",
+        "reliquias",
+        "lucro_extra",
+        "quebra_de_contrato",
+        "bermudas",
+        "contra_o_monopolio",
+        "maelstrom",
+        "motim",
+        "baleias",
+        "manutencao_total",
+        "sabotagem",
+        "piratas",
+        "iceberg",
+        "mudanca_de_rota",
+        "atlantida",
+        "banco_de_gelo",
+        "nautilus",
+        "atalho",
+        "porto_livre",
+        "tempestade",
+        "aposta",
+        "desastre_maritimo",
+        "nova_especie",
+        "pedagio_livre",
+        "naufrago",
+        "gasolina_livre"
+      ],
+      "held_card_ids": [
+        "viagem_de_graca",
+        "prazo_estendido",
+        "contrato_cancelado"
+      ]
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 432,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "5 / 4",
+          "deadline_progress": "5/4",
+          "destination": "RIO",
+          "distance_label": "Distancia 8",
+          "distance_value": 8,
+          "free_fuel_for_contract": true,
+          "freight_label": "Frete $ 432",
+          "freight_value": 432,
+          "mandatory_toll": "SUZ",
+          "note": "Rev\u00e9s: Alf\u00e2ndega. WoW pagou $ 70.",
+          "origin": "LAG",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 5,
+          "route_stage": "arrived",
+          "settlement_adjustment": 0,
+          "settlement_value": 432,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "bankrupt": false,
+        "board_node_id": "rio",
+        "cash": 11931,
+        "cash_display": "$ 11.931",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "human",
+        "is_human": true,
+        "last_roll": [
+          6,
+          5
+        ],
+        "location_code": "RIO",
+        "location_label": "RIO",
+        "monopoly_regions": [
+          "AS"
+        ],
+        "name": "WoW",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "GIO",
+          "HKG",
+          "LAG",
+          "NYC",
+          "PAN",
+          "JED",
+          "RIO",
+          "GUA",
+          "JAK",
+          "VAL",
+          "TOK",
+          "DAK",
+          "ATE",
+          "SRI",
+          "MAN",
+          "SYD",
+          "VAN",
+          "SIN",
+          "LAX",
+          "SHA",
+          "CAP",
+          "BUE",
+          "MAZ",
+          "LON",
+          "MUM"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "pagou $ 70"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 150,
+          "cargo_label": "Autom\u00f3veis",
+          "completed": true,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "SPE",
+          "distance_label": "Distancia 10",
+          "distance_value": 10,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 125",
+          "freight_value": 125,
+          "mandatory_toll": "GIB",
+          "note": "O navio chegou em SPE depois de passar por GIB e recebeu $ 125 ($ 150 + bonus $ 100).",
+          "origin": "NYC",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 2,
+          "route_stage": "arrived",
+          "settlement_adjustment": 100,
+          "settlement_value": 125,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cars",
+        "active_permission_label": "Autom\u00f3veis",
+        "ai": {
+          "archetype_id": "port_sprinter",
+          "manual_profile": true,
+          "profile_id": "port_sprinter",
+          "profile_label": "Foco em portos",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.2,
+              "cash_reserve_ratio": 0,
+              "coupon_patience": 0.2,
+              "description": "Arrisca muito, gira rapido e aceita apertar caixa para ganhar posicao. Usa o tabuleiro com agressividade operacional.",
+              "id": "corsario",
+              "impulsiveness": 0.8,
+              "label": "Corsario",
+              "risk_tolerance": 0.9
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Executa o basico com alguma ordem, mas ainda sofre oscilacoes relevantes de criterio e timing.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "operacional",
+            "label": "Operacional",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_expert"
+        },
+        "bankrupt": false,
+        "board_node_id": "spe",
+        "cash": 3883,
+        "cash_display": "$ 3.883",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [
+          {
+            "acquired_turn": 142,
+            "eligible_checks": 4,
+            "expires_after_turns": 100,
+            "kind": "extended_contract_deadline",
+            "label": "Prazo Estendido",
+            "source_card_id": "prazo_estendido"
+          }
+        ],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          3,
+          2
+        ],
+        "location_code": "SPE",
+        "location_label": "SPE",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": true,
+        "permissions": [
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          }
+        ],
+        "property_codes": [
+          "SPE",
+          "HOU",
+          "DAR",
+          "REC"
+        ],
+        "ship_type": "cars",
+        "ship_type_label": "Autom\u00f3veis",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 125"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 65,
+          "cargo_label": "Granel",
+          "completed": true,
+          "deadline_label": "3 / 4",
+          "deadline_progress": "3/4",
+          "destination": "LAG",
+          "distance_label": "Distancia 13",
+          "distance_value": 13,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 1",
+          "freight_value": 1,
+          "mandatory_toll": "PAN",
+          "note": "Sorte: Corrente a favor. Jogador 2 ativou Corrente a favor e repetiu o valor da ultima rolagem (10). Jogador 2 chegou em LAG depois de passar por PAN e concluiu o contrato, recebendo $ 1.",
+          "origin": "NYC",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 3,
+          "route_stage": "arrived",
+          "settlement_adjustment": 50,
+          "settlement_value": 1,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "bulk",
+        "active_permission_label": "Granel",
+        "ai": {
+          "archetype_id": "cargo_planner",
+          "manual_profile": true,
+          "profile_id": "cargo_planner",
+          "profile_label": "Foco em malha",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "cargo_planner",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "cargo_planner",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.3,
+              "cash_reserve_ratio": 0.1,
+              "coupon_patience": 0.3,
+              "description": "Busca janelas de valor com pouca rigidez patrimonial. Assume risco com alguma disciplina, mas continua voltado a capturar chances taticas.",
+              "id": "oportunista",
+              "impulsiveness": 0.6,
+              "label": "Oportunista",
+              "risk_tolerance": 0.7
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Le melhor o tabuleiro e erra menos por impulso. Usa mais leitura de futuro e disciplina para sustentar decisoes de medio prazo.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "analitico",
+            "label": "Analitico",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_expert"
+        },
+        "bankrupt": false,
+        "board_node_id": "lag",
+        "cash": 1862,
+        "cash_display": "$ 1.862",
+        "color_hex": "#22c55e",
+        "color_id": "green",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [
+          {
+            "acquired_turn": 139,
+            "eligible_checks": 4,
+            "expires_after_turns": 100,
+            "kind": "free_fuel_contract",
+            "label": "Viagem de Gra\u00e7a",
+            "source_card_id": "viagem_de_graca"
+          }
+        ],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          4,
+          6
+        ],
+        "location_code": "LAG",
+        "location_label": "LAG",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": true,
+        "permissions": [
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          }
+        ],
+        "property_codes": [
+          "CAR"
+        ],
+        "ship_type": "bulk",
+        "ship_type_label": "Granel",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 1"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 81,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "ATE",
+          "distance_label": "Distancia 9",
+          "distance_value": 9,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 81",
+          "freight_value": 81,
+          "mandatory_toll": "SUZ",
+          "note": "Rev\u00e9s: Greve. Jogador 3 vai parar 1 rodada(s).",
+          "origin": "RIO",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 2,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 81,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": true,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_expert"
+        },
+        "bankrupt": false,
+        "board_node_id": "chance-011",
+        "cash": 4786,
+        "cash_display": "$ 4.786",
+        "color_hex": "#ef4444",
+        "color_id": "red",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-3",
+        "is_human": false,
+        "last_roll": [
+          6,
+          4
+        ],
+        "location_code": null,
+        "location_label": "Sorte / Reves",
+        "monopoly_regions": [],
+        "name": "Jogador 3",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          },
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          }
+        ],
+        "property_codes": [
+          "SUZ",
+          "AUC",
+          "DUB"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "retoma na proxima"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 56,
+          "cargo_label": "Cruzeiro",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "REC",
+          "distance_label": "Distancia 7",
+          "distance_value": 7,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 56",
+          "freight_value": 56,
+          "mandatory_toll": "SIN",
+          "note": "Jogador 4 parou em Abastecimento 20 e pagou $ 20 ao banco.",
+          "origin": "ATE",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 2,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 56,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "cruise",
+        "active_permission_label": "Cruzeiro",
+        "ai": {
+          "archetype_id": "port_sprinter",
+          "manual_profile": true,
+          "profile_id": "port_sprinter",
+          "profile_label": "Foco em portos",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.2,
+              "cash_reserve_ratio": 0,
+              "coupon_patience": 0.2,
+              "description": "Arrisca muito, gira rapido e aceita apertar caixa para ganhar posicao. Usa o tabuleiro com agressividade operacional.",
+              "id": "corsario",
+              "impulsiveness": 0.8,
+              "label": "Corsario",
+              "risk_tolerance": 0.9
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Executa o basico com alguma ordem, mas ainda sofre oscilacoes relevantes de criterio e timing.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "operacional",
+            "label": "Operacional",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_expert"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-104",
+        "cash": 3581,
+        "cash_display": "$ 3.581",
+        "color_hex": "#f97316",
+        "color_id": "orange",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-4",
+        "is_human": false,
+        "last_roll": [
+          4,
+          3
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Jogador 4",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#A9C4E4",
+            "id": "cars",
+            "kind": "cars",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Autom\u00f3veis"
+          },
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          }
+        ],
+        "property_codes": [],
+        "ship_type": "cruise",
+        "ship_type_label": "Cruzeiro",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 20"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 130,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "LAX",
+          "distance_label": "Distancia 13",
+          "distance_value": 13,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 130",
+          "freight_value": 130,
+          "mandatory_toll": "GIB",
+          "note": "Jogador 5 pagou $ 40 a WoW em SRI.",
+          "origin": "JAK",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 130,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "ai": {
+          "archetype_id": "cargo_planner",
+          "manual_profile": true,
+          "profile_id": "cargo_planner",
+          "profile_label": "Foco em malha",
+          "profile_overrides": {
+            "metadata": {
+              "archetype_id": "cargo_planner",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "cargo_planner",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.3,
+              "cash_reserve_ratio": 0.1,
+              "coupon_patience": 0.3,
+              "description": "Busca janelas de valor com pouca rigidez patrimonial. Assume risco com alguma disciplina, mas continua voltado a capturar chances taticas.",
+              "id": "oportunista",
+              "impulsiveness": 0.6,
+              "label": "Oportunista",
+              "risk_tolerance": 0.7
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          },
+          "skill": {
+            "combo_awareness": 0.4,
+            "description": "Le melhor o tabuleiro e erra menos por impulso. Usa mais leitura de futuro e disciplina para sustentar decisoes de medio prazo.",
+            "evaluation_noise": 0.7,
+            "foresight": 0.4,
+            "id": "analitico",
+            "label": "Analitico",
+            "liquidity_discipline": 0.5,
+            "timing_quality": 0.4
+          },
+          "skill_preset_id": "ai_expert"
+        },
+        "bankrupt": false,
+        "board_node_id": "sri",
+        "cash": 1899,
+        "cash_display": "$ 1.899",
+        "color_hex": "#a855f7",
+        "color_id": "purple",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [
+          {
+            "acquired_turn": 144,
+            "eligible_checks": 4,
+            "expires_after_turns": 100,
+            "kind": "cancel_contract",
+            "label": "Contrato Cancelado",
+            "source_card_id": "contrato_cancelado"
+          }
+        ],
+        "id": "cpu-5",
+        "is_human": false,
+        "last_roll": [
+          6,
+          1
+        ],
+        "location_code": "SRI",
+        "location_label": "SRI",
+        "monopoly_regions": [],
+        "name": "Jogador 5",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#D60A00",
+            "id": "cruise",
+            "kind": "cruise",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Cruzeiro"
+          },
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          },
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          },
+          {
+            "accent": "#4467A8",
+            "id": "container",
+            "kind": "container",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Container"
+          }
+        ],
+        "property_codes": [
+          "HAM"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "pagou $ 40"
+      }
+    ],
+    "report": {
+      "activeKey": "milestones-table",
+      "couponExpirationEvents": [],
+      "milestones": [
+        {
+          "label": "Turno 05",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1804,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 4604,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1060,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 3840,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1135,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 3925,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1607,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 3927,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 1391,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 4251,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1030,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 3910,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 5
+        },
+        {
+          "label": "Turno 10",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 154,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 5874,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 4,
+              "toll_count": 1
+            },
+            {
+              "cash": 1694,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 4994,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1212,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 4322,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1152,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 3832,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1503,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 4683,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 830,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 4090,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 10
+        },
+        {
+          "label": "Turno 20",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 521,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 6681,
+              "permission_count": 1,
+              "property_count": 6,
+              "title_count": 5,
+              "toll_count": 1
+            },
+            {
+              "cash": 2042,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 5662,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 671,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 4191,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 996,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 3836,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 2524,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 5984,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 437,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 4557,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 20
+        },
+        {
+          "label": "Turno 30",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 300,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 6920,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 6,
+              "toll_count": 1
+            },
+            {
+              "cash": 3124,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 6264,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 2382,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 4792,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 1150,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 4790,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 1833,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 6433,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 1185,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 4835,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 30
+        },
+        {
+          "label": "Turno 40",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 716,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 7656,
+              "permission_count": 1,
+              "property_count": 8,
+              "title_count": 7,
+              "toll_count": 1
+            },
+            {
+              "cash": 1407,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 6067,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 1828,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 4658,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 2233,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 5453,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 3176,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 7146,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1149,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 5109,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 40
+        },
+        {
+          "label": "Turno 50",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1100,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 8430,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 8,
+              "toll_count": 1
+            },
+            {
+              "cash": 4137,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 7347,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1225,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 5105,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 2636,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 5876,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 3217,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 7147,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 825,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 5145,
+              "permission_count": 1,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 50
+        },
+        {
+          "label": "Turno 60",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1113,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 8833,
+              "permission_count": 1,
+              "property_count": 10,
+              "title_count": 9,
+              "toll_count": 1
+            },
+            {
+              "cash": 3532,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 7542,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 597,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 5307,
+              "permission_count": 1,
+              "property_count": 7,
+              "title_count": 7,
+              "toll_count": 0
+            },
+            {
+              "cash": 3670,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 6430,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 4099,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 7189,
+              "permission_count": 1,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 1906,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 5526,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 60
+        },
+        {
+          "label": "Turno 70",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2203,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 10373,
+              "permission_count": 1,
+              "property_count": 11,
+              "title_count": 10,
+              "toll_count": 1
+            },
+            {
+              "cash": 3146,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 8376,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 540,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 5940,
+              "permission_count": 1,
+              "property_count": 9,
+              "title_count": 9,
+              "toll_count": 0
+            },
+            {
+              "cash": 4230,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 7690,
+              "permission_count": 1,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 2955,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 7335,
+              "permission_count": 2,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 156,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 5426,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 70
+        },
+        {
+          "label": "Turno 80",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 720,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 11600,
+              "permission_count": 2,
+              "property_count": 13,
+              "title_count": 12,
+              "toll_count": 1
+            },
+            {
+              "cash": 2512,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 8462,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1647,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 5877,
+              "permission_count": 1,
+              "property_count": 6,
+              "title_count": 6,
+              "toll_count": 0
+            },
+            {
+              "cash": 3882,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 8602,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 2472,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 7332,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 358,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 5628,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 80
+        },
+        {
+          "label": "Turno 90",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1011,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 12671,
+              "permission_count": 2,
+              "property_count": 15,
+              "title_count": 14,
+              "toll_count": 1
+            },
+            {
+              "cash": 3850,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 9080,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 2225,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 6145,
+              "permission_count": 1,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 3634,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 8664,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 3308,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 8268,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1136,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 6246,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 90
+        },
+        {
+          "label": "Turno 100",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2818,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 14478,
+              "permission_count": 2,
+              "property_count": 15,
+              "title_count": 14,
+              "toll_count": 1
+            },
+            {
+              "cash": 5731,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 10071,
+              "permission_count": 2,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 701,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 6311,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 3763,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 9223,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 3941,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 8781,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 592,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 6592,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 100
+        },
+        {
+          "label": "Turno 120",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 2446,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 19316,
+              "permission_count": 3,
+              "property_count": 19,
+              "title_count": 17,
+              "toll_count": 2
+            },
+            {
+              "cash": 4529,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 11419,
+              "permission_count": 2,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 1726,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 6536,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 3120,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 10130,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 4218,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 9838,
+              "permission_count": 2,
+              "property_count": 4,
+              "title_count": 4,
+              "toll_count": 0
+            },
+            {
+              "cash": 2980,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 7730,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 120
+        },
+        {
+          "label": "Turno 140",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 3527,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 22397,
+              "permission_count": 4,
+              "property_count": 19,
+              "title_count": 17,
+              "toll_count": 2
+            },
+            {
+              "cash": 3575,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 12465,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 1753,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 6523,
+              "permission_count": 2,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 3842,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 12162,
+              "permission_count": 3,
+              "property_count": 2,
+              "title_count": 1,
+              "toll_count": 1
+            },
+            {
+              "cash": 4256,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 10236,
+              "permission_count": 2,
+              "property_count": 5,
+              "title_count": 5,
+              "toll_count": 0
+            },
+            {
+              "cash": 1555,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 8675,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 140
+        },
+        {
+          "label": "Turno 160",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 5355,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "human",
+              "patrimony_total": 31885,
+              "permission_count": 6,
+              "property_count": 24,
+              "title_count": 21,
+              "toll_count": 3
+            },
+            {
+              "cash": 4010,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 13080,
+              "permission_count": 4,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            },
+            {
+              "cash": 2166,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 6506,
+              "permission_count": 2,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 4567,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 13407,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 2,
+              "toll_count": 1
+            },
+            {
+              "cash": 3890,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 9890,
+              "permission_count": 3,
+              "property_count": 0,
+              "title_count": 0,
+              "toll_count": 0
+            },
+            {
+              "cash": 2941,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 10111,
+              "permission_count": 3,
+              "property_count": 3,
+              "title_count": 3,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 160
+        }
+      ]
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "port_sprinter",
+        "manual_profile": true,
+        "name": "Jogador 1",
+        "profile_id": "port_sprinter",
+        "profile_label": "Foco em portos",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Executa o basico com alguma ordem, mas ainda sofre oscilacoes relevantes de criterio e timing.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "operacional",
+          "label": "Operacional",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_expert"
+      },
+      "cpu-2": {
+        "archetype_id": "cargo_planner",
+        "manual_profile": true,
+        "name": "Jogador 2",
+        "profile_id": "cargo_planner",
+        "profile_label": "Foco em malha",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Le melhor o tabuleiro e erra menos por impulso. Usa mais leitura de futuro e disciplina para sustentar decisoes de medio prazo.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "analitico",
+          "label": "Analitico",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_expert"
+      },
+      "cpu-3": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": true,
+        "name": "Jogador 3",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_expert"
+      },
+      "cpu-4": {
+        "archetype_id": "port_sprinter",
+        "manual_profile": true,
+        "name": "Jogador 4",
+        "profile_id": "port_sprinter",
+        "profile_label": "Foco em portos",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Executa o basico com alguma ordem, mas ainda sofre oscilacoes relevantes de criterio e timing.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "operacional",
+          "label": "Operacional",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_expert"
+      },
+      "cpu-5": {
+        "archetype_id": "cargo_planner",
+        "manual_profile": true,
+        "name": "Jogador 5",
+        "profile_id": "cargo_planner",
+        "profile_label": "Foco em malha",
+        "skill": {
+          "combo_awareness": 0.4,
+          "description": "Le melhor o tabuleiro e erra menos por impulso. Usa mais leitura de futuro e disciplina para sustentar decisoes de medio prazo.",
+          "evaluation_noise": 0.7,
+          "foresight": 0.4,
+          "id": "analitico",
+          "label": "Analitico",
+          "liquidity_discipline": 0.5,
+          "timing_quality": 0.4
+        },
+        "skill_preset_id": "ai_expert"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Contrato em andamento",
+      "active_player_id": "human",
+      "dice": [
+        0,
+        0
+      ],
+      "note": "Seu contrato segue em andamento. Prazo atual: 5/4.",
+      "phase": "Turno 180",
+      "turn_label": "Turno 180",
+      "turn_number": 180
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": true,
+      "ai_difficulty": "expert",
+      "ai_manual_profiles": [
+        "port_sprinter",
+        "cargo_planner",
+        "balanced_trader",
+        "port_sprinter",
+        "cargo_planner"
+      ],
+      "ai_manual_robot_configs": [
+        {
+          "archetypeId": "port_sprinter",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.2,
+              "cash_reserve_ratio": 0,
+              "coupon_patience": 0.2,
+              "description": "Arrisca muito, gira rapido e aceita apertar caixa para ganhar posicao. Usa o tabuleiro com agressividade operacional.",
+              "id": "corsario",
+              "impulsiveness": 0.8,
+              "label": "Corsario",
+              "risk_tolerance": 0.9
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "cargo_planner",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "cargo_planner",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "cargo_planner",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.3,
+              "cash_reserve_ratio": 0.1,
+              "coupon_patience": 0.3,
+              "description": "Busca janelas de valor com pouca rigidez patrimonial. Assume risco com alguma disciplina, mas continua voltado a capturar chances taticas.",
+              "id": "oportunista",
+              "impulsiveness": 0.6,
+              "label": "Oportunista",
+              "risk_tolerance": 0.7
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "balanced_trader",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "balanced_trader",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "balanced_trader",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.5,
+              "cash_reserve_ratio": 0.2,
+              "coupon_patience": 0.5,
+              "description": "Mantem postura media entre protecao, ousadia e paciencia. Serve como referencia central para calibrar comportamento geral da mesa.",
+              "id": "equilibrado",
+              "impulsiveness": 0.4,
+              "label": "Temperado",
+              "risk_tolerance": 0.5
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "port_sprinter",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "port_sprinter",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "port_sprinter",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.2,
+              "cash_reserve_ratio": 0,
+              "coupon_patience": 0.2,
+              "description": "Arrisca muito, gira rapido e aceita apertar caixa para ganhar posicao. Usa o tabuleiro com agressividade operacional.",
+              "id": "corsario",
+              "impulsiveness": 0.8,
+              "label": "Corsario",
+              "risk_tolerance": 0.9
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        },
+        {
+          "archetypeId": "cargo_planner",
+          "overrides": {
+            "metadata": {
+              "archetype_id": "cargo_planner",
+              "negotiation_preset_id": "fechado",
+              "personality_preset_id": "",
+              "setup_archetype_id": "cargo_planner",
+              "setup_customized": true,
+              "skill_preset_id": "",
+              "table_preset_id": "stage6_profile_table",
+              "vision_preset_id": ""
+            },
+            "negotiation": {
+              "buy_openness": 0,
+              "desperation_discount": 0,
+              "discount_tolerance": 0,
+              "premium_tolerance": 0.1,
+              "sell_openness": 0,
+              "strategic_lock": 1
+            },
+            "personality": {
+              "asset_attachment": 0.3,
+              "cash_reserve_ratio": 0.1,
+              "coupon_patience": 0.3,
+              "description": "Busca janelas de valor com pouca rigidez patrimonial. Assume risco com alguma disciplina, mas continua voltado a capturar chances taticas.",
+              "id": "oportunista",
+              "impulsiveness": 0.6,
+              "label": "Oportunista",
+              "risk_tolerance": 0.7
+            },
+            "skill": {
+              "combo_awareness": 0.4,
+              "evaluation_noise": 0.7,
+              "foresight": 0.4,
+              "liquidity_discipline": 0.5,
+              "timing_quality": 0.4
+            },
+            "vision": {
+              "planning_horizon_turns": 0.2,
+              "weight_monopoly": 0.5,
+              "weight_origin_bonus": 0.6,
+              "weight_permission": 0.5,
+              "weight_port": 0.6,
+              "weight_toll": 0.5
+            }
+          }
+        }
+      ],
+      "ai_profile_mode": "liquid_market",
+      "ai_profile_order": [
+        "port_sprinter",
+        "cargo_planner",
+        "balanced_trader"
+      ],
+      "company_name": "WoW",
+      "human_color_id": "blue",
+      "rival_count": 5
+    }
+  },
+  "variant": "game-ai-ui-v2",
+  "version": 1
+}

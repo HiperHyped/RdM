@@ -1,4 +1,7 @@
 (function attachSaveBrowser(global) {
+  let ephemeralSaveSpaceId = '';
+  const SAVE_SPACE_STORAGE_KEY = 'ultramarine.save-space-id';
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -15,6 +18,39 @@
     return parsed.toLocaleString('pt-BR');
   }
 
+  function safeLocalStorage() {
+    try {
+      return global.localStorage;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function generateSaveSpaceId() {
+    if (global.crypto?.randomUUID) {
+      return String(global.crypto.randomUUID()).toLowerCase();
+    }
+    const randomChunk = Math.random().toString(36).slice(2, 10);
+    return `space-${Date.now().toString(36)}-${randomChunk}`.toLowerCase();
+  }
+
+  function getOrCreateSaveSpaceId() {
+    const storage = safeLocalStorage();
+    if (!storage) {
+      if (!ephemeralSaveSpaceId) {
+        ephemeralSaveSpaceId = generateSaveSpaceId();
+      }
+      return ephemeralSaveSpaceId;
+    }
+    const existing = String(storage.getItem(SAVE_SPACE_STORAGE_KEY) || '').trim().toLowerCase();
+    if (existing) {
+      return existing;
+    }
+    const created = generateSaveSpaceId();
+    storage.setItem(SAVE_SPACE_STORAGE_KEY, created);
+    return created;
+  }
+
   function createSaveBrowserController(config) {
     const state = config.state;
     const byId = config.byId;
@@ -24,6 +60,7 @@
     const runtime = config.runtime;
     const onLoad = typeof config.onLoad === 'function' ? config.onLoad : null;
     const onAfterSuccess = typeof config.onAfterSuccess === 'function' ? config.onAfterSuccess : null;
+    const getSaveSpaceId = typeof config.getSaveSpaceId === 'function' ? config.getSaveSpaceId : getOrCreateSaveSpaceId;
     const baseTitle = config.title || 'Saves compativeis';
     const baseCopy = config.copy || 'Selecione um save compativel para validar o arquivo.';
     const emptyCopy = config.emptyCopy || 'Nenhum save compativel encontrado para esta tela.';
@@ -79,6 +116,15 @@
     function getDetail() { return byId('load-browser-detail'); }
     function getPrimary() { return byId('load-browser-primary'); }
     function getSecondary() { return byId('load-browser-secondary'); }
+
+    function buildRuntimeUrl(fileName = '') {
+      const saveSpaceId = String(getSaveSpaceId() || '').trim();
+      const basePath = fileName
+        ? `/api/saves/runtime/${encodeURIComponent(runtime)}/${encodeURIComponent(fileName)}`
+        : `/api/saves/runtime/${encodeURIComponent(runtime)}`;
+      if (!saveSpaceId) return basePath;
+      return `${basePath}?save_space_id=${encodeURIComponent(saveSpaceId)}`;
+    }
 
     function ensureBrowserDefaults() {
       Object.assign(browserState(), {
@@ -252,7 +298,7 @@
       browserState().loading = true;
       render();
       try {
-        browserState().selectedSave = await fetchJson(`/api/saves/runtime/${encodeURIComponent(runtime)}/${encodeURIComponent(resolvedName)}`);
+        browserState().selectedSave = await fetchJson(buildRuntimeUrl(resolvedName));
       } catch (_error) {
         browserState().selectedSave = null;
         browserState().error = 'Nao foi possivel ler o save selecionado.';
@@ -271,7 +317,7 @@
       browserState().loading = true;
       render();
       try {
-        const response = await fetchJson(`/api/saves/runtime/${encodeURIComponent(runtime)}`);
+        const response = await fetchJson(buildRuntimeUrl());
         browserState().items = Array.isArray(response?.saves) ? response.saves : [];
         browserState().loading = false;
         render();
@@ -405,7 +451,7 @@
       const wasPausedBeforeOpen = Boolean(state.view?.paused);
       setPaused(true);
       try {
-        const response = await fetchJson(`/api/saves/runtime/${encodeURIComponent(runtime)}`);
+        const response = await fetchJson(buildRuntimeUrl());
         const items = Array.isArray(response?.saves) ? response.saves : [];
         if (!items.length) {
           await openDecisionModal({
@@ -425,7 +471,7 @@
         if (!latestFileName) {
           throw new Error('latest-save-missing-file-name');
         }
-        const payload = await fetchJson(`/api/saves/runtime/${encodeURIComponent(runtime)}/${encodeURIComponent(latestFileName)}`);
+        const payload = await fetchJson(buildRuntimeUrl(latestFileName));
         await confirmLoadedPayload(payload, wasPausedBeforeOpen);
         return payload;
       } catch (_error) {
@@ -445,5 +491,6 @@
     };
   }
 
+  global.getOrCreateRdMSaveSpaceId = getOrCreateSaveSpaceId;
   global.createSaveBrowserController = createSaveBrowserController;
 })(window);

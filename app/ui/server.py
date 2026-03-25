@@ -41,6 +41,7 @@ class SaveSnapshotRequest(BaseModel):
     variant: str = Field(min_length=1, max_length=64)
     snapshot: dict[str, Any]
     label: str | None = Field(default=None, max_length=80)
+    save_space_id: str | None = Field(default=None, min_length=8, max_length=63)
 
 class EditorNodeCreate(BaseModel):
     kind: Literal['port', 'toll', 'fuel', 'chance']
@@ -248,6 +249,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             'status': 'ok',
             'service': 'rei-dos-mares',
             'save_root': str(save_store.root_dir),
+            'save_backend': save_store.describe_backend(),
             'tutorial_config': str(tutorial_config_path),
         }
 
@@ -501,32 +503,48 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
 
     @app.post('/api/saves/game')
     async def save_game(payload: SaveSnapshotRequest) -> dict[str, Any]:
-        save_meta = save_store.save_snapshot(
-            mode='game',
-            variant=payload.variant,
-            snapshot=payload.snapshot,
-            label=payload.label,
-        )
+        try:
+            save_meta = save_store.save_snapshot(
+                mode='game',
+                variant=payload.variant,
+                snapshot=payload.snapshot,
+                label=payload.label,
+                save_space_id=payload.save_space_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         return {'save': save_meta}
 
     @app.post('/api/saves/robots')
     async def save_robots(payload: SaveSnapshotRequest) -> dict[str, Any]:
-        save_meta = save_store.save_snapshot(
-            mode='robots',
-            variant=payload.variant,
-            snapshot=payload.snapshot,
-            label=payload.label,
-        )
+        try:
+            save_meta = save_store.save_snapshot(
+                mode='robots',
+                variant=payload.variant,
+                snapshot=payload.snapshot,
+                label=payload.label,
+                save_space_id=payload.save_space_id,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         return {'save': save_meta}
 
     @app.get('/api/saves/runtime/{runtime}')
-    async def list_runtime_saves(runtime: str) -> dict[str, Any]:
+    async def list_runtime_saves(runtime: str, request: Request) -> dict[str, Any]:
+        save_space_id = str(request.query_params.get('save_space_id') or '').strip() or None
         try:
-            saves = save_store.list_compatible_saves(runtime=runtime)
+            saves = save_store.list_compatible_saves(runtime=runtime, save_space_id=save_space_id)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         return {
             'runtime': runtime,
+            'save_space_id': save_space_id or '',
             'saves': saves,
         }
 
@@ -547,13 +565,16 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         }
 
     @app.get('/api/saves/runtime/{runtime}/{file_name}')
-    async def load_runtime_save(runtime: str, file_name: str) -> dict[str, Any]:
+    async def load_runtime_save(runtime: str, file_name: str, request: Request) -> dict[str, Any]:
+        save_space_id = str(request.query_params.get('save_space_id') or '').strip() or None
         try:
-            payload = save_store.load_compatible_save(runtime=runtime, file_name=file_name)
+            payload = save_store.load_compatible_save(runtime=runtime, file_name=file_name, save_space_id=save_space_id)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail='Save file not found.') from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         return payload
 
     @app.get('/api/map/bootstrap')

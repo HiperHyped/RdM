@@ -72,6 +72,26 @@ def test_game_save_endpoint_persists_snapshot(tmp_path) -> None:
     assert record['label'] == 'Turno 03'
 
 
+def test_save_store_isolates_namespaced_saves(tmp_path) -> None:
+    store = SaveStore(tmp_path)
+    snapshot = {
+        'schema': 'rdm-ui-save-v1',
+        'session': {'turn_label': 'Turno 09'},
+    }
+
+    meta = store.save_snapshot(
+        mode='game',
+        variant='game-ai-ui-v3',
+        snapshot=snapshot,
+        label='Save Privado',
+        save_space_id='space-abcd1234',
+    )
+
+    assert (tmp_path / 'game' / 'space-abcd1234' / meta['file_name']).exists()
+    assert store.list_compatible_saves(runtime='game-ai-ui-v3', save_space_id='space-abcd1234')
+    assert store.list_compatible_saves(runtime='game-ai-ui-v3', save_space_id='space-efgh5678') == []
+
+
 def test_healthcheck_reports_service_status(tmp_path) -> None:
     client = TestClient(create_app(save_root_dir=tmp_path))
 
@@ -181,3 +201,53 @@ def test_runtime_save_endpoints_list_and_load_compatible_file(tmp_path) -> None:
     assert payload['meta']['file_name'] == file_name
     assert payload['record']['variant'] == 'robots-ai-ui'
     assert payload['record']['snapshot']['session']['turn_label'] == 'Turno 21'
+
+
+def test_runtime_save_endpoints_filter_by_save_space_id(tmp_path) -> None:
+    client = TestClient(create_app(save_root_dir=tmp_path))
+
+    save_response = client.post(
+        '/api/saves/game',
+        json={
+            'variant': 'game-ai-ui-v3',
+            'label': 'Save da Ana',
+            'save_space_id': 'space-ana1234',
+            'snapshot': {
+                'schema': 'rdm-ui-save-v1',
+                'session': {'turn_label': 'Turno 04'},
+            },
+        },
+    )
+    file_name = save_response.json()['save']['file_name']
+
+    other_response = client.post(
+        '/api/saves/game',
+        json={
+            'variant': 'game-ai-ui-v3',
+            'label': 'Save do Bruno',
+            'save_space_id': 'space-bruno12',
+            'snapshot': {
+                'schema': 'rdm-ui-save-v1',
+                'session': {'turn_label': 'Turno 05'},
+            },
+        },
+    )
+    assert other_response.status_code == 200
+
+    list_response = client.get('/api/saves/runtime/game-ai-ui-v3?save_space_id=space-ana1234')
+    assert list_response.status_code == 200
+    saves = list_response.json()['saves']
+    assert len(saves) == 1
+    assert saves[0]['file_name'] == file_name
+
+    hidden_response = client.get('/api/saves/runtime/game-ai-ui-v3?save_space_id=space-bruno12')
+    assert hidden_response.status_code == 200
+    assert len(hidden_response.json()['saves']) == 1
+    assert hidden_response.json()['saves'][0]['file_name'] != file_name
+
+    load_response = client.get(f'/api/saves/runtime/game-ai-ui-v3/{file_name}?save_space_id=space-ana1234')
+    assert load_response.status_code == 200
+    assert load_response.json()['meta']['save_space_id'] == 'space-ana1234'
+
+    blocked_response = client.get(f'/api/saves/runtime/game-ai-ui-v3/{file_name}?save_space_id=space-bruno12')
+    assert blocked_response.status_code == 404

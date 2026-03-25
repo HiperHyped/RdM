@@ -18,3 +18,7 @@ TEMPLATE_DIR = ROOT_DIR / 'app' / 'ui' / 'templates'
 SAVE_ROOT_DIR = _env_path('RDM_SAVE_ROOT_DIR', ROOT_DIR / 'saves')
 GAME_V3_TUTORIAL_CONFIG_PATH = _env_path('RDM_TUTORIAL_CONFIG_PATH', DATA_DIR / 'game_v3_tutorial_v2.json')
 BOARD_SOURCE_IMAGE = STATIC_DIR / 'assets' / 'board-source-updated.png'
+SUPABASE_URL = str(os.getenv('RDM_SUPABASE_URL') or '').strip().rstrip('/')
+SUPABASE_SERVICE_KEY = str(os.getenv('RDM_SUPABASE_SERVICE_KEY') or '').strip()
+SUPABASE_STORAGE_BUCKET = str(os.getenv('RDM_SUPABASE_STORAGE_BUCKET') or 'ultramarine').strip() or 'ultramarine'
+SUPABASE_STORAGE_PREFIX = str(os.getenv('RDM_SUPABASE_STORAGE_PREFIX') or 'FILES').strip().strip('/')
