@@ -63,7 +63,9 @@ def test_game_save_endpoint_persists_snapshot(tmp_path) -> None:
     )
 
     assert response.status_code == 200
-    payload = response.json()['save']
+    response_payload = response.json()
+    payload = response_payload['save']
+    assert response_payload['save_backend']['name'] == 'local'
 
     save_path = tmp_path / 'game' / payload['file_name']
     record = json.loads(save_path.read_text(encoding='utf-8'))
@@ -190,7 +192,9 @@ def test_runtime_save_endpoints_list_and_load_compatible_file(tmp_path) -> None:
 
     list_response = client.get('/api/saves/runtime/robots-ai-ui')
     assert list_response.status_code == 200
-    saves = list_response.json()['saves']
+    list_payload = list_response.json()
+    assert list_payload['save_backend']['name'] == 'local'
+    saves = list_payload['saves']
     assert len(saves) == 1
     assert saves[0]['file_name'] == file_name
     assert saves[0]['variant'] == 'robots-ai-ui'
@@ -198,6 +202,7 @@ def test_runtime_save_endpoints_list_and_load_compatible_file(tmp_path) -> None:
     load_response = client.get(f'/api/saves/runtime/robots-ai-ui/{file_name}')
     assert load_response.status_code == 200
     payload = load_response.json()
+    assert payload['save_backend']['name'] == 'local'
     assert payload['meta']['file_name'] == file_name
     assert payload['record']['variant'] == 'robots-ai-ui'
     assert payload['record']['snapshot']['session']['turn_label'] == 'Turno 21'

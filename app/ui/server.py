@@ -515,7 +515,10 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
-        return {'save': save_meta}
+        return {
+            'save': save_meta,
+            'save_backend': save_store.describe_backend(),
+        }
 
     @app.post('/api/saves/robots')
     async def save_robots(payload: SaveSnapshotRequest) -> dict[str, Any]:
@@ -531,7 +534,10 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
-        return {'save': save_meta}
+        return {
+            'save': save_meta,
+            'save_backend': save_store.describe_backend(),
+        }
 
     @app.get('/api/saves/runtime/{runtime}')
     async def list_runtime_saves(runtime: str, request: Request) -> dict[str, Any]:
@@ -545,6 +551,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         return {
             'runtime': runtime,
             'save_space_id': save_space_id or '',
+            'save_backend': save_store.describe_backend(),
             'saves': saves,
         }
 
@@ -575,7 +582,10 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
-        return payload
+        return {
+            **payload,
+            'save_backend': save_store.describe_backend(),
+        }
 
     @app.get('/api/map/bootstrap')
     async def map_bootstrap() -> dict[str, Any]:
