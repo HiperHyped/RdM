@@ -9,7 +9,7 @@ from urllib import error as urllib_error
 from urllib import parse as urllib_parse
 from urllib import request as urllib_request
 
-from app.config import SAVE_ROOT_DIR, SUPABASE_SERVICE_KEY, SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_PREFIX, SUPABASE_URL
+from app.config import SAVE_ROOT_DIR, SUPABASE_KEY, SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_PREFIX, SUPABASE_URL
 
 SaveMode = Literal['game', 'robots']
 SaveRuntime = Literal['game-ui', 'game-ai-ui', 'game-ai-ui-v2', 'game-ai-ui-v3', 'robots-ui', 'robots-ai-ui', 'robots-ai-ui-v2']
@@ -138,11 +138,11 @@ class _SupabaseStorageBackend(_StorageBackend):
 
     @classmethod
     def from_env(cls) -> _SupabaseStorageBackend | None:
-        if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        if not SUPABASE_URL or not SUPABASE_KEY:
             return None
         return cls(
             base_url=SUPABASE_URL,
-            service_key=SUPABASE_SERVICE_KEY,
+            service_key=SUPABASE_KEY,
             bucket=SUPABASE_STORAGE_BUCKET,
             prefix=SUPABASE_STORAGE_PREFIX,
         )
