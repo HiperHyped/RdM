@@ -48,6 +48,207 @@
     z-index: 24;
   }
 
+  .layout-tuning-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 40;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(215, 230, 245, 0.14);
+    background: linear-gradient(180deg, rgba(4, 15, 27, 0.92), rgba(6, 18, 31, 0.88));
+    color: #edf6ff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+  }
+
+  .layout-tuning-toggle[hidden],
+  .layout-tuning-panel[hidden] {
+    display: none;
+  }
+
+  .layout-tuning-panel {
+    position: fixed;
+    right: 18px;
+    top: 18px;
+    z-index: 41;
+    width: min(460px, calc(100vw - 24px));
+    max-height: calc(100vh - 90px);
+    overflow: auto;
+    padding: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(215, 230, 245, 0.14);
+    background:
+      radial-gradient(circle at top right, rgba(240, 180, 41, 0.12), transparent 34%),
+      linear-gradient(180deg, rgba(4, 15, 27, 0.96), rgba(6, 18, 31, 0.93));
+    backdrop-filter: blur(18px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+    display: grid;
+    gap: 12px;
+  }
+
+  .layout-tuning-panel.is-hidden {
+    display: none;
+  }
+
+  .layout-tuning-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .layout-tuning-head h2 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+  }
+
+  .layout-tuning-head p {
+    margin: 0;
+  }
+
+  .layout-tuning-close {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(215, 230, 245, 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    color: #edf6ff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .layout-tuning-note {
+    color: rgba(223, 239, 255, 0.82);
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+
+  .layout-tuning-status {
+    margin: 0;
+    color: rgba(223, 239, 255, 0.74);
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .layout-tuning-status.is-error {
+    color: #ffb8b8;
+  }
+
+  .layout-tuning-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .layout-tuning-row {
+    display: grid;
+    gap: 8px;
+    padding: 10px 11px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .layout-tuning-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .layout-tuning-row-head strong {
+    font-size: 0.78rem;
+  }
+
+  .layout-tuning-row-head span {
+    color: rgba(223, 239, 255, 0.72);
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .layout-tuning-axis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .layout-tuning-axis {
+    display: grid;
+    gap: 6px;
+  }
+
+  .layout-tuning-axis label {
+    color: rgba(223, 239, 255, 0.74);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .layout-tuning-axis-controls {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 4px;
+  }
+
+  .layout-tuning-axis-controls input {
+    width: 100%;
+    min-width: 0;
+    min-height: 32px;
+    padding: 0 4px;
+    border-radius: 9px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: #edf6ff;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .layout-tuning-axis-controls button,
+  .layout-tuning-actions button {
+    min-height: 32px;
+    padding: 0 6px;
+    border-radius: 9px;
+    border: 1px solid rgba(215, 230, 245, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #edf6ff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .layout-tuning-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .layout-tuning-metrics {
+    margin: 0;
+    color: rgba(223, 239, 255, 0.76);
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
+  .layout-tuning-json {
+    margin: 0;
+    padding: 10px 11px;
+    border-radius: 16px;
+    border: 1px solid rgba(215, 230, 245, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfefff;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   .report-modal {
     width: min(1220px, calc(100vw - 24px));
     max-width: 1220px;
@@ -2908,15 +3109,389 @@
   <section class="preview-panel preview-rivals">
     <div id="preview-rival-list" class="preview-rival-grid" data-tutorial-anchor="rivals-panel" data-tutorial-anchor-label="Painel dos jogadores"></div>
   </section>
+
+  <button id="layout-tuning-toggle" type="button" class="layout-tuning-toggle" aria-expanded="false" aria-controls="layout-tuning-panel">Ajustar layout</button>
+  <aside id="layout-tuning-panel" class="layout-tuning-panel is-hidden" aria-hidden="true">
+    <div class="layout-tuning-head">
+      <div>
+        <p class="eyebrow">Ajuste fino</p>
+        <h2>Layout por janela</h2>
+      </div>
+      <button id="layout-tuning-close" type="button" class="layout-tuning-close">Fechar</button>
+    </div>
+        <p class="layout-tuning-note">Cada janela tem ajuste proprio. Os valores sao gravados no arquivo JSON base do jogo e passam a valer automaticamente no programa. Abra esta tela com <strong>?layout</strong> para editar.</p>
+    <p id="layout-tuning-status" class="layout-tuning-status">Arquivo base: data/game_ai_ui_v3_layout.json</p>
+    <div id="layout-tuning-grid" class="layout-tuning-grid"></div>
+    <div class="layout-tuning-actions">
+      <button id="layout-tuning-copy" type="button">Copiar ajustes</button>
+      <button id="layout-tuning-reset" type="button">Resetar tudo</button>
+    </div>
+    <pre id="layout-tuning-json" class="layout-tuning-json"></pre>
+  </aside>
 </main>
 
 <script src="{{ request.url_for('static', path='js/game-economy.js') }}?v=economy-v1"></script>
 <script src="{{ request.url_for('static', path='js/save-browser.js') }}?v=save-browser-v1"></script>
 <script id="rdm-ai-v2-config" type="application/json">{{ ai_v2_config | tojson }}</script>
 <script id="rdm-ai-v2-rules" type="application/json">{{ ai_v2_rules | tojson }}</script>
+<script id="rdm-game-v3-layout-config" type="application/json">{{ layout_config | tojson }}</script>
 <script>
   window.__RDM_AI_V2_CONFIG__ = JSON.parse(document.getElementById('rdm-ai-v2-config').textContent);
   window.__RDM_AI_V2_RULES__ = JSON.parse(document.getElementById('rdm-ai-v2-rules').textContent);
+  window.__RDM_GAME_V3_LAYOUT_CONFIG__ = JSON.parse(document.getElementById('rdm-game-v3-layout-config').textContent);
+
+  (function attachGameV3LayoutTuning() {
+    const isLayoutMode = new URLSearchParams(window.location.search).has('layout');
+    const SAVE_ENDPOINT = '/api/layouts/game-ai-ui-v3';
+    const targets = [
+      { key: 'map', label: 'Mapa', selectors: ['#game-preview-map', '#game-preview-routes', '#game-preview-nodes', '#game-preview-ships', '#game-preview-hitlayer'], supportsWidth: false },
+      { key: 'leftStack', label: 'Resumo esquerdo', selectors: ['.preview-left-stack'], supportsWidth: true },
+      { key: 'actionLog', label: 'Log do turno', selectors: ['#game-action-log'], supportsWidth: true },
+      { key: 'rivals', label: 'Barra de jogadores', selectors: ['.preview-rivals'], supportsWidth: true },
+      { key: 'pause', label: 'Indicador de pausa', selectors: ['#game-pause-indicator'], supportsWidth: false },
+      { key: 'setupModal', label: 'Janela inicial', selectors: ['#game-setup-overlay .game-setup-modal'], supportsWidth: true },
+      { key: 'setupAiEditorModal', label: 'IA avancada inicial', selectors: ['#setup-ai-editor-overlay .setup-ai-editor-modal'], supportsWidth: true },
+      { key: 'settingsModal', label: 'Configuracoes', selectors: ['#game-settings-overlay .settings-modal'], supportsWidth: true },
+      { key: 'reportModal', label: 'Relatorios', selectors: ['#game-report-overlay .report-modal'], supportsWidth: true },
+      { key: 'permissionDrawModal', label: 'Sorteio de permissao', selectors: ['#permission-draw-overlay .permission-draw-modal'], supportsWidth: true },
+      { key: 'portDrawModal', label: 'Sorteio de porto', selectors: ['#port-draw-overlay .port-draw-modal'], supportsWidth: true },
+      { key: 'movementDiceModal', label: 'Rolagem de dados', selectors: ['#movement-dice-overlay .movement-dice-modal'], supportsWidth: true },
+      { key: 'chanceDrawModal', label: 'Sorte ou reves', selectors: ['#chance-draw-overlay .chance-draw-modal'], supportsWidth: true },
+      { key: 'decisionModal', label: 'Confirmacao', selectors: ['#decision-overlay .decision-modal'], supportsWidth: true },
+      { key: 'saveNameModal', label: 'Salvar arquivo', selectors: ['#save-name-overlay .save-name-modal'], supportsWidth: true },
+      { key: 'loadBrowserModal', label: 'Carregar save', selectors: ['#load-browser-overlay .load-browser-modal'], supportsWidth: true },
+      { key: 'negotiationModal', label: 'Negociacao', selectors: ['#negotiation-overlay .negotiation-modal'], supportsWidth: true },
+      { key: 'permissionChoiceModal', label: 'Escolha de permissao', selectors: ['#permission-choice-overlay .permission-choice-modal'], supportsWidth: true },
+    ];
+
+    const defaults = Object.fromEntries(targets.map((target) => [target.key, { x: 0, y: 0, width: null }]));
+    const state = JSON.parse(JSON.stringify(defaults));
+    const rowsByTarget = new Map();
+    const grid = document.getElementById('layout-tuning-grid');
+    const panel = document.getElementById('layout-tuning-panel');
+    const toggle = document.getElementById('layout-tuning-toggle');
+    const closeButton = document.getElementById('layout-tuning-close');
+    const copyButton = document.getElementById('layout-tuning-copy');
+    const resetButton = document.getElementById('layout-tuning-reset');
+    const jsonNode = document.getElementById('layout-tuning-json');
+    const statusNode = document.getElementById('layout-tuning-status');
+    let metricsTimerId = 0;
+    let saveTimerId = 0;
+    let saveRequestToken = 0;
+
+    function sanitizeNumber(value, fallback) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function sanitizeWidth(value) {
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        return null;
+      }
+      return Math.round(parsed);
+    }
+
+    function getTargetNodes(target) {
+      return target.selectors.flatMap((selector) => Array.from(document.querySelectorAll(selector)));
+    }
+
+    function getPrimaryNode(target) {
+      const nodes = getTargetNodes(target);
+      return nodes.find((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.width > 0 || rect.height > 0;
+      }) || nodes[0] || null;
+    }
+
+    function updateStatus(message, isError) {
+      if (!statusNode) return;
+      statusNode.textContent = message;
+      statusNode.classList.toggle('is-error', Boolean(isError));
+    }
+
+    function readInitialConfig() {
+      const parsed = window.__RDM_GAME_V3_LAYOUT_CONFIG__ || {};
+      targets.forEach((target) => {
+        const entry = parsed?.[target.key] || {};
+        state[target.key] = {
+          x: sanitizeNumber(entry.x, 0),
+          y: sanitizeNumber(entry.y, 0),
+          width: target.supportsWidth ? sanitizeWidth(entry.width) : null,
+        };
+      });
+    }
+
+    async function persistOffsets() {
+      const requestToken = ++saveRequestToken;
+      try {
+        const response = await fetch(SAVE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(state),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        if (requestToken !== saveRequestToken) {
+          return;
+        }
+        if (payload?.layout && typeof payload.layout === 'object') {
+          targets.forEach((target) => {
+            const entry = payload.layout[target.key] || {};
+            state[target.key] = {
+              x: sanitizeNumber(entry.x, 0),
+              y: sanitizeNumber(entry.y, 0),
+              width: target.supportsWidth ? sanitizeWidth(entry.width) : null,
+            };
+          });
+          applyOffsets();
+          rowsByTarget.forEach((_row, targetKey) => {
+            syncRowInputs(targetKey);
+          });
+        }
+        updateStatus('Arquivo salvo em data/game_ai_ui_v3_layout.json', false);
+      } catch (_error) {
+        updateStatus('Falha ao salvar data/game_ai_ui_v3_layout.json', true);
+      }
+    }
+
+    function queueSave() {
+      if (!isLayoutMode) {
+        return;
+      }
+      window.clearTimeout(saveTimerId);
+      updateStatus('Salvando data/game_ai_ui_v3_layout.json...', false);
+      saveTimerId = window.setTimeout(() => {
+        persistOffsets();
+      }, 180);
+    }
+
+    function applyTarget(target) {
+      const entry = state[target.key];
+      getTargetNodes(target).forEach((node) => {
+        node.style.translate = `${entry.x}px ${entry.y}px`;
+        if (target.supportsWidth) {
+          const widthValue = entry.width === null ? '' : `${entry.width}px`;
+          node.style.width = widthValue;
+          node.style.maxWidth = widthValue;
+        }
+      });
+    }
+
+    function renderJson() {
+      if (jsonNode) {
+        jsonNode.textContent = JSON.stringify(state, null, 2);
+      }
+    }
+
+    function refreshMetrics() {
+      rowsByTarget.forEach((row, targetKey) => {
+        const target = targets.find((item) => item.key === targetKey);
+        if (!target) return;
+        const metricsNode = row.querySelector('[data-layout-metrics]');
+        if (!metricsNode) return;
+        const node = getPrimaryNode(target);
+        if (!node) {
+          metricsNode.textContent = 'Elemento nao encontrado.';
+          return;
+        }
+        const rect = node.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+          metricsNode.textContent = 'Janela oculta no momento.';
+          return;
+        }
+        metricsNode.textContent = `Atual: x ${Math.round(rect.left)} | y ${Math.round(rect.top)} | largura ${Math.round(rect.width)} | altura ${Math.round(rect.height)}`;
+      });
+    }
+
+    function applyOffsets() {
+      targets.forEach((target) => {
+        applyTarget(target);
+      });
+      renderJson();
+      refreshMetrics();
+    }
+
+    function syncRowInputs(targetKey) {
+      const row = rowsByTarget.get(targetKey);
+      if (!row) return;
+      row.querySelectorAll('[data-layout-axis]').forEach((input) => {
+        const axis = input.getAttribute('data-layout-axis');
+        if (!axis) return;
+        const value = state[targetKey][axis];
+        input.value = value === null ? '' : String(value);
+      });
+    }
+
+    function setPanelVisibility(visible) {
+      if (!panel || !toggle) return;
+      panel.classList.toggle('is-hidden', !visible);
+      panel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+      toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
+      panel.hidden = !visible;
+      if (visible) {
+        refreshMetrics();
+        if (!metricsTimerId) {
+          metricsTimerId = window.setInterval(refreshMetrics, 500);
+        }
+      } else if (metricsTimerId) {
+        window.clearInterval(metricsTimerId);
+        metricsTimerId = 0;
+      }
+    }
+
+    function updateValue(targetKey, axis, value) {
+      if (axis === 'width') {
+        state[targetKey][axis] = sanitizeWidth(value);
+      } else {
+        state[targetKey][axis] = sanitizeNumber(value, 0);
+      }
+      const target = targets.find((item) => item.key === targetKey);
+      if (target) {
+        applyTarget(target);
+      }
+      renderJson();
+      queueSave();
+      syncRowInputs(targetKey);
+      refreshMetrics();
+    }
+
+    function nudgeValue(targetKey, axis, delta) {
+      const currentValue = axis === 'width' ? (state[targetKey][axis] ?? 0) : Number(state[targetKey][axis] || 0);
+      const nextValue = currentValue + delta;
+      updateValue(targetKey, axis, axis === 'width' && nextValue <= 0 ? '' : nextValue);
+    }
+
+    function buildAxisControl(targetKey, axis, label, enabled) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'layout-tuning-axis';
+
+      const title = document.createElement('label');
+      title.textContent = label;
+      wrapper.appendChild(title);
+
+      const controls = document.createElement('div');
+      controls.className = 'layout-tuning-axis-controls';
+
+      const minus = document.createElement('button');
+      minus.type = 'button';
+      minus.textContent = axis === 'width' ? '-20' : '-10';
+      minus.disabled = !enabled;
+      minus.addEventListener('click', () => {
+        nudgeValue(targetKey, axis, axis === 'width' ? -20 : -10);
+      });
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '1';
+      input.value = state[targetKey][axis] === null ? '' : String(state[targetKey][axis]);
+      input.dataset.layoutTarget = targetKey;
+      input.dataset.layoutAxis = axis;
+      input.placeholder = enabled ? '0' : '--';
+      input.disabled = !enabled;
+      input.addEventListener('input', () => {
+        updateValue(targetKey, axis, input.value);
+      });
+
+      const plus = document.createElement('button');
+      plus.type = 'button';
+      plus.textContent = axis === 'width' ? '+20' : '+10';
+      plus.disabled = !enabled;
+      plus.addEventListener('click', () => {
+        nudgeValue(targetKey, axis, axis === 'width' ? 20 : 10);
+      });
+
+      controls.appendChild(minus);
+      controls.appendChild(input);
+      controls.appendChild(plus);
+      wrapper.appendChild(controls);
+      return wrapper;
+    }
+
+    function buildRow(target) {
+      const row = document.createElement('div');
+      row.className = 'layout-tuning-row';
+
+      const head = document.createElement('div');
+      head.className = 'layout-tuning-row-head';
+      head.innerHTML = `<strong>${target.label}</strong><span>${target.key}</span>`;
+
+      const metrics = document.createElement('p');
+      metrics.className = 'layout-tuning-metrics';
+      metrics.dataset.layoutMetrics = 'true';
+
+      const axes = document.createElement('div');
+      axes.className = 'layout-tuning-axis-grid';
+      axes.appendChild(buildAxisControl(target.key, 'x', 'X', true));
+      axes.appendChild(buildAxisControl(target.key, 'y', 'Y', true));
+      axes.appendChild(buildAxisControl(target.key, 'width', 'Largura', target.supportsWidth));
+
+      row.appendChild(head);
+      row.appendChild(metrics);
+      row.appendChild(axes);
+      rowsByTarget.set(target.key, row);
+      return row;
+    }
+
+    readInitialConfig();
+    applyOffsets();
+
+    if (!isLayoutMode) {
+      if (toggle) {
+        toggle.hidden = true;
+      }
+      if (panel) {
+        panel.hidden = true;
+      }
+      return;
+    }
+
+    if (grid) {
+      targets.forEach((target) => {
+        grid.appendChild(buildRow(target));
+      });
+      refreshMetrics();
+    }
+
+    toggle?.addEventListener('click', () => {
+      setPanelVisibility(panel?.classList.contains('is-hidden'));
+    });
+    closeButton?.addEventListener('click', () => {
+      setPanelVisibility(false);
+    });
+    copyButton?.addEventListener('click', async () => {
+      const text = JSON.stringify(state, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        copyButton.textContent = 'Copiado';
+        window.setTimeout(() => {
+          copyButton.textContent = 'Copiar ajustes';
+        }, 1200);
+      } catch (_error) {
+        copyButton.textContent = 'Falhou';
+        window.setTimeout(() => {
+          copyButton.textContent = 'Copiar ajustes';
+        }, 1200);
+      }
+    });
+    resetButton?.addEventListener('click', () => {
+      targets.forEach((target) => {
+        state[target.key] = { x: 0, y: 0, width: null };
+      });
+      applyOffsets();
+      queueSave();
+      rowsByTarget.forEach((_row, targetKey) => {
+        syncRowInputs(targetKey);
+      });
+    });
+  })();
 </script>
 <script src="{{ request.url_for('static', path='js/ai-profiles-v2.js') }}?v=ai-profiles-v2-v2"></script>
 <script src="{{ request.url_for('static', path='js/ai-policy-engine-v2.js') }}?v=ai-policy-engine-v2-v4"></script>

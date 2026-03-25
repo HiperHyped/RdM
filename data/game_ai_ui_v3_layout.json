@@ -1,0 +1,92 @@
+{
+  "map": {
+    "x": 0,
+    "y": 30,
+    "width": null
+  },
+  "leftStack": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "actionLog": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "rivals": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "pause": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "setupModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "setupAiEditorModal": {
+    "x": 0,
+    "y": -40,
+    "width": null
+  },
+  "settingsModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "reportModal": {
+    "x": 0,
+    "y": -50,
+    "width": null
+  },
+  "permissionDrawModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "portDrawModal": {
+    "x": 0,
+    "y": -50,
+    "width": 1080
+  },
+  "movementDiceModal": {
+    "x": 0,
+    "y": -40,
+    "width": null
+  },
+  "chanceDrawModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "decisionModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "saveNameModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "loadBrowserModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "negotiationModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  },
+  "permissionChoiceModal": {
+    "x": 0,
+    "y": 0,
+    "width": null
+  }
+}

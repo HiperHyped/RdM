@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "kind": "port",
     "label": "ATE",
@@ -2352,18 +2352,6 @@
     "id": "fuel-150"
   },
   {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1581.3158824529983,
-    "y": 322.19802755024847,
-    "route_id": null,
-    "order": null,
-    "lat": 74.4844038673886,
-    "lon": 72.30318251924177,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-154"
-  },
-  {
     "kind": "chance",
     "label": "",
     "x": 1635.9183560807537,
@@ -2376,30 +2364,6 @@
     "id": "chance-046"
   },
   {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1706.244667396744,
-    "y": 325.415930310074,
-    "route_id": null,
-    "order": null,
-    "lat": 77.62516431622163,
-    "lon": 90.51961730072799,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-155"
-  },
-  {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1933.1352354870867,
-    "y": 366.6747942757266,
-    "route_id": null,
-    "order": null,
-    "lat": 77.62516431622163,
-    "lon": 120.93324457181998,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-158"
-  },
-  {
     "kind": "chance",
     "label": "",
     "x": 1993.556647833107,
@@ -2410,18 +2374,6 @@
     "lon": 128.81059568036954,
     "notes": "manual-chance",
     "id": "chance-047"
-  },
-  {
-    "kind": "fuel",
-    "label": "5",
-    "x": 2053.844089154987,
-    "y": 394.4686849734114,
-    "route_id": null,
-    "order": null,
-    "lat": 75.30457026891882,
-    "lon": 136.74253761299153,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-159"
   },
   {
     "kind": "chance",
@@ -2448,18 +2400,6 @@
     "id": "fuel-162"
   },
   {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1327.712734709985,
-    "y": 227.19727069800854,
-    "route_id": null,
-    "order": null,
-    "lat": 70.16767208948278,
-    "lon": 17.87668134046671,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-167"
-  },
-  {
     "kind": "chance",
     "label": "",
     "x": 1354.4917858598333,
@@ -2470,18 +2410,6 @@
     "lon": 28.68808805765609,
     "notes": "manual-chance",
     "id": "chance-049"
-  },
-  {
-    "kind": "fuel",
-    "label": "5",
-    "x": 1444.1310245932123,
-    "y": 334.87520012905475,
-    "route_id": null,
-    "order": null,
-    "lat": 69.4572972620441,
-    "lon": 50.386581331524276,
-    "notes": "fuel_level=5; fuel_value=25; manual=true",
-    "id": "fuel-169"
   },
   {
     "kind": "chance",
@@ -2578,5 +2506,113 @@
     "lon": 4.371265982473211,
     "notes": "fuel_level=5; fuel_value=25; manual=true",
     "id": "fuel-177"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1314.1903198010893,
+    "y": 231.77798287645862,
+    "route_id": null,
+    "order": null,
+    "lat": 68.18220540933441,
+    "lon": 13.598086994158878,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-178"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1393.6950407690342,
+    "y": 322.24205587527376,
+    "route_id": null,
+    "order": null,
+    "lat": 68.91973485606543,
+    "lon": 40.76454083096345,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-179"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1462.4925149214198,
+    "y": 337.7238990707634,
+    "route_id": null,
+    "order": null,
+    "lat": 69.6623040071722,
+    "lon": 53.57248156840787,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-180"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1545.932853572921,
+    "y": 329.6221184859859,
+    "route_id": null,
+    "order": null,
+    "lat": 72.68946595396584,
+    "lon": 66.94103621270652,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-181"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1740.4858535553549,
+    "y": 332.3215298472148,
+    "route_id": null,
+    "order": null,
+    "lat": 77.74744328799149,
+    "lon": 95.31047307434024,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-182"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 1865.4972042555664,
+    "y": 368.83398495001427,
+    "route_id": null,
+    "order": null,
+    "lat": 76.37319225166834,
+    "lon": 112.10522954712422,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-183"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 2101.4719003283267,
+    "y": 408.2182527657925,
+    "route_id": null,
+    "order": null,
+    "lat": 73.72221957490062,
+    "lon": 143.02946257902275,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-184"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 2209.141259717996,
+    "y": 409.82511268534245,
+    "route_id": null,
+    "order": null,
+    "lat": 73.20415184872908,
+    "lon": 157.60331890691458,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-185"
+  },
+  {
+    "kind": "fuel",
+    "label": "5",
+    "x": 113.98023032411106,
+    "y": 469.3864168633955,
+    "route_id": null,
+    "order": null,
+    "lat": 63.851745802205954,
+    "lon": -169.02524448808154,
+    "notes": "fuel_level=5; fuel_value=25; manual=true",
+    "id": "fuel-186"
   }
 ]

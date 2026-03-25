@@ -95,7 +95,8 @@ def test_save_store_isolates_namespaced_saves(tmp_path) -> None:
 
 
 def test_healthcheck_reports_service_status(tmp_path) -> None:
-    client = TestClient(create_app(save_root_dir=tmp_path))
+    layout_path = tmp_path / 'game_ai_ui_v3_layout.json'
+    client = TestClient(create_app(save_root_dir=tmp_path, layout_config_path=layout_path))
 
     response = client.get('/api/health')
 
@@ -104,15 +105,74 @@ def test_healthcheck_reports_service_status(tmp_path) -> None:
     assert payload['status'] == 'ok'
     assert payload['service'] == 'rei-dos-mares'
     assert payload['save_root'] == str(tmp_path)
+    assert payload['layout_config'] == str(layout_path)
 
 
 def test_root_renders_game_ai_ui_v3(tmp_path) -> None:
-    client = TestClient(create_app(save_root_dir=tmp_path))
+    layout_path = tmp_path / 'game_ai_ui_v3_layout.json'
+    client = TestClient(create_app(save_root_dir=tmp_path, layout_config_path=layout_path))
 
     response = client.get('/')
 
     assert response.status_code == 200
     assert 'Preview do Jogo AI V3' in response.text
+    assert 'rdm-game-v3-layout-config' in response.text
+
+
+def test_game_v3_layout_endpoint_reads_and_writes_json_file(tmp_path) -> None:
+    layout_path = tmp_path / 'game_ai_ui_v3_layout.json'
+    client = TestClient(create_app(save_root_dir=tmp_path, layout_config_path=layout_path))
+
+    read_response = client.get('/api/layouts/game-ai-ui-v3')
+    assert read_response.status_code == 200
+    assert read_response.json()['path'] == str(layout_path)
+    assert layout_path.exists()
+
+    update_response = client.put(
+        '/api/layouts/game-ai-ui-v3',
+        json={
+            'map': {'x': 12, 'y': -18, 'width': None},
+            'leftStack': {'x': 4, 'y': 9, 'width': 260},
+        },
+    )
+    assert update_response.status_code == 200
+    payload = update_response.json()
+    assert payload['saved'] is True
+    assert payload['layout']['map'] == {'x': 12, 'y': -18, 'width': None}
+    assert payload['layout']['leftStack'] == {'x': 4, 'y': 9, 'width': 260}
+
+    saved = json.loads(layout_path.read_text(encoding='utf-8'))
+    assert saved['map'] == {'x': 12, 'y': -18, 'width': None}
+    assert saved['leftStack'] == {'x': 4, 'y': 9, 'width': 260}
+
+
+def test_game_v3_layout_endpoint_recovers_from_invalid_json(tmp_path) -> None:
+    layout_path = tmp_path / 'game_ai_ui_v3_layout.json'
+    layout_path.write_text('{ invalid json', encoding='utf-8')
+    client = TestClient(create_app(save_root_dir=tmp_path, layout_config_path=layout_path))
+
+    response = client.get('/api/layouts/game-ai-ui-v3')
+
+    assert response.status_code == 200
+    payload = response.json()['layout']
+    assert payload['map'] == {'x': 0, 'y': 0, 'width': None}
+    assert payload['leftStack'] == {'x': 0, 'y': 0, 'width': None}
+
+    saved = json.loads(layout_path.read_text(encoding='utf-8'))
+    assert saved['map'] == {'x': 0, 'y': 0, 'width': None}
+
+
+def test_game_v3_layout_endpoint_recovers_from_invalid_structure(tmp_path) -> None:
+    layout_path = tmp_path / 'game_ai_ui_v3_layout.json'
+    layout_path.write_text(json.dumps({'map': 'broken'}), encoding='utf-8')
+    client = TestClient(create_app(save_root_dir=tmp_path, layout_config_path=layout_path))
+
+    response = client.get('/api/layouts/game-ai-ui-v3')
+
+    assert response.status_code == 200
+    payload = response.json()['layout']
+    assert payload['map'] == {'x': 0, 'y': 0, 'width': None}
+    assert payload['reportModal'] == {'x': 0, 'y': 0, 'width': None}
 
 
 def test_robots_save_endpoint_persists_snapshot_in_robot_folder(tmp_path) -> None:

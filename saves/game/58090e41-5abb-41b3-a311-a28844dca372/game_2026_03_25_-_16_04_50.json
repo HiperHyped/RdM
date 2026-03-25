@@ -1,0 +1,917 @@
+{
+  "label": "game_2026_03_25_-_16_04_50",
+  "mode": "game",
+  "save_id": "20260325T190452316936Z-game-ai-ui-v2-game-2026-03-25-16-04-50",
+  "save_space_id": "58090e41-5abb-41b3-a311-a28844dca372",
+  "saved_at": "2026-03-25T19:04:52.316936Z",
+  "snapshot": {
+    "active_action_feed": [
+      {
+        "action": "Abastecimento",
+        "color": "#a855f7",
+        "createdAt": 1774465490301,
+        "detail": "Pagou $ 10 ao banco.",
+        "expiresAt": 1774465502301,
+        "glow": "#cd9cfa",
+        "id": "1774465490301-386d0eb488a2a8",
+        "playerId": "cpu-5",
+        "playerName": "Jogador 5",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Porto comprado",
+        "color": "#f97316",
+        "createdAt": 1774465489398,
+        "detail": "BUE por $ 360.",
+        "expiresAt": 1774465501398,
+        "glow": "#fcae78",
+        "id": "1774465489398-18caf671827288",
+        "playerId": "cpu-4",
+        "playerName": "Jogador 4",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Rodada perdida",
+        "color": "#ef4444",
+        "createdAt": 1774465488515,
+        "detail": "Ainda faltam 1 rodada(s).",
+        "expiresAt": 1774465500515,
+        "glow": "#f69393",
+        "id": "1774465488515-02263a73538c2",
+        "playerId": "cpu-3",
+        "playerName": "Jogador 3",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Contrato concluido",
+        "color": "#22c55e",
+        "createdAt": 1774465488360,
+        "detail": "Valor Frete: $ 540 | Total: $ 540",
+        "expiresAt": 1774465500360,
+        "glow": "#7fdda2",
+        "id": "1774465488360-698c2e3534045",
+        "playerId": "cpu-2",
+        "playerName": "Jogador 2",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#eab308",
+        "createdAt": 1774465487742,
+        "detail": "Pagou $ 15 ao banco.",
+        "expiresAt": 1774465499742,
+        "glow": "#f3d370",
+        "id": "1774465487742-d0e252ceb984b8",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Destino definido",
+        "color": "#eab308",
+        "createdAt": 1774465486980,
+        "detail": "VAL | $ 1.008",
+        "expiresAt": 1774465498980,
+        "glow": "#f3d370",
+        "id": "1774465486980-f68f34a73df508",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Pedagio sorteado",
+        "color": "#eab308",
+        "createdAt": 1774465486857,
+        "detail": "SIN",
+        "expiresAt": 1774465498857,
+        "glow": "#f3d370",
+        "id": "1774465486857-c4034b25edbd98",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Porto comprado no destino",
+        "color": "#eab308",
+        "createdAt": 1774465486407,
+        "detail": "SYD por $ 410.",
+        "expiresAt": 1774465498407,
+        "glow": "#f3d370",
+        "id": "1774465486407-c714add19504c",
+        "playerId": "cpu-1",
+        "playerName": "Jogador 1",
+        "turnLabel": "Turno 07"
+      },
+      {
+        "action": "Abastecimento",
+        "color": "#2563eb",
+        "createdAt": 1774465486236,
+        "detail": "Pagou $ 20 ao banco.",
+        "expiresAt": 1774465498236,
+        "glow": "#81a5f3",
+        "id": "1774465486236-d454ba9b7e4be8",
+        "playerId": "human",
+        "playerName": "Minha Companhia",
+        "turnLabel": "Turno 07"
+      }
+    ],
+    "ai": {
+      "aiDifficultyId": "normal",
+      "aiProfileModeId": "balanced",
+      "stageId": "stage8_profile_setup",
+      "stageLabel": "Perfis, cupons e caixa"
+    },
+    "chance_deck": {
+      "discard_pile": [
+        "ataque_submarino",
+        "alfandega",
+        "aposta",
+        "baleias",
+        "gasolina_livre",
+        "bermudas",
+        "atraso_de_entrega",
+        "corrente_a_favor"
+      ],
+      "draw_pile": [
+        "time_campeao",
+        "greve",
+        "vento_a_favor",
+        "naufrago",
+        "pedagio_livre",
+        "nova_especie",
+        "sardinhas",
+        "pedagio_extra",
+        "iceberg",
+        "maelstrom",
+        "piratas",
+        "tempestade",
+        "viagem_de_graca",
+        "contrato_cancelado",
+        "porto_livre",
+        "sabotagem",
+        "mudanca_de_rota",
+        "reliquias",
+        "nautilus",
+        "desastre_maritimo",
+        "manutencao_total",
+        "atlantida",
+        "banco_de_gelo",
+        "prazo_estendido",
+        "lula_gigante",
+        "quebra_de_contrato",
+        "vazamento",
+        "motim"
+      ],
+      "held_card_ids": [
+        "atalho",
+        "lucro_extra",
+        "contra_o_monopolio"
+      ]
+    },
+    "mortgaged_property_codes": [],
+    "players": [
+      {
+        "active_contract": {
+          "base_freight_value": 384,
+          "cargo_label": "G\u00e1s",
+          "completed": false,
+          "deadline_label": "3 / 4",
+          "deadline_progress": "3/4",
+          "destination": "TOK",
+          "distance_label": "Distancia 16",
+          "distance_value": 16,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 384",
+          "freight_value": 384,
+          "mandatory_toll": "PAN",
+          "note": "Minha Companhia parou em Abastecimento 20 e pagou $ 20 ao banco.",
+          "origin": "GEN",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 3,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 384,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "active_permission_label": "G\u00e1s",
+        "bankrupt": false,
+        "board_node_id": "fuel-054",
+        "cash": 1038,
+        "cash_display": "$ 1.038",
+        "color_hex": "#2563eb",
+        "color_id": "blue",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 1,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "human",
+        "is_human": true,
+        "last_roll": [
+          6,
+          2
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 20",
+        "monopoly_regions": [],
+        "name": "Minha Companhia",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "NYC",
+          "GEN"
+        ],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 20"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 1008,
+          "cargo_label": "Granel",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "VAL",
+          "distance_label": "Distancia 21",
+          "distance_value": 21,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 1.008",
+          "freight_value": 1008,
+          "mandatory_toll": "SIN",
+          "note": "Jogador 1 parou em Abastecimento 15 e pagou $ 15 ao banco.",
+          "origin": "SYD",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 1008,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "bulk",
+        "active_permission_label": "Granel",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.5,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.5,
+            "foresight": 0.5,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.6,
+            "timing_quality": 0.5
+          },
+          "skill_preset_id": "solido"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-114",
+        "cash": 1925,
+        "cash_display": "$ 1.925",
+        "color_hex": "#eab308",
+        "color_id": "yellow",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-1",
+        "is_human": false,
+        "last_roll": [
+          4,
+          3
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 15",
+        "monopoly_regions": [],
+        "name": "Jogador 1",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#17C51A",
+            "id": "bulk",
+            "kind": "bulk",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Granel"
+          }
+        ],
+        "property_codes": [
+          "CAR",
+          "SYD"
+        ],
+        "ship_type": "bulk",
+        "ship_type_label": "Granel",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 15"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 540,
+          "cargo_label": "G\u00e1s",
+          "completed": true,
+          "deadline_label": "4 / 4",
+          "deadline_progress": "4/4",
+          "destination": "HKG",
+          "distance_label": "Distancia 9",
+          "distance_value": 9,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 540",
+          "freight_value": 540,
+          "mandatory_toll": "SIN",
+          "note": "O navio chegou em HKG depois de passar por SIN e recebeu $ 540.",
+          "origin": "DUB",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 4,
+          "route_stage": "arrived",
+          "settlement_adjustment": 0,
+          "settlement_value": 540,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "gas",
+        "active_permission_label": "G\u00e1s",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "alias_of": "solido",
+            "combo_awareness": 0.5,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.5,
+            "foresight": 0.5,
+            "id": "ai_normal",
+            "label": "Solido",
+            "liquidity_discipline": 0.6,
+            "timing_quality": 0.5
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "hkg",
+        "cash": 2040,
+        "cash_display": "$ 2.040",
+        "color_hex": "#22c55e",
+        "color_id": "green",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [
+          {
+            "acquired_turn": 1,
+            "eligible_checks": 3,
+            "expires_after_turns": 100,
+            "kind": "shortcut_ignore_toll",
+            "label": "Atalho",
+            "source_card_id": "atalho"
+          }
+        ],
+        "id": "cpu-2",
+        "is_human": false,
+        "last_roll": [
+          3,
+          3
+        ],
+        "location_code": "HKG",
+        "location_label": "HKG",
+        "monopoly_regions": [],
+        "name": "Jogador 2",
+        "needs_new_contract": true,
+        "permissions": [
+          {
+            "accent": "#F2B400",
+            "id": "gas",
+            "kind": "gas",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "G\u00e1s"
+          }
+        ],
+        "property_codes": [
+          "DUB",
+          "MUM"
+        ],
+        "ship_type": "gas",
+        "ship_type_label": "G\u00e1s",
+        "skip_turns": 0,
+        "status_label": "recebeu $ 540"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 24,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "1 / 4",
+          "deadline_progress": "1/4",
+          "destination": "GUA",
+          "distance_label": "Distancia 4",
+          "distance_value": 4,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 24",
+          "freight_value": 24,
+          "mandatory_toll": "GIB",
+          "note": "Rev\u00e9s: Bermudas. Jogador 3 vai parar 2 rodada(s).",
+          "origin": "NYC",
+          "origin_monopoly": false,
+          "origin_owned": false,
+          "rounds_elapsed": 1,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 24,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "combo_awareness": 0.5,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.5,
+            "foresight": 0.5,
+            "id": "solido",
+            "label": "Solido",
+            "liquidity_discipline": 0.6,
+            "timing_quality": 0.5
+          },
+          "skill_preset_id": "solido"
+        },
+        "bankrupt": false,
+        "board_node_id": "chance-021",
+        "cash": 1990,
+        "cash_display": "$ 1.990",
+        "color_hex": "#ef4444",
+        "color_id": "red",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [
+          {
+            "acquired_turn": 4,
+            "eligible_checks": 1,
+            "expires_after_turns": 200,
+            "kind": "anti_monopoly_owner_share",
+            "label": "Contra o Monop\u00f3lio",
+            "source_card_id": "contra_o_monopolio"
+          }
+        ],
+        "id": "cpu-3",
+        "is_human": false,
+        "last_roll": [
+          1,
+          6
+        ],
+        "location_code": null,
+        "location_label": "Sorte / Reves",
+        "monopoly_regions": [],
+        "name": "Jogador 3",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          }
+        ],
+        "property_codes": [],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 1,
+        "status_label": "parado 1 rodada(s)"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 48,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "2 / 4",
+          "deadline_progress": "2/4",
+          "destination": "JAK",
+          "distance_label": "Distancia 16",
+          "distance_value": 16,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 48",
+          "freight_value": 48,
+          "mandatory_toll": "USH",
+          "note": "Jogador 4 comprou o porto BUE por $ 360.",
+          "origin": "HAM",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 2,
+          "route_stage": "to_toll",
+          "settlement_adjustment": 0,
+          "settlement_value": 48,
+          "target_rounds": 4,
+          "toll_passed": false,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "alias_of": "solido",
+            "combo_awareness": 0.5,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.5,
+            "foresight": 0.5,
+            "id": "ai_normal",
+            "label": "Solido",
+            "liquidity_discipline": 0.6,
+            "timing_quality": 0.5
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "bue",
+        "cash": 1100,
+        "cash_display": "$ 1.100",
+        "color_hex": "#f97316",
+        "color_id": "orange",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-4",
+        "is_human": false,
+        "last_roll": [
+          5,
+          2
+        ],
+        "location_code": "BUE",
+        "location_label": "BUE",
+        "monopoly_regions": [],
+        "name": "Jogador 4",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          }
+        ],
+        "property_codes": [
+          "REC",
+          "HAM",
+          "BUE"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "comprou BUE"
+      },
+      {
+        "active_contract": {
+          "base_freight_value": 540,
+          "cargo_label": "Petr\u00f3leo",
+          "completed": false,
+          "deadline_label": "6 / 4",
+          "deadline_progress": "6/4",
+          "destination": "DUB",
+          "distance_label": "Distancia 18",
+          "distance_value": 18,
+          "free_fuel_for_contract": false,
+          "freight_label": "Frete $ 540",
+          "freight_value": 540,
+          "mandatory_toll": "USH",
+          "note": "Jogador 5 parou em Abastecimento 10 e pagou $ 10 ao banco.",
+          "origin": "HOU",
+          "origin_monopoly": false,
+          "origin_owned": true,
+          "rounds_elapsed": 6,
+          "route_stage": "to_destination",
+          "settlement_adjustment": 0,
+          "settlement_value": 540,
+          "target_rounds": 4,
+          "toll_passed": true,
+          "toll_requirement_waived": false
+        },
+        "active_permission_id": "oil",
+        "active_permission_label": "Petr\u00f3leo",
+        "ai": {
+          "archetype_id": "balanced_trader",
+          "manual_profile": false,
+          "profile_id": "balanced_trader",
+          "profile_label": "Equilibrado",
+          "profile_overrides": null,
+          "skill": {
+            "alias_of": "solido",
+            "combo_awareness": 0.5,
+            "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+            "evaluation_noise": 0.5,
+            "foresight": 0.5,
+            "id": "ai_normal",
+            "label": "Solido",
+            "liquidity_discipline": 0.6,
+            "timing_quality": 0.5
+          },
+          "skill_preset_id": "ai_normal"
+        },
+        "bankrupt": false,
+        "board_node_id": "fuel-070",
+        "cash": 1471,
+        "cash_display": "$ 1.471",
+        "color_hex": "#a855f7",
+        "color_id": "purple",
+        "coupon_expired_total": 0,
+        "coupon_expired_turn_count": 0,
+        "coupon_used_total": 0,
+        "coupon_used_turn_count": 0,
+        "coupons": [],
+        "id": "cpu-5",
+        "is_human": false,
+        "last_roll": [
+          4,
+          3
+        ],
+        "location_code": null,
+        "location_label": "Abastecimento 10",
+        "monopoly_regions": [],
+        "name": "Jogador 5",
+        "needs_new_contract": false,
+        "permissions": [
+          {
+            "accent": "#4C4C4C",
+            "id": "oil",
+            "kind": "oil",
+            "mortgaged": false,
+            "purchase_price": 2000,
+            "text": "#FFFFFF",
+            "title": "Petr\u00f3leo"
+          }
+        ],
+        "property_codes": [
+          "HOU"
+        ],
+        "ship_type": "oil",
+        "ship_type_label": "Petr\u00f3leo",
+        "skip_turns": 0,
+        "status_label": "abasteceu $ 10"
+      }
+    ],
+    "report": {
+      "activeKey": "cash-by-turn",
+      "couponExpirationEvents": [],
+      "milestones": [
+        {
+          "label": "Turno 05",
+          "phase": "Fechamento da rodada",
+          "players": [
+            {
+              "cash": 1073,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 1,
+              "coupon_used_turn_count": 1,
+              "id": "human",
+              "patrimony_total": 3913,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1470,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-1",
+              "patrimony_total": 3810,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 1515,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-2",
+              "patrimony_total": 4405,
+              "permission_count": 1,
+              "property_count": 2,
+              "title_count": 2,
+              "toll_count": 0
+            },
+            {
+              "cash": 1990,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-3",
+              "patrimony_total": 3990,
+              "permission_count": 1,
+              "property_count": 0,
+              "title_count": 0,
+              "toll_count": 0
+            },
+            {
+              "cash": 1890,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-4",
+              "patrimony_total": 4210,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            },
+            {
+              "cash": 1501,
+              "coupon_expired_total": 0,
+              "coupon_expired_turn_count": 0,
+              "coupon_used_total": 0,
+              "coupon_used_turn_count": 0,
+              "id": "cpu-5",
+              "patrimony_total": 3881,
+              "permission_count": 1,
+              "property_count": 1,
+              "title_count": 1,
+              "toll_count": 0
+            }
+          ],
+          "turnNumber": 5
+        }
+      ]
+    },
+    "robot_skills": {
+      "cpu-1": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 1",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.5,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.5,
+          "foresight": 0.5,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.6,
+          "timing_quality": 0.5
+        },
+        "skill_preset_id": "solido"
+      },
+      "cpu-2": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 2",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "alias_of": "solido",
+          "combo_awareness": 0.5,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.5,
+          "foresight": 0.5,
+          "id": "ai_normal",
+          "label": "Solido",
+          "liquidity_discipline": 0.6,
+          "timing_quality": 0.5
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-3": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 3",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "combo_awareness": 0.5,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.5,
+          "foresight": 0.5,
+          "id": "solido",
+          "label": "Solido",
+          "liquidity_discipline": 0.6,
+          "timing_quality": 0.5
+        },
+        "skill_preset_id": "solido"
+      },
+      "cpu-4": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 4",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "alias_of": "solido",
+          "combo_awareness": 0.5,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.5,
+          "foresight": 0.5,
+          "id": "ai_normal",
+          "label": "Solido",
+          "liquidity_discipline": 0.6,
+          "timing_quality": 0.5
+        },
+        "skill_preset_id": "ai_normal"
+      },
+      "cpu-5": {
+        "archetype_id": "balanced_trader",
+        "manual_profile": false,
+        "name": "Jogador 5",
+        "profile_id": "balanced_trader",
+        "profile_label": "Equilibrado",
+        "skill": {
+          "alias_of": "solido",
+          "combo_awareness": 0.5,
+          "description": "Perfil confiavel para jogo padrao. Comete menos oscilacoes, respeita melhor caixa e enxerga combinacoes basicas com consistencia.",
+          "evaluation_noise": 0.5,
+          "foresight": 0.5,
+          "id": "ai_normal",
+          "label": "Solido",
+          "liquidity_discipline": 0.6,
+          "timing_quality": 0.5
+        },
+        "skill_preset_id": "ai_normal"
+      }
+    },
+    "schema": "rdm-ui-save-v1",
+    "session": {
+      "action_label": "Nova rodada",
+      "active_player_id": "human",
+      "dice": [
+        0,
+        0
+      ],
+      "note": "A rodada 08 vai comecar.",
+      "phase": "Turno 08",
+      "turn_label": "Turno 08",
+      "turn_number": 8
+    },
+    "setup_defaults": {
+      "ai_advanced_profiles": false,
+      "ai_difficulty": "normal",
+      "ai_manual_profiles": [],
+      "ai_manual_robot_configs": [],
+      "ai_profile_mode": "balanced",
+      "ai_profile_order": [
+        "balanced_trader"
+      ],
+      "company_name": "Minha Companhia",
+      "human_color_id": "blue",
+      "rival_count": 5
+    }
+  },
+  "variant": "game-ai-ui-v2",
+  "version": 1
+}

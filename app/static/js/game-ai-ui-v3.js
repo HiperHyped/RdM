@@ -150,7 +150,7 @@ const GAME_V3_TUTORIAL_STORAGE_KEYS = {
 
 const GAME_V3_TUTORIAL_AUTHORING_STORAGE_KEY = 'rdm-game-v3-tutorial-authoring-v2';
 const GAME_V3_TUTORIAL_AUTHORING_UI_STORAGE_KEY = 'rdm-game-v3-tutorial-authoring-ui-v2';
-const GAME_V3_TUTORIAL_PERSIST_PROGRESS = false;
+const GAME_V3_TUTORIAL_PERSIST_PROGRESS = true;
 const GAME_V3_TUTORIAL_MODE_QUERY_KEY = 'tutorial';
 const GAME_V3_TUTORIAL_MODE_AUTHORING = 'editing';
 const GAME_V3_TUTORIAL_MODE_RUNTIME = 'runtime';
@@ -12060,9 +12060,39 @@ async function saveCurrentGame() {
   if (!saveLabel) return;
 
   const previousLabel = button?.getAttribute('aria-label') || 'Salvar';
+  const response = await persistGameSave({
+    button,
+    previousLabel,
+    saveLabel,
+    savingAriaLabel: 'Salvando',
+  });
+
+  if (!response) {
+    await openDecisionModal({
+      title: 'Falha ao salvar',
+      copy: 'Nao foi possivel salvar a partida.',
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+    return;
+  }
+
+  await openDecisionModal({
+    title: 'Partida salva',
+    eyebrowLabel: 'Salvamento de partida',
+    copy: `Arquivo ${response?.save?.label || response?.save?.save_id || 'Save'} salvo.`,
+    primaryLabel: 'OK',
+    hideSecondary: true,
+  });
+}
+
+async function persistGameSave({ button = null, previousLabel = '', saveLabel = '', savingAriaLabel = 'Salvando' } = {}) {
+  const resolvedLabel = String(saveLabel || '').trim();
+  if (!resolvedLabel) return null;
+
   if (button) {
     button.disabled = true;
-    button.setAttribute('aria-label', 'Salvando');
+    button.setAttribute('aria-label', savingAriaLabel);
   }
 
   try {
@@ -12071,8 +12101,8 @@ async function saveCurrentGame() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        variant: 'game-ai-ui-v2',
-        label: saveLabel,
+        variant: 'game-ai-ui-v3',
+        label: resolvedLabel,
         save_space_id: getOrCreateSaveSpaceId(),
         snapshot,
       }),
@@ -12080,26 +12110,66 @@ async function saveCurrentGame() {
     if (button && response?.save?.file_name) {
       button.title = `Ultimo save: ${response.save.file_name}`;
     }
-    await openDecisionModal({
-      title: 'Partida salva',
-      eyebrowLabel: 'Salvamento de partida',
-      copy: `Arquivo ${response?.save?.label || response?.save?.save_id || 'Save'} salvo.`,
-      primaryLabel: 'OK',
-      hideSecondary: true,
-    });
+    return response;
   } catch (_error) {
-    await openDecisionModal({
-      title: 'Falha ao salvar',
-      copy: 'Nao foi possivel salvar a partida.',
-      primaryLabel: 'OK',
-      hideSecondary: true,
-    });
+    return null;
   } finally {
     if (button) {
       button.disabled = false;
       button.setAttribute('aria-label', previousLabel);
     }
   }
+}
+
+function returnToInitialScreen() {
+  state.setup.started = false;
+  state.setup.submitting = false;
+  updateSetupStartButton();
+  closeSetupAiEditor();
+  closeSettingsOverlay();
+  closeReportOverlay();
+  saveBrowser?.close('secondary', { restorePause: false });
+  setPaused(true);
+  setSetupOverlayVisible(true);
+}
+
+async function autoSaveAndReturnHome() {
+  const button = byId('preview-home-button');
+  if (button?.disabled) return;
+
+  if (!state.setup.started) {
+    returnToInitialScreen();
+    return;
+  }
+
+  const wasPaused = Boolean(state.view.paused);
+  setPaused(true);
+
+  const previousLabel = button?.getAttribute('aria-label') || 'Sair';
+  const response = await persistGameSave({
+    button,
+    previousLabel,
+    saveLabel: buildSuggestedSaveName(),
+    savingAriaLabel: 'Salvando e saindo',
+  });
+
+  if (!response) {
+    if (!wasPaused) {
+      setPaused(false);
+    }
+    await openDecisionModal({
+      title: 'Falha ao salvar',
+      copy: 'Nao foi possivel salvar a partida atual antes de voltar para a tela inicial.',
+      primaryLabel: 'OK',
+      hideSecondary: true,
+    });
+    return;
+  }
+
+  if (button && response?.save?.file_name) {
+    button.title = `Ultimo auto-save: ${response.save.file_name}`;
+  }
+  returnToInitialScreen();
 }
 
 function applyMapPayload(payload) {
@@ -13188,6 +13258,7 @@ async function submitSetupSelection(event) {
     applyBootstrapPayload(payload);
     state.setup.started = true;
     setSetupOverlayVisible(false);
+    setPaused(false);
     setupStage = 'renderizando mapa inicial';
     await renderMap();
     await delay(140);
@@ -13525,9 +13596,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     maybeAdvanceTutorialFromButtonClick('preview-settings-button', { stepId: tutorialCurrentStep()?.id || '' });
     openSettingsOverlay();
   });
-  byId('preview-home-button')?.addEventListener('click', () => {
+  byId('preview-home-button')?.addEventListener('click', async () => {
     maybeAdvanceTutorialFromButtonClick('preview-home-button', { stepId: tutorialCurrentStep()?.id || '' });
-    setSetupOverlayVisible(true);
+    await autoSaveAndReturnHome();
   });
   byId('preview-load-button')?.addEventListener('click', () => {
     maybeAdvanceTutorialFromButtonClick('preview-load-button', { stepId: tutorialCurrentStep()?.id || '' });

@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from pathlib import Path
 
-from app.config import GAME_V3_TUTORIAL_CONFIG_PATH, STATIC_DIR, TEMPLATE_DIR
+from app.config import GAME_V3_LAYOUT_CONFIG_PATH, GAME_V3_TUTORIAL_CONFIG_PATH, STATIC_DIR, TEMPLATE_DIR
 from app.maptools import (
     BoardEdgeRecord,
     BoardNodeCreate,
@@ -185,7 +185,7 @@ def _load_synced_snapshot(
     return snapshot
 
 
-def create_app(save_root_dir: Path | None = None) -> FastAPI:
+def create_app(save_root_dir: Path | None = None, layout_config_path: Path | None = None) -> FastAPI:
     app = FastAPI(title='Rei dos Mares')
     app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
     templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
@@ -193,9 +193,11 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
     save_store = SaveStore(save_root_dir)
     data = load_game_data()
     tutorial_config_path = GAME_V3_TUTORIAL_CONFIG_PATH
+    game_v3_layout_config_path = layout_config_path or GAME_V3_LAYOUT_CONFIG_PATH
 
     save_store.root_dir.mkdir(parents=True, exist_ok=True)
     tutorial_config_path.parent.mkdir(parents=True, exist_ok=True)
+    game_v3_layout_config_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _load_tutorial_config() -> list[dict[str, Any]]:
         if not tutorial_config_path.exists():
@@ -218,12 +220,79 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
         )
         return payload
 
+    def _default_game_v3_layout_config() -> dict[str, dict[str, int | None]]:
+        return {
+            'map': {'x': 0, 'y': 0, 'width': None},
+            'leftStack': {'x': 0, 'y': 0, 'width': None},
+            'actionLog': {'x': 0, 'y': 0, 'width': None},
+            'rivals': {'x': 0, 'y': 0, 'width': None},
+            'pause': {'x': 0, 'y': 0, 'width': None},
+            'setupModal': {'x': 0, 'y': 0, 'width': None},
+            'setupAiEditorModal': {'x': 0, 'y': 0, 'width': None},
+            'settingsModal': {'x': 0, 'y': 0, 'width': None},
+            'reportModal': {'x': 0, 'y': 0, 'width': None},
+            'permissionDrawModal': {'x': 0, 'y': 0, 'width': None},
+            'portDrawModal': {'x': 0, 'y': 0, 'width': None},
+            'movementDiceModal': {'x': 0, 'y': 0, 'width': None},
+            'chanceDrawModal': {'x': 0, 'y': 0, 'width': None},
+            'decisionModal': {'x': 0, 'y': 0, 'width': None},
+            'saveNameModal': {'x': 0, 'y': 0, 'width': None},
+            'loadBrowserModal': {'x': 0, 'y': 0, 'width': None},
+            'negotiationModal': {'x': 0, 'y': 0, 'width': None},
+            'permissionChoiceModal': {'x': 0, 'y': 0, 'width': None},
+        }
+
+    def _normalize_game_v3_layout_config(payload: Any) -> dict[str, dict[str, int | None]]:
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=400, detail='Layout config must be a JSON object.')
+
+        defaults = _default_game_v3_layout_config()
+        normalized: dict[str, dict[str, int | None]] = {}
+        for key, default_entry in defaults.items():
+            raw_entry = payload.get(key, {})
+            if not isinstance(raw_entry, dict):
+                raw_entry = {}
+            x = raw_entry.get('x', default_entry['x'])
+            y = raw_entry.get('y', default_entry['y'])
+            width = raw_entry.get('width', default_entry['width'])
+            try:
+                normalized[key] = {
+                    'x': int(x),
+                    'y': int(y),
+                    'width': None if width in {'', None} else int(width),
+                }
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(status_code=400, detail=f'Invalid layout entry for {key}.') from exc
+        return normalized
+
+    def _load_game_v3_layout_config() -> dict[str, dict[str, int | None]]:
+        if not game_v3_layout_config_path.exists():
+            return _save_game_v3_layout_config(_default_game_v3_layout_config())
+        try:
+            payload = json.loads(game_v3_layout_config_path.read_text(encoding='utf-8-sig'))
+        except json.JSONDecodeError:
+            return _save_game_v3_layout_config(_default_game_v3_layout_config())
+        try:
+            return _normalize_game_v3_layout_config(payload)
+        except HTTPException:
+            return _save_game_v3_layout_config(_default_game_v3_layout_config())
+
+    def _save_game_v3_layout_config(payload: Any) -> dict[str, dict[str, int | None]]:
+        normalized = _normalize_game_v3_layout_config(payload)
+        game_v3_layout_config_path.parent.mkdir(parents=True, exist_ok=True)
+        game_v3_layout_config_path.write_text(
+            json.dumps(normalized, ensure_ascii=True, indent=2) + '\n',
+            encoding='utf-8',
+        )
+        return normalized
+
     def _game_ai_ui_v3_context(request: Request) -> dict[str, Any]:
         tutorial_mode = str(request.query_params.get('tutorial') or 'runtime').strip().lower()
         return {
             'page_title': 'Preview do Jogo AI V3',
             'ai_v2_config': load_ai_v2_config(),
             'ai_v2_rules': load_ai_v2_rules_config(),
+            'layout_config': _load_game_v3_layout_config(),
             'tutorial_mode': tutorial_mode,
         }
 
@@ -251,6 +320,7 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             'save_root': str(save_store.root_dir),
             'save_backend': save_store.describe_backend(),
             'tutorial_config': str(tutorial_config_path),
+            'layout_config': str(game_v3_layout_config_path),
         }
 
     @app.get('/tools/map', response_class=HTMLResponse)
@@ -569,6 +639,23 @@ def create_app(save_root_dir: Path | None = None) -> FastAPI:
             'saved': True,
             'path': str(tutorial_config_path),
             'tutorial': saved,
+        }
+
+    @app.get('/api/layouts/game-ai-ui-v3')
+    async def load_game_ai_v3_layout() -> dict[str, Any]:
+        return {
+            'path': str(game_v3_layout_config_path),
+            'layout': _load_game_v3_layout_config(),
+        }
+
+    @app.put('/api/layouts/game-ai-ui-v3')
+    async def save_game_ai_v3_layout(request: Request) -> dict[str, Any]:
+        payload = await request.json()
+        saved = _save_game_v3_layout_config(payload)
+        return {
+            'saved': True,
+            'path': str(game_v3_layout_config_path),
+            'layout': saved,
         }
 
     @app.get('/api/saves/runtime/{runtime}/{file_name}')

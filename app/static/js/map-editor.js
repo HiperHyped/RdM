@@ -373,6 +373,37 @@ function renderNodeOverlay() {
     return border;
   }
 
+  function appendChanceMarker(cx, cy, radius) {
+    const leftHalf = document.createElementNS(svgNs, 'path');
+    leftHalf.setAttribute('d', `M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 0 ${cx} ${cy + radius} L ${cx} ${cy - radius} Z`);
+    leftHalf.setAttribute('fill', '#d94b45');
+    overlay.appendChild(leftHalf);
+
+    const rightHalf = document.createElementNS(svgNs, 'path');
+    rightHalf.setAttribute('d', `M ${cx} ${cy - radius} A ${radius} ${radius} 0 0 1 ${cx} ${cy + radius} L ${cx} ${cy - radius} Z`);
+    rightHalf.setAttribute('fill', '#2ea65a');
+    overlay.appendChild(rightHalf);
+
+    const meridian = document.createElementNS(svgNs, 'line');
+    meridian.setAttribute('x1', cx);
+    meridian.setAttribute('y1', cy - radius);
+    meridian.setAttribute('x2', cx);
+    meridian.setAttribute('y2', cy + radius);
+    meridian.setAttribute('stroke', '#06111a');
+    meridian.setAttribute('stroke-width', '1.2');
+    overlay.appendChild(meridian);
+
+    const border = document.createElementNS(svgNs, 'circle');
+    border.setAttribute('cx', cx);
+    border.setAttribute('cy', cy);
+    border.setAttribute('r', radius);
+    border.setAttribute('fill', 'none');
+    border.setAttribute('stroke', '#06111a');
+    border.setAttribute('stroke-width', '3.2');
+    overlay.appendChild(border);
+    return border;
+  }
+
   function appendDiamond(cx, cy, radius, fill, stroke, strokeWidth) {
     const diamond = document.createElementNS(svgNs, 'polygon');
     diamond.setAttribute(
@@ -417,7 +448,7 @@ function renderNodeOverlay() {
     }
 
     if (node.kind === 'chance') {
-      appendCircle(x, y, 6.9, '#f8fafc', '#06111a', 3.2);
+      appendChanceMarker(x, y, 6.9);
       return;
     }
 
@@ -806,7 +837,7 @@ function moveDrag(event) {
   }
   const layer = getHitLayer();
   const sensitivity = 180 / Math.max(720, layer.clientWidth);
-  state.view.rotationLon = normalizeLon(state.drag.startRotationLon + (deltaX * sensitivity));
+  state.view.rotationLon = normalizeLon(state.drag.startRotationLon - (deltaX * sensitivity));
   buildFallbackProjection();
   renderRouteOverlay();
   renderNodeOverlay();
